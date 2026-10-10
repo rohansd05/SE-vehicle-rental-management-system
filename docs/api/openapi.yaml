@@ -443,6 +443,496 @@ paths:
           description: ''
         '404':
           description: No response body
+  /api/v1/maintenance/clearances/:
+    get:
+      operationId: api_v1_maintenance_clearances_list
+      description: 'BR-16: jobs whose work is complete on an Unsafe vehicle, oldest
+        first.'
+      summary: Jobs awaiting Unsafe-flag clearance
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Maintenance clearance (BR-16)
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMaintenanceJobList'
+          description: ''
+  /api/v1/maintenance/jobs/:
+    get:
+      operationId: api_v1_maintenance_jobs_list
+      description: Branch Staff and Branch Managers see their branch's jobs, a technician
+        sees only the jobs assigned to them, an Administrator sees all. Filter with
+        `status`, `vehicle`, `severity` and `job_type`.
+      summary: List maintenance jobs
+      parameters:
+      - in: query
+        name: job_type
+        schema:
+          type: string
+          enum:
+          - Cleaning
+          - Corrective
+          - Documentation
+          - Inspection
+          - Preventive
+        description: |-
+          * `Preventive` - Preventive
+          * `Corrective` - Corrective
+          * `Inspection` - Inspection
+          * `Cleaning` - Cleaning
+          * `Documentation` - Documentation
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Low
+          - Medium
+        description: |-
+          * `Low` - Low
+          * `Medium` - Medium
+          * `High` - High
+          * `Critical` - Critical
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - Cancelled
+          - Completed
+          - In Progress
+          - Reported
+          - Scheduled
+        description: |-
+          * `Reported` - Reported
+          * `Scheduled` - Scheduled
+          * `In Progress` - In Progress
+          * `Completed` - Completed
+          * `Cancelled` - Cancelled
+      - in: query
+        name: vehicle
+        schema:
+          type: integer
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMaintenanceJobList'
+          description: ''
+    post:
+      operationId: api_v1_maintenance_jobs_create
+      description: Creates a Reported job. `flag_unsafe` flags the vehicle Unsafe
+        at once (Maint.Unsafe); otherwise the vehicle status changes only when the
+        job is scheduled (Appendix B).
+      summary: Report a fault (Maint.Create)
+      tags:
+      - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportJob'
+            examples:
+              ReportAFault:
+                value:
+                  vehicle: 12
+                  job_type: Corrective
+                  severity: High
+                  reported_problem: Brake pedal feels soft; pulls to the left under
+                    braking.
+                  flag_unsafe: true
+                summary: Report a fault
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportJob'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportJob'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/:
+    get:
+      operationId: api_v1_maintenance_jobs_retrieve
+      summary: A maintenance job with its record and parts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/approve-clearance/:
+    post:
+      operationId: api_v1_maintenance_jobs_approve_clearance_create
+      description: The vehicle becomes Available, the Administrator is recorded as
+        `closed_by`, the next service due is computed (BR-15) and the job is Completed.
+      summary: Clear the Unsafe flag and complete the job (BR-16)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance clearance (BR-16)
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/cancel/:
+    post:
+      operationId: api_v1_maintenance_jobs_cancel_create
+      description: POST on one job the caller can see.
+      summary: Cancel a Reported or Scheduled job
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelJob'
+            examples:
+              Cancel:
+                value:
+                  reason: Duplicate of job 41.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelJob'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelJob'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/complete/:
+    post:
+      operationId: api_v1_maintenance_jobs_complete_create
+      description: 'Validates the recorded work, parts and cost; if incomplete the
+        answer is 400 with `code: work_incomplete` ("record work first"). If the vehicle
+        is flagged Unsafe the job stays In Progress with `awaiting_clearance: true`
+        until an Administrator approves it (BR-16). Otherwise the vehicle becomes
+        Available, the next service due is computed (BR-15) and the job is Completed.'
+      summary: Complete a job (Exp 4 sequence 3, MaintenanceJob.complete_job())
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkIncomplete'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/record/:
+    put:
+      operationId: api_v1_maintenance_jobs_record_update
+      description: 'Replaces the job''s record. The total cost is computed: labour
+        plus every part''s quantity x unit cost.'
+      summary: Record the work, parts, cost and downtime (Maint.Record)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordWork'
+            examples:
+              RecordWork:
+                value:
+                  service_date: '2026-10-14'
+                  odometer_at_service: 15230
+                  work_description: Replaced front brake pads; bled the brake lines.
+                  labour_cost: '800.00'
+                  downtime_hours: '6.50'
+                  parts:
+                  - part_name: Brake pads (front)
+                    quantity: '1'
+                    unit_cost: '1450.00'
+                  - part_name: Brake fluid DOT4
+                    quantity: '0.5'
+                    unit_cost: '600.00'
+                summary: Record work
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecordWork'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecordWork'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/schedule/:
+    post:
+      operationId: api_v1_maintenance_jobs_schedule_create
+      description: 'Reported -> Scheduled; an Available vehicle goes Under Maintenance.
+        If the period overlaps Confirmed bookings the answer is 409 listing them;
+        send again with `confirm_conflicts: true` to go ahead (Maint.Conflict).'
+      summary: Assign a technician and a period (Maint.Schedule)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleJob'
+            examples:
+              Schedule:
+                value:
+                  technician: 3
+                  scheduled_from: '2026-10-14T04:30:00Z'
+                  scheduled_to: '2026-10-14T12:30:00Z'
+                  confirm_conflicts: false
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleJob'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleJob'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleConflict'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/start/:
+    post:
+      operationId: api_v1_maintenance_jobs_start_create
+      description: POST on one job the caller can see.
+      summary: Start a scheduled job (Scheduled -> In Progress)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/maintenance/technicians/:
+    get:
+      operationId: api_v1_maintenance_technicians_list
+      description: Technicians a job can be assigned to (Appendix A "assigned to").
+      summary: Active maintenance technicians
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Technician'
+          description: ''
+  /api/v1/maintenance/vehicles/:
+    get:
+      operationId: api_v1_maintenance_vehicles_list
+      description: Vehicles a fault can be reported on, with status and BR-15 next
+        service due.
+      summary: Vehicles of the caller's branch (all for an Administrator)
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - Available
+          - On Rent
+          - Retired
+          - Under Maintenance
+          - Unsafe
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceVehicle'
+          description: ''
+  /api/v1/maintenance/vehicles/{id}/history/:
+    get:
+      operationId: api_v1_maintenance_vehicles_history_list
+      description: |-
+        Maint.History: every job on a vehicle, newest first, for staff,
+        technicians and Administrators.
+      summary: Maintenance history of a vehicle (Maint.History)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMaintenanceJobList'
+          description: ''
+        '404':
+          description: No response body
   /api/v1/me/:
     get:
       operationId: api_v1_me_retrieve
@@ -543,6 +1033,14 @@ components:
       required:
       - access
       - user
+    CancelJob:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
     CategoriesEnum:
       enum:
       - Car
@@ -551,6 +1049,21 @@ components:
       description: |-
         * `Car` - Car
         * `Two-Wheeler` - Two-Wheeler
+    ConflictBooking:
+      type: object
+      properties:
+        booking_reference:
+          type: string
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+      required:
+      - booking_reference
+      - pickup_datetime
+      - return_datetime
     DatabaseEnum:
       enum:
       - ok
@@ -598,6 +1111,20 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+    JobTypeEnum:
+      enum:
+      - Preventive
+      - Corrective
+      - Inspection
+      - Cleaning
+      - Documentation
+      type: string
+      description: |-
+        * `Preventive` - Preventive
+        * `Corrective` - Corrective
+        * `Inspection` - Inspection
+        * `Cleaning` - Cleaning
+        * `Documentation` - Documentation
     Licence:
       type: object
       description: A licence as its owner, branch staff and administrators see it.
@@ -830,6 +1357,243 @@ components:
       required:
       - email
       - password
+    MaintenanceJob:
+      type: object
+      properties:
+        job_id:
+          type: integer
+          readOnly: true
+        job_type:
+          allOf:
+          - $ref: '#/components/schemas/JobTypeEnum'
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceJobStatusEnum'
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicle'
+          readOnly: true
+        technician:
+          allOf:
+          - $ref: '#/components/schemas/Technician'
+          readOnly: true
+          nullable: true
+        reported_problem:
+          type: string
+          readOnly: true
+        reported_by:
+          type: string
+          readOnly: true
+        scheduled_from:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        scheduled_to:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        service_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        odometer_at_service:
+          type: integer
+          readOnly: true
+          nullable: true
+        work_description:
+          type: string
+          readOnly: true
+        labour_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        downtime_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        total_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartUsed'
+          readOnly: true
+        missing_work:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Maint.Record items still to record; empty when the job can
+            be completed.
+        awaiting_clearance:
+          type: boolean
+          readOnly: true
+        clearance_requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_by:
+          type: string
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - awaiting_clearance
+      - clearance_requested_at
+      - closed_at
+      - closed_by
+      - created_at
+      - downtime_hours
+      - job_id
+      - job_type
+      - labour_cost
+      - missing_work
+      - odometer_at_service
+      - parts
+      - reported_by
+      - reported_problem
+      - scheduled_from
+      - scheduled_to
+      - service_date
+      - severity
+      - started_at
+      - status
+      - technician
+      - total_cost
+      - vehicle
+      - work_description
+    MaintenanceJobStatusEnum:
+      enum:
+      - Reported
+      - Scheduled
+      - In Progress
+      - Completed
+      - Cancelled
+      type: string
+      description: |-
+        * `Reported` - Reported
+        * `Scheduled` - Scheduled
+        * `In Progress` - In Progress
+        * `Completed` - Completed
+        * `Cancelled` - Cancelled
+    MaintenanceVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        registration_no:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        model:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicleStatusEnum'
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        home_branch:
+          type: string
+          readOnly: true
+        home_branch_id:
+          type: integer
+          readOnly: true
+        odometer:
+          type: integer
+          readOnly: true
+        last_service_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_service_odometer:
+          type: integer
+          readOnly: true
+          nullable: true
+        next_service_due:
+          allOf:
+          - $ref: '#/components/schemas/NextServiceDue'
+          readOnly: true
+      required:
+      - brand
+      - category
+      - home_branch
+      - home_branch_id
+      - id
+      - last_service_date
+      - last_service_odometer
+      - model
+      - next_service_due
+      - odometer
+      - registration_no
+      - status
+      - vehicle_type
+    MaintenanceVehicleStatusEnum:
+      enum:
+      - Available
+      - On Rent
+      - Under Maintenance
+      - Unsafe
+      - Retired
+      type: string
+      description: |-
+        * `Available` - Available
+        * `On Rent` - On Rent
+        * `Under Maintenance` - Under Maintenance
+        * `Unsafe` - Unsafe
+        * `Retired` - Retired
+    NextServiceDue:
+      type: object
+      description: 'BR-15: whichever comes first.'
+      properties:
+        odometer:
+          type: integer
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - date
+      - odometer
     OTPCode:
       type: object
       properties:
@@ -862,6 +1626,77 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LicenceReview'
+    PaginatedMaintenanceJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceJob'
+    PartInput:
+      type: object
+      properties:
+        part_name:
+          type: string
+          maxLength: 150
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - part_name
+      - quantity
+      - unit_cost
+    PartUsed:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        part_name:
+          type: string
+          readOnly: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - id
+      - part_name
+      - quantity
+      - total_cost
+      - unit_cost
     PasswordChange:
       type: object
       properties:
@@ -949,6 +1784,38 @@ components:
       - mobile_no
       - name
       - role
+    RecordWork:
+      type: object
+      description: Maint.Record.
+      properties:
+        service_date:
+          type: string
+          format: date
+        odometer_at_service:
+          type: integer
+          minimum: 0
+        work_description:
+          type: string
+          maxLength: 5000
+        labour_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        downtime_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartInput'
+      required:
+      - downtime_hours
+      - labour_cost
+      - odometer_at_service
+      - parts
+      - service_date
+      - work_description
     Register:
       type: object
       properties:
@@ -998,6 +1865,27 @@ components:
       required:
       - detail
       - email
+    ReportJob:
+      type: object
+      description: Maint.Create; Maint.Unsafe (flag_unsafe).
+      properties:
+        vehicle:
+          type: integer
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        reported_problem:
+          type: string
+          maxLength: 2000
+        flag_unsafe:
+          type: boolean
+          default: false
+      required:
+      - job_type
+      - reported_problem
+      - severity
+      - vehicle
     RoleEnum:
       enum:
       - CUSTOMER
@@ -1012,6 +1900,68 @@ components:
         * `MAINTENANCE_TECHNICIAN` - Maintenance Technician
         * `ADMINISTRATOR` - Administrator
         * `BRANCH_MANAGER` - Branch Manager
+    ScheduleConflict:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConflictBooking'
+      required:
+      - bookings
+      - code
+      - detail
+    ScheduleJob:
+      type: object
+      description: Maint.Schedule, Maint.Conflict.
+      properties:
+        technician:
+          type: integer
+        scheduled_from:
+          type: string
+          format: date-time
+        scheduled_to:
+          type: string
+          format: date-time
+        confirm_conflicts:
+          type: boolean
+          default: false
+      required:
+      - scheduled_from
+      - scheduled_to
+      - technician
+    SeverityEnum:
+      enum:
+      - Low
+      - Medium
+      - High
+      - Critical
+      type: string
+      description: |-
+        * `Low` - Low
+        * `Medium` - Medium
+        * `High` - High
+        * `Critical` - Critical
+    Technician:
+      type: object
+      properties:
+        technician_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        workshop:
+          type: string
+          readOnly: true
+      required:
+      - name
+      - technician_id
+      - workshop
     UserSummary:
       type: object
       properties:
@@ -1044,6 +1994,21 @@ components:
       required:
       - code
       - email
+    WorkIncomplete:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        missing:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+      - detail
+      - missing
   securitySchemes:
     jwtAuth:
       type: http

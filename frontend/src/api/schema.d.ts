@@ -269,6 +269,248 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/maintenance/clearances/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jobs awaiting Unsafe-flag clearance
+         * @description BR-16: jobs whose work is complete on an Unsafe vehicle, oldest first.
+         */
+        get: operations["api_v1_maintenance_clearances_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List maintenance jobs
+         * @description Branch Staff and Branch Managers see their branch's jobs, a technician sees only the jobs assigned to them, an Administrator sees all. Filter with `status`, `vehicle`, `severity` and `job_type`.
+         */
+        get: operations["api_v1_maintenance_jobs_list"];
+        put?: never;
+        /**
+         * Report a fault (Maint.Create)
+         * @description Creates a Reported job. `flag_unsafe` flags the vehicle Unsafe at once (Maint.Unsafe); otherwise the vehicle status changes only when the job is scheduled (Appendix B).
+         */
+        post: operations["api_v1_maintenance_jobs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A maintenance job with its record and parts */
+        get: operations["api_v1_maintenance_jobs_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/approve-clearance/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clear the Unsafe flag and complete the job (BR-16)
+         * @description The vehicle becomes Available, the Administrator is recorded as `closed_by`, the next service due is computed (BR-15) and the job is Completed.
+         */
+        post: operations["api_v1_maintenance_jobs_approve_clearance_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a Reported or Scheduled job
+         * @description POST on one job the caller can see.
+         */
+        post: operations["api_v1_maintenance_jobs_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete a job (Exp 4 sequence 3, MaintenanceJob.complete_job())
+         * @description Validates the recorded work, parts and cost; if incomplete the answer is 400 with `code: work_incomplete` ("record work first"). If the vehicle is flagged Unsafe the job stays In Progress with `awaiting_clearance: true` until an Administrator approves it (BR-16). Otherwise the vehicle becomes Available, the next service due is computed (BR-15) and the job is Completed.
+         */
+        post: operations["api_v1_maintenance_jobs_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/record/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Record the work, parts, cost and downtime (Maint.Record)
+         * @description Replaces the job's record. The total cost is computed: labour plus every part's quantity x unit cost.
+         */
+        put: operations["api_v1_maintenance_jobs_record_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/schedule/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assign a technician and a period (Maint.Schedule)
+         * @description Reported -> Scheduled; an Available vehicle goes Under Maintenance. If the period overlaps Confirmed bookings the answer is 409 listing them; send again with `confirm_conflicts: true` to go ahead (Maint.Conflict).
+         */
+        post: operations["api_v1_maintenance_jobs_schedule_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/start/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a scheduled job (Scheduled -> In Progress)
+         * @description POST on one job the caller can see.
+         */
+        post: operations["api_v1_maintenance_jobs_start_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/technicians/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Active maintenance technicians
+         * @description Technicians a job can be assigned to (Appendix A "assigned to").
+         */
+        get: operations["api_v1_maintenance_technicians_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/vehicles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vehicles of the caller's branch (all for an Administrator)
+         * @description Vehicles a fault can be reported on, with status and BR-15 next service due.
+         */
+        get: operations["api_v1_maintenance_vehicles_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/vehicles/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Maintenance history of a vehicle (Maint.History)
+         * @description Maint.History: every job on a vehicle, newest first, for staff,
+         *     technicians and Administrators.
+         */
+        get: operations["api_v1_maintenance_vehicles_history_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/": {
         parameters: {
             query?: never;
@@ -322,12 +564,22 @@ export interface components {
             access: string;
             user: components["schemas"]["UserSummary"];
         };
+        CancelJob: {
+            reason: string;
+        };
         /**
          * @description * `Car` - Car
          *     * `Two-Wheeler` - Two-Wheeler
          * @enum {string}
          */
         CategoriesEnum: "Car" | "Two-Wheeler";
+        ConflictBooking: {
+            booking_reference: string;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+        };
         /**
          * @description * `ok` - ok
          *     * `unreachable` - unreachable
@@ -353,6 +605,15 @@ export interface components {
          * @enum {string}
          */
         HealthStatusEnum: "ok" | "degraded";
+        /**
+         * @description * `Preventive` - Preventive
+         *     * `Corrective` - Corrective
+         *     * `Inspection` - Inspection
+         *     * `Cleaning` - Cleaning
+         *     * `Documentation` - Documentation
+         * @enum {string}
+         */
+        JobTypeEnum: "Preventive" | "Corrective" | "Inspection" | "Cleaning" | "Documentation";
         /** @description A licence as its owner, branch staff and administrators see it. */
         Licence: {
             readonly id: number;
@@ -438,6 +699,83 @@ export interface components {
             email: string;
             password: string;
         };
+        MaintenanceJob: {
+            readonly job_id: number;
+            readonly job_type: components["schemas"]["JobTypeEnum"];
+            readonly severity: components["schemas"]["SeverityEnum"];
+            readonly status: components["schemas"]["MaintenanceJobStatusEnum"];
+            readonly vehicle: components["schemas"]["MaintenanceVehicle"];
+            readonly technician: components["schemas"]["Technician"] | null;
+            readonly reported_problem: string;
+            readonly reported_by: string;
+            /** Format: date-time */
+            readonly scheduled_from: string | null;
+            /** Format: date-time */
+            readonly scheduled_to: string | null;
+            /** Format: date-time */
+            readonly started_at: string | null;
+            /** Format: date */
+            readonly service_date: string | null;
+            readonly odometer_at_service: number | null;
+            readonly work_description: string;
+            /** Format: decimal */
+            readonly labour_cost: string;
+            /** Format: decimal */
+            readonly downtime_hours: string | null;
+            /** Format: decimal */
+            readonly total_cost: string;
+            readonly parts: components["schemas"]["PartUsed"][];
+            /** @description Maint.Record items still to record; empty when the job can be completed. */
+            readonly missing_work: string[];
+            readonly awaiting_clearance: boolean;
+            /** Format: date-time */
+            readonly clearance_requested_at: string | null;
+            readonly closed_by: string | null;
+            /** Format: date-time */
+            readonly closed_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `Reported` - Reported
+         *     * `Scheduled` - Scheduled
+         *     * `In Progress` - In Progress
+         *     * `Completed` - Completed
+         *     * `Cancelled` - Cancelled
+         * @enum {string}
+         */
+        MaintenanceJobStatusEnum: "Reported" | "Scheduled" | "In Progress" | "Completed" | "Cancelled";
+        MaintenanceVehicle: {
+            readonly id: number;
+            readonly registration_no: string;
+            readonly brand: string;
+            readonly model: string;
+            readonly status: components["schemas"]["MaintenanceVehicleStatusEnum"];
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly home_branch: string;
+            readonly home_branch_id: number;
+            readonly odometer: number;
+            /** Format: date */
+            readonly last_service_date: string | null;
+            readonly last_service_odometer: number | null;
+            readonly next_service_due: components["schemas"]["NextServiceDue"];
+        };
+        /**
+         * @description * `Available` - Available
+         *     * `On Rent` - On Rent
+         *     * `Under Maintenance` - Under Maintenance
+         *     * `Unsafe` - Unsafe
+         *     * `Retired` - Retired
+         * @enum {string}
+         */
+        MaintenanceVehicleStatusEnum: "Available" | "On Rent" | "Under Maintenance" | "Unsafe" | "Retired";
+        /** @description BR-15: whichever comes first. */
+        NextServiceDue: {
+            odometer: number | null;
+            /** Format: date */
+            date: string | null;
+        };
         OTPCode: {
             code: string;
         };
@@ -455,6 +793,38 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["LicenceReview"][];
+        };
+        PaginatedMaintenanceJobList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["MaintenanceJob"][];
+        };
+        PartInput: {
+            part_name: string;
+            /** Format: decimal */
+            quantity: string;
+            /** Format: decimal */
+            unit_cost: string;
+        };
+        PartUsed: {
+            readonly id: number;
+            readonly part_name: string;
+            /** Format: decimal */
+            readonly quantity: string;
+            /** Format: decimal */
+            readonly unit_cost: string;
+            /** Format: decimal */
+            readonly total_cost: string;
         };
         PasswordChange: {
             current_password: string;
@@ -484,6 +854,18 @@ export interface components {
             readonly role: components["schemas"]["RoleEnum"];
             mobile_change_pending: boolean;
         };
+        /** @description Maint.Record. */
+        RecordWork: {
+            /** Format: date */
+            service_date: string;
+            odometer_at_service: number;
+            work_description: string;
+            /** Format: decimal */
+            labour_cost: string;
+            /** Format: decimal */
+            downtime_hours: string;
+            parts: components["schemas"]["PartInput"][];
+        };
         Register: {
             /** Format: email */
             email: string;
@@ -501,6 +883,15 @@ export interface components {
             email: string;
             detail: string;
         };
+        /** @description Maint.Create; Maint.Unsafe (flag_unsafe). */
+        ReportJob: {
+            vehicle: number;
+            job_type: components["schemas"]["JobTypeEnum"];
+            severity: components["schemas"]["SeverityEnum"];
+            reported_problem: string;
+            /** @default false */
+            flag_unsafe: boolean;
+        };
         /**
          * @description * `CUSTOMER` - Customer
          *     * `BRANCH_STAFF` - Branch Staff
@@ -510,6 +901,34 @@ export interface components {
          * @enum {string}
          */
         RoleEnum: "CUSTOMER" | "BRANCH_STAFF" | "MAINTENANCE_TECHNICIAN" | "ADMINISTRATOR" | "BRANCH_MANAGER";
+        ScheduleConflict: {
+            detail: string;
+            code: string;
+            bookings: components["schemas"]["ConflictBooking"][];
+        };
+        /** @description Maint.Schedule, Maint.Conflict. */
+        ScheduleJob: {
+            technician: number;
+            /** Format: date-time */
+            scheduled_from: string;
+            /** Format: date-time */
+            scheduled_to: string;
+            /** @default false */
+            confirm_conflicts: boolean;
+        };
+        /**
+         * @description * `Low` - Low
+         *     * `Medium` - Medium
+         *     * `High` - High
+         *     * `Critical` - Critical
+         * @enum {string}
+         */
+        SeverityEnum: "Low" | "Medium" | "High" | "Critical";
+        Technician: {
+            readonly technician_id: number;
+            readonly name: string;
+            readonly workshop: string;
+        };
         UserSummary: {
             readonly id: number;
             /** Format: email */
@@ -521,6 +940,11 @@ export interface components {
             /** Format: email */
             email: string;
             code: string;
+        };
+        WorkIncomplete: {
+            detail: string;
+            code: string;
+            missing: string[];
         };
     };
     responses: never;
@@ -940,6 +1364,399 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_maintenance_clearances_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMaintenanceJobList"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `Preventive` - Preventive
+                 *     * `Corrective` - Corrective
+                 *     * `Inspection` - Inspection
+                 *     * `Cleaning` - Cleaning
+                 *     * `Documentation` - Documentation
+                 */
+                job_type?: "Cleaning" | "Corrective" | "Documentation" | "Inspection" | "Preventive";
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /**
+                 * @description * `Low` - Low
+                 *     * `Medium` - Medium
+                 *     * `High` - High
+                 *     * `Critical` - Critical
+                 */
+                severity?: "Critical" | "High" | "Low" | "Medium";
+                /**
+                 * @description * `Reported` - Reported
+                 *     * `Scheduled` - Scheduled
+                 *     * `In Progress` - In Progress
+                 *     * `Completed` - Completed
+                 *     * `Cancelled` - Cancelled
+                 */
+                status?: "Cancelled" | "Completed" | "In Progress" | "Reported" | "Scheduled";
+                vehicle?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMaintenanceJobList"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportJob"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReportJob"];
+                "multipart/form-data": components["schemas"]["ReportJob"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_approve_clearance_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelJob"];
+                "application/x-www-form-urlencoded": components["schemas"]["CancelJob"];
+                "multipart/form-data": components["schemas"]["CancelJob"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_complete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkIncomplete"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_record_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordWork"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecordWork"];
+                "multipart/form-data": components["schemas"]["RecordWork"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_schedule_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleJob"];
+                "application/x-www-form-urlencoded": components["schemas"]["ScheduleJob"];
+                "multipart/form-data": components["schemas"]["ScheduleJob"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleConflict"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_start_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_technicians_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Technician"][];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_vehicles_list: {
+        parameters: {
+            query?: {
+                status?: "Available" | "On Rent" | "Retired" | "Under Maintenance" | "Unsafe";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceVehicle"][];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_vehicles_history_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMaintenanceJobList"];
                 };
             };
             /** @description No response body */

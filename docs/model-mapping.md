@@ -233,6 +233,24 @@ customers (Book.Hold). `blocked_period` = `[pickup, return + 60 min)`.
 | `service_date`, `odometer_at_service`, `work_description`, `labour_cost`, `workshop_invoice` | Maint.Record |
 | `closed_by`, `closed_at` | BR-16, Maint.Unsafe |
 | `PartUsed` (part, quantity, unit cost) | Maint.Record; SRS Fig. 2 "each consuming many Parts" |
+| `downtime_hours` (Module 2) | Maint.History "downtime"; entered by the technician with the record |
+| `started_at` (Module 2) | Appendix B Scheduled → In Progress |
+| `clearance_requested_at` (Module 2) | BR-16; Exp 4 sequence 3 "request clearance of Unsafe flag" |
+
+**Close Maintenance Job and the Unsafe clearance (Exp 4 sequence 3, BR-16).**
+The diagram shows the Administrator clearing the flag inside the
+technician's `complete_job()` call. In the system the Administrator answers
+later, so the job waits:
+
+| Diagram message | Stored as |
+|---|---|
+| `complete_job()` on an Unsafe vehicle → "request clearance of Unsafe flag" | `clearance_requested_at` set; `status` stays In Progress; Administrators notified |
+| job waiting for the Administrator | `awaiting_clearance` (property) = In Progress and `clearance_requested_at` set |
+| Administrator → `Vehicle.update_status()` → Available | `POST maintenance/jobs/{id}/approve-clearance/`, through `fleet/services/status.py` (BR-16 enforced there) |
+| "flag cleared, approver recorded" | `closed_by` = the approving Administrator, `closed_at`; the audit entry for the vehicle has the same actor |
+| `complete_job()` on a vehicle not flagged | `closed_by` = the technician (or Administrator) who completed it |
+| "compute next service due (BR-15)" | `Vehicle.last_service_date` and `last_service_odometer` are updated from the job's `service_date` and `odometer_at_service`; the next service due is computed from them (`maintenance.services.next_service_due`) and never stored, so no fleet column was added and none can drift (CO-5) |
+| "job status = Completed" | `status` Completed |
 
 ### notifications
 | Field / model | SRS source |

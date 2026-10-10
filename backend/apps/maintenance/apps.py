@@ -6,3 +6,8 @@ class MaintenanceConfig(AppConfig):
     name = "apps.maintenance"
     label = "maintenance"
     verbose_name = "Maintenance"
+
+    def ready(self) -> None:
+        from .notification_templates import register
+
+        register()

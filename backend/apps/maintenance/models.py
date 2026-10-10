@@ -66,8 +66,16 @@ class MaintenanceJob(TimeStampedModel):
     work_description = models.TextField(blank=True)
     labour_cost = _money(default=0)
     workshop_invoice = models.FileField(upload_to="maintenance/invoices/", blank=True)
+    # Maint.History "downtime": entered by the technician with the record.
+    downtime_hours = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    # Appendix B Scheduled -> In Progress.
+    started_at = models.DateTimeField(null=True, blank=True)
+    # Exp 4 sequence 3, BR-16: the technician completed the work on an Unsafe
+    # vehicle and the job waits for an Administrator to clear the flag.
+    clearance_requested_at = models.DateTimeField(null=True, blank=True)
     # BR-16, Maint.Unsafe: only an Administrator or authorised technician
-    # closes a job, and that user is recorded.
+    # closes a job, and that user is recorded. When a clearance is approved
+    # this is the approving Administrator.
     closed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -91,10 +99,40 @@ class MaintenanceJob(TimeStampedModel):
                 condition=Q(total_cost__gte=0) & Q(labour_cost__gte=0),
                 name="maintenance_costs_not_negative",
             ),
+            models.CheckConstraint(
+                condition=Q(downtime_hours__isnull=True) | Q(downtime_hours__gte=0),
+                name="maintenance_downtime_not_negative",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"Job {self.job_id} ({self.job_type}, {self.status})"
+
+    @property
+    def awaiting_clearance(self) -> bool:
+        """BR-16: work is complete and an Administrator must clear the Unsafe flag."""
+        return self.status == self.Status.IN_PROGRESS and self.clearance_requested_at is not None
+
+    # Exp 3 class-diagram methods; the logic is in services.py.
+
+    def schedule_job(self, *, technician, scheduled_from, scheduled_to, actor, **kwargs):
+        """Exp 3 MaintenanceJob.schedule_job(): Reported -> Scheduled (Maint.Schedule)."""
+        from .services import schedule_job
+
+        return schedule_job(
+            self.pk,
+            actor,
+            technician=technician,
+            scheduled_from=scheduled_from,
+            scheduled_to=scheduled_to,
+            **kwargs,
+        )
+
+    def complete_job(self, *, actor, request=None):
+        """Exp 3 MaintenanceJob.complete_job(): Exp 4 sequence diagram 3."""
+        from .services import complete_job
+
+        return complete_job(self.pk, actor, request=request)
 
 
 class PartUsed(models.Model):
