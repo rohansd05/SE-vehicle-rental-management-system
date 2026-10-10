@@ -328,6 +328,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fleet/vehicles/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A vehicle in detail (Search.Detail)
+         * @description Photographs (signed links), specification, the tariff in force, the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating and the last service date. `tariff` and `terms` are null while the category has no tariff in force.
+         */
+        get: operations["api_v1_fleet_vehicles_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/": {
         parameters: {
             query?: never;
@@ -1419,6 +1439,16 @@ export interface components {
          * @enum {string}
          */
         SeverityEnum: "Low" | "Medium" | "High" | "Critical";
+        /** @description Search.Detail "the applicable tariff" (PR3: the weekly rate is not applied, so not shown). */
+        TariffSummary: {
+            /** Format: decimal */
+            hourly_rate: string;
+            /** Format: decimal */
+            daily_rate: string;
+            free_km_allowance_per_day: number;
+            /** Format: decimal */
+            excess_km_rate: string;
+        };
         Technician: {
             readonly technician_id: number;
             readonly name: string;
@@ -1435,6 +1465,33 @@ export interface components {
             readonly id: number;
             name: string;
             readonly vehicle_type: string;
+        };
+        /** @description Search.Detail: photos, specification, tariff, deposit, policies, rating, last service. */
+        VehicleDetail: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            year: number;
+            colour: string;
+            fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly category_id: number;
+            readonly home_branch: string;
+            readonly home_branch_id: number;
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            /** Format: decimal */
+            readonly average_rating: string | null;
+            /** Format: date */
+            last_service_date?: string | null;
+            readonly status: string;
+            readonly photos: string[];
+            readonly tariff: components["schemas"]["TariffSummary"] | null;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            readonly terms: components["schemas"]["QuoteTerms"] | null;
         };
         VerifyOTP: {
             /** Format: email */
@@ -1961,6 +2018,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedAvailableVehicleList"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_vehicles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleDetail"];
                 };
             };
         };

@@ -238,6 +238,12 @@ export function SearchPage() {
           ) : (
             <VehicleResults
               vehicles={results.data.results}
+              hrefFor={(vehicle) =>
+                `/app/vehicles/${vehicle.id}?${new URLSearchParams({
+                  pickup_datetime: query.pickup_datetime,
+                  return_datetime: query.return_datetime,
+                })}`
+              }
               hasPrevious={Boolean(results.data.previous)}
               hasNext={Boolean(results.data.next)}
               onPrevious={() => goToPage((query.page ?? 1) - 1)}

@@ -3,8 +3,15 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.pricing.serializers import EstimateSerializer
-from apps.pricing.services import estimate
+from apps.core.files import signed_file_url
+from apps.pricing.serializers import EstimateSerializer, QuoteTermsSerializer
+from apps.pricing.services import (
+    PricingError,
+    current_tariff,
+    estimate,
+    quote_terms,
+    security_deposit_for,
+)
 
 from .models import Branch, Car, TwoWheeler, Vehicle, VehicleCategory
 from .services.availability import RentalPeriodError, check_period
@@ -128,3 +135,65 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
     def get_engine_cc(self, vehicle: Vehicle) -> int | None:
         two_wheeler = self._two_wheeler(vehicle)
         return two_wheeler.engine_cc if two_wheeler else None
+
+
+class TariffSummarySerializer(serializers.Serializer):
+    """Search.Detail "the applicable tariff" (PR3: the weekly rate is not applied, so not shown)."""
+
+    hourly_rate = serializers.DecimalField(max_digits=12, decimal_places=2)
+    daily_rate = serializers.DecimalField(max_digits=12, decimal_places=2)
+    free_km_allowance_per_day = serializers.IntegerField(source="free_km_allowance")
+    excess_km_rate = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class VehicleDetailSerializer(AvailableVehicleSerializer):
+    """Search.Detail: photos, specification, tariff, deposit, policies, rating, last service."""
+
+    status = serializers.CharField(read_only=True)
+    photos = serializers.SerializerMethodField()
+    tariff = serializers.SerializerMethodField()
+    security_deposit = serializers.SerializerMethodField()
+    terms = serializers.SerializerMethodField()
+
+    class Meta(AvailableVehicleSerializer.Meta):
+        fields = [
+            *(name for name in AvailableVehicleSerializer.Meta.fields if name != "estimate"),
+            "status",
+            "photos",
+            "tariff",
+            "security_deposit",
+            "terms",
+        ]
+
+    def _tariff(self, vehicle: Vehicle):
+        cache = self.context.setdefault("_tariffs", {})
+        if vehicle.category_id not in cache:
+            try:
+                cache[vehicle.category_id] = current_tariff(vehicle.category)
+            except PricingError:
+                cache[vehicle.category_id] = None
+        return cache[vehicle.category_id]
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_photos(self, vehicle: Vehicle) -> list[str]:
+        """Signed links (SI-3: only the object key is stored)."""
+        request = self.context.get("request")
+        return [signed_file_url(photo.image, request) for photo in vehicle.photos.all()]
+
+    @extend_schema_field(TariffSummarySerializer(allow_null=True))
+    def get_tariff(self, vehicle: Vehicle) -> dict | None:
+        tariff = self._tariff(vehicle)
+        return TariffSummarySerializer(tariff).data if tariff else None
+
+    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
+    def get_security_deposit(self, vehicle: Vehicle) -> str:
+        """BR-3 (PR4)."""
+        return serializers.DecimalField(max_digits=12, decimal_places=2).to_representation(
+            security_deposit_for(vehicle.vehicle_type)
+        )
+
+    @extend_schema_field(QuoteTermsSerializer(allow_null=True))
+    def get_terms(self, vehicle: Vehicle) -> dict | None:
+        """Search.Detail "the fuel and cancellation policies"; Book.Quote.Terms."""
+        tariff = self._tariff(vehicle)
+        return QuoteTermsSerializer(quote_terms(tariff)).data if tariff else None

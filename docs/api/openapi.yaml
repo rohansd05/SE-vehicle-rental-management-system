@@ -603,6 +603,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAvailableVehicleList'
           description: ''
+  /api/v1/fleet/vehicles/{id}/:
+    get:
+      operationId: api_v1_fleet_vehicles_retrieve
+      description: Photographs (signed links), specification, the tariff in force,
+        the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating
+        and the last service date. `tariff` and `terms` are null while the category
+        has no tariff in force.
+      summary: A vehicle in detail (Search.Detail)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleDetail'
+          description: ''
   /api/v1/health/:
     get:
       operationId: api_v1_health_retrieve
@@ -3106,6 +3131,30 @@ components:
         * `Medium` - Medium
         * `High` - High
         * `Critical` - Critical
+    TariffSummary:
+      type: object
+      description: 'Search.Detail "the applicable tariff" (PR3: the weekly rate is
+        not applied, so not shown).'
+      properties:
+        hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_km_allowance_per_day:
+          type: integer
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - daily_rate
+      - excess_km_rate
+      - free_km_allowance_per_day
+      - hourly_rate
     Technician:
       type: object
       properties:
@@ -3157,6 +3206,110 @@ components:
       - id
       - name
       - vehicle_type
+    VehicleDetail:
+      type: object
+      description: 'Search.Detail: photos, specification, tariff, deposit, policies,
+        rating, last service.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        category_id:
+          type: integer
+          readOnly: true
+        home_branch:
+          type: string
+          readOnly: true
+        home_branch_id:
+          type: integer
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        average_rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        last_service_date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          readOnly: true
+        photos:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        tariff:
+          allOf:
+          - $ref: '#/components/schemas/TariffSummary'
+          nullable: true
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        terms:
+          allOf:
+          - $ref: '#/components/schemas/QuoteTerms'
+          nullable: true
+          readOnly: true
+      required:
+      - average_rating
+      - brand
+      - category
+      - category_id
+      - colour
+      - engine_cc
+      - fuel_type
+      - home_branch
+      - home_branch_id
+      - id
+      - model
+      - photos
+      - seating_capacity
+      - security_deposit
+      - status
+      - tariff
+      - terms
+      - transmission
+      - vehicle_type
+      - year
     VerifyOTP:
       type: object
       properties:

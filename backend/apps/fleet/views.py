@@ -10,7 +10,7 @@ token sent with a public request is never a reason to refuse it.
 """
 
 from drf_spectacular.utils import extend_schema
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
 
 from apps.bookings.services import with_average_rating
@@ -22,6 +22,7 @@ from .serializers import (
     AvailableVehicleSerializer,
     BranchSerializer,
     VehicleCategorySerializer,
+    VehicleDetailSerializer,
 )
 from .services.availability import available_vehicles
 
@@ -108,6 +109,33 @@ class VehicleSearchView(ListAPIView):
             "excluding add-ons, discounts and usage-based charges; null if no tariff is in force."
         ),
         parameters=[AvailabilitySearchSerializer],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class VehicleDetailView(RetrieveAPIView):
+    """Search.Detail, public like the catalogue (Search.Browse). Retired is gone (Fleet.Retire)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+    serializer_class = VehicleDetailSerializer
+
+    def get_queryset(self):
+        return with_average_rating(
+            Vehicle.objects.exclude(status=Vehicle.Status.RETIRED)
+            .select_related("category", "home_branch", "car", "twowheeler")
+            .prefetch_related("photos")
+        )
+
+    @extend_schema(
+        tags=[TAG],
+        summary="A vehicle in detail (Search.Detail)",
+        description=(
+            "Photographs (signed links), specification, the tariff in force, the BR-3 deposit, "
+            "the rental terms (Book.Quote.Terms), the average rating and the last service date. "
+            "`tariff` and `terms` are null while the category has no tariff in force."
+        ),
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)

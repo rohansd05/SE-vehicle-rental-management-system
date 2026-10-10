@@ -1,4 +1,5 @@
 import { Bike, Car, Star } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,7 +51,7 @@ function Estimate({ vehicle }: { vehicle: AvailableVehicle }) {
   )
 }
 
-export function VehicleCard({ vehicle }: { vehicle: AvailableVehicle }) {
+export function VehicleCard({ vehicle, href }: { vehicle: AvailableVehicle; href: string }) {
   const Icon = vehicle.vehicle_type === 'Two-Wheeler' ? Bike : Car
   return (
     <Card className="h-full">
@@ -87,6 +88,11 @@ export function VehicleCard({ vehicle }: { vehicle: AvailableVehicle }) {
           <dd>{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
         </dl>
         <Estimate vehicle={vehicle} />
+        <Button asChild className="h-10">
+          <Link to={href} aria-label={`View and book the ${vehicle.brand} ${vehicle.model}`}>
+            View and book
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   )
@@ -94,12 +100,14 @@ export function VehicleCard({ vehicle }: { vehicle: AvailableVehicle }) {
 
 export function VehicleResults({
   vehicles,
+  hrefFor,
   hasPrevious,
   hasNext,
   onPrevious,
   onNext,
 }: {
   vehicles: AvailableVehicle[]
+  hrefFor: (vehicle: AvailableVehicle) => string
   hasPrevious: boolean
   hasNext: boolean
   onPrevious: () => void
@@ -110,7 +118,7 @@ export function VehicleResults({
       <ul aria-label="Available vehicles" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {vehicles.map((vehicle) => (
           <li key={vehicle.id}>
-            <VehicleCard vehicle={vehicle} />
+            <VehicleCard vehicle={vehicle} href={hrefFor(vehicle)} />
           </li>
         ))}
       </ul>

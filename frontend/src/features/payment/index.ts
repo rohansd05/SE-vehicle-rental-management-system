@@ -1,3 +1,2 @@
-// payment: Card, online (UPI, net banking, wallet) and cash payments (D6).
-// Placeholder. Implemented from Phase 1 onward.
-export {}
+// payment: pay for a held booking with a sandbox token (Pay.Authorize, SE-9) — owner: Rohan.
+export { PaymentPage } from './PaymentPage'

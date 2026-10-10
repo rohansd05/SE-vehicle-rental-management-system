@@ -54,7 +54,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'My bookings',
     icon: CalendarDays,
     roles: ['CUSTOMER'],
-    available: false,
+    available: true,
     description: 'Your bookings, invoices and rental history.',
   },
   {
