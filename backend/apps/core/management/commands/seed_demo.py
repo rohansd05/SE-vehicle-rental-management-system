@@ -27,6 +27,7 @@ from apps.accounts.models import (
     MaintenanceTechnician,
     User,
 )
+from apps.bookings.seed import delete_demo_booking_data, seed_demo_booking_data
 from apps.core.audit import entity_type, snapshot
 from apps.core.choices import FuelType, VehicleType
 from apps.core.models import AuditLog
@@ -220,6 +221,7 @@ class Command(BaseCommand):
         self._seed_fuel_prices(administrator)
         self._seed_vehicles(branches, categories)
         seed_demo_jobs(self._count)
+        seed_demo_booking_data(self._count)
 
     def _seed_branches(self) -> dict[str, Branch]:
         branches = {}
@@ -446,6 +448,7 @@ class Command(BaseCommand):
             self._delete_audited(Tariff.objects.filter(vehicle_category__name__in=CATEGORIES))
             FuelPrice.objects.filter(effective_from=DEMO_EFFECTIVE_FROM).delete()
             delete_demo_jobs()
+            delete_demo_booking_data()
             self._delete_audited(Vehicle.objects.filter(registration_no__in=demo_registrations()))
             # The licence (deleted with its customer) protects the admin who verified it.
             Customer.objects.filter(user__email__in=demo_emails).delete()
