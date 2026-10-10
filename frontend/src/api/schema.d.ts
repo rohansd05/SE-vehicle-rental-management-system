@@ -144,6 +144,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookings (History.View, History.Privacy)
+         * @description History.View (GET, newest pickup first) and Book.Create (POST, customers only).
+         */
+        get: operations["api_v1_bookings_list"];
+        put?: never;
+        /**
+         * Create a booking and hold the vehicle (Booking.create_booking())
+         * @description Exp 4 sequence 1: checks the period (BR-5), the terms (Book.Quote.Terms, SA-1), eligibility (Licence.is_valid(): BR-2, BR-3, BR-4), availability (Vehicle.check_availability(), BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified, licence_expired, licence_expires_before_return, licence_category, under_age, customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`.
+         */
+        post: operations["api_v1_bookings_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A booking with its itemised price */
+        get: operations["api_v1_bookings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/hold/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hold a Draft booking again (Book.Hold.Expire)
+         * @description Rechecks eligibility and availability and re-prices at today's tariff.
+         */
+        post: operations["api_v1_bookings_hold_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/invoice/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the invoice PDF
+         * @description Pay.Invoice: the issued invoice as a PDF (History.Download).
+         */
+        get: operations["api_v1_bookings_invoice_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/pay/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay for a held booking and confirm it (Pay.Authorize, Book.Done)
+         * @description SE-9: the customer's password is required. One gateway authorisation for the rental and the deposit. Success: Confirmed, with booking reference, pickup code, transaction id and invoice. 402 `payment_declined`: the hold is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`. Repeating the same idempotency key never charges twice (Pay.Idempotent).
+         */
+        post: operations["api_v1_bookings_pay_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/files/{token}/": {
         parameters: {
             query?: never;
@@ -159,6 +260,86 @@ export interface paths {
          *     forged or expired link gets a 404 that says nothing about the file.
          */
         get: operations["api_v1_files_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/branches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Branches (pickup locations)
+         * @description The pickup branches a search can start from.
+         */
+        get: operations["api_v1_fleet_branches_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vehicle categories
+         * @description Appendix A vehicle categories, for the search filter (Search.Filter).
+         */
+        get: operations["api_v1_fleet_categories_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search available vehicles (Search.Available)
+         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field. Each result carries `estimate` (Search.Price): the base charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based charges; null if no tariff is in force.
+         */
+        get: operations["api_v1_fleet_search_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/vehicles/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A vehicle in detail (Search.Detail)
+         * @description Photographs (signed links), specification, the tariff in force, the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating and the last service date. `tariff` and `terms` are null while the category has no tariff in force.
+         */
+        get: operations["api_v1_fleet_vehicles_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -555,6 +736,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pricing/add-ons/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Add-ons on offer (Book.Addons)
+         * @description Active add-ons. With `vehicle_type`, only those offered with that type.
+         */
+        get: operations["api_v1_pricing_add_ons_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/quote/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quote a booking (Tariff.calculate_price(), BR-6)
+         * @description Base charge (whole days from 24 hours, otherwise whole hours after a 15-minute grace), add-ons per billed day, the discount, then tax on the discounted amount (D14 rate). The security deposit (BR-3) is separate and not part of `total_payable`. Usage-based charges arise only at return. Nothing is saved.
+         */
+        post: operations["api_v1_pricing_quote_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -564,8 +785,170 @@ export interface components {
             access: string;
             user: components["schemas"]["UserSummary"];
         };
+        AddOn: {
+            readonly id: number;
+            name: string;
+            /** Format: decimal */
+            daily_rate: string;
+            /** @description Car or Two-Wheeler; blank when offered with any vehicle. */
+            readonly vehicle_type: string;
+        };
+        AddOnCharge: {
+            add_on_id: number;
+            name: string;
+            quantity: number;
+            /** Format: decimal */
+            daily_rate: string;
+            days: number;
+            /** Format: decimal */
+            amount: string;
+        };
+        AddOnRequest: {
+            add_on: number;
+            /** @default 1 */
+            quantity: number;
+        };
+        /** @description One search result: the specification a customer chooses by (Search.Filter fields). */
+        AvailableVehicle: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            year: number;
+            colour: string;
+            fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly category_id: number;
+            readonly home_branch: string;
+            readonly home_branch_id: number;
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            /** Format: decimal */
+            readonly average_rating: string | null;
+            /** Format: date */
+            last_service_date?: string | null;
+            readonly estimate: components["schemas"]["Estimate"] | null;
+        };
+        /**
+         * @description * `day` - day
+         *     * `hour` - hour
+         * @enum {string}
+         */
+        BillingUnitEnum: "day" | "hour";
+        /** @description A booking as its customer, branch staff or an Administrator sees it (History.Privacy). */
+        Booking: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly pickup_branch: string;
+            readonly pickup_branch_id: number;
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            /** Format: date-time */
+            readonly hold_expires_at: string | null;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly pickup_code: string;
+            readonly add_ons: components["schemas"]["BookingAddOnLine"][];
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @default  */
+            readonly discount_code: string;
+            /** Format: decimal */
+            readonly discount_amount: string;
+            /** Format: date-time */
+            readonly terms_accepted_at: string | null;
+            /** Format: date-time */
+            readonly safety_notice_acknowledged_at: string | null;
+            readonly invoice_number: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        BookingAddOnLine: {
+            add_on_id: number;
+            name: string;
+            quantity: number;
+            /** Format: decimal */
+            daily_rate: string;
+        };
+        /** @description Adds the itemised price (Book.Quote.Display) and the payment transaction (Pay.Confirm.OK). */
+        BookingDetail: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly pickup_branch: string;
+            readonly pickup_branch_id: number;
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            /** Format: date-time */
+            readonly hold_expires_at: string | null;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly pickup_code: string;
+            readonly add_ons: components["schemas"]["BookingAddOnLine"][];
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @default  */
+            readonly discount_code: string;
+            /** Format: decimal */
+            readonly discount_amount: string;
+            /** Format: date-time */
+            readonly terms_accepted_at: string | null;
+            /** Format: date-time */
+            readonly safety_notice_acknowledged_at: string | null;
+            readonly invoice_number: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly price: components["schemas"]["Quote"];
+            readonly transaction_id: string | null;
+        };
+        /** @description A refusal with a stable code, e.g. licence_not_verified, vehicle_unavailable. */
+        BookingError: {
+            detail: string;
+            code: string;
+        };
+        /**
+         * @description * `Draft` - Draft
+         *     * `Pending Payment` - Pending Payment
+         *     * `Confirmed` - Confirmed
+         *     * `Active` - Active
+         *     * `Completed` - Completed
+         *     * `Cancelled` - Cancelled
+         *     * `No-show` - No-show
+         * @enum {string}
+         */
+        BookingStatusEnum: "Draft" | "Pending Payment" | "Confirmed" | "Active" | "Completed" | "Cancelled" | "No-show";
+        BookingVehicle: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: string;
+        };
+        Branch: {
+            readonly branch_id: number;
+            branch_name: string;
+            address: string;
+        };
         CancelJob: {
             reason: string;
+        };
+        CancellationRefund: {
+            notice_hours_at_least: number;
+            /** Format: decimal */
+            refund_percent: string;
         };
         /**
          * @description * `Car` - Car
@@ -580,6 +963,24 @@ export interface components {
             /** Format: date-time */
             return_datetime: string;
         };
+        /** @description Book.Create: one vehicle, the period, add-ons, a discount code and the terms (BK5). */
+        CreateBooking: {
+            vehicle: number;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            /** @default  */
+            discount_code: string;
+            /** @description Book.Quote.Terms: must be true. */
+            terms_accepted: boolean;
+            /**
+             * @description SA-1: must be true for a two-wheeler.
+             * @default false
+             */
+            safety_notice_acknowledged: boolean;
+        };
         /**
          * @description * `ok` - ok
          *     * `unreachable` - unreachable
@@ -593,6 +994,23 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        /** @description Search.Price: base charge plus tax for the period, an estimate (PR9). */
+        Estimate: {
+            billing_unit: components["schemas"]["BillingUnitEnum"];
+            billing_count: number;
+            /** Format: decimal */
+            total_payable: string;
+            /** Format: decimal */
+            security_deposit: string;
+        };
+        /**
+         * @description * `Petrol` - Petrol
+         *     * `Diesel` - Diesel
+         *     * `CNG` - CNG
+         *     * `Electric` - Electric
+         * @enum {string}
+         */
+        FuelTypeEnum: "Petrol" | "Diesel" | "CNG" | "Electric";
         Health: {
             status: components["schemas"]["HealthStatusEnum"];
             database: components["schemas"]["DatabaseEnum"];
@@ -779,6 +1197,36 @@ export interface components {
         OTPCode: {
             code: string;
         };
+        PaginatedAvailableVehicleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AvailableVehicle"][];
+        };
+        PaginatedBookingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Booking"][];
+        };
         PaginatedLicenceReviewList: {
             /** @example 123 */
             count: number;
@@ -835,6 +1283,15 @@ export interface components {
             mobile_no?: string;
             address?: string;
         };
+        /** @description Pay.Authorize with a gateway token (CO-2: never card details); SE-9 re-authentication. */
+        PayBooking: {
+            /** @description Token from the gateway's hosted fields. Sandbox: tok_visa, tok_decline. */
+            payment_token: string;
+            /** @description Pay.Idempotent: one key per payment attempt; repeating it never charges twice. */
+            idempotency_key: string;
+            /** @description SE-9: re-authentication before payment. */
+            password: string;
+        };
         Profile: {
             readonly id: number;
             /** Format: email */
@@ -853,6 +1310,64 @@ export interface components {
             readonly address: string;
             readonly role: components["schemas"]["RoleEnum"];
             mobile_change_pending: boolean;
+        };
+        /** @description Book.Quote.Display: every charge itemised (UI-4); the deposit apart (Pay.Deposit). */
+        Quote: {
+            tariff_id: number;
+            billing_unit: components["schemas"]["BillingUnitEnum"];
+            billing_count: number;
+            /** Format: decimal */
+            unit_rate: string;
+            /** Format: decimal */
+            base_charge: string;
+            add_ons: components["schemas"]["AddOnCharge"][];
+            /** Format: decimal */
+            add_ons_total: string;
+            /** Format: decimal */
+            rental_charge: string;
+            discount_code: string;
+            /** Format: decimal */
+            discount_amount: string;
+            /** Format: decimal */
+            taxable_amount: string;
+            /** Format: decimal */
+            tax_rate_percent: string;
+            /** Format: decimal */
+            tax_amount: string;
+            /** Format: decimal */
+            total_payable: string;
+            /** Format: decimal */
+            security_deposit: string;
+            free_helmets_per_rider: number;
+            terms: components["schemas"]["QuoteTerms"];
+        };
+        /** @description Book.Quote.Display: a vehicle, a period (BR-5), add-ons (Book.Addons) and a code (D17). */
+        QuoteRequest: {
+            vehicle: number;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            /** @default  */
+            discount_code: string;
+        };
+        /** @description Book.Quote.Terms. */
+        QuoteTerms: {
+            free_km_allowance_per_day: number;
+            /** Format: decimal */
+            excess_km_rate: string;
+            late_return_grace_minutes: number;
+            /** Format: decimal */
+            late_return_hourly_rate: string;
+            /** Format: decimal */
+            late_return_daily_cap: string;
+            late_return_full_day_after_hours: number;
+            /** Format: decimal */
+            fuel_shortfall_service_charge_percent: string;
+            cancellation_refunds: components["schemas"]["CancellationRefund"][];
+            /** Format: decimal */
+            no_show_retained_percent: string;
         };
         /** @description Maint.Record. */
         RecordWork: {
@@ -924,6 +1439,16 @@ export interface components {
          * @enum {string}
          */
         SeverityEnum: "Low" | "Medium" | "High" | "Critical";
+        /** @description Search.Detail "the applicable tariff" (PR3: the weekly rate is not applied, so not shown). */
+        TariffSummary: {
+            /** Format: decimal */
+            hourly_rate: string;
+            /** Format: decimal */
+            daily_rate: string;
+            free_km_allowance_per_day: number;
+            /** Format: decimal */
+            excess_km_rate: string;
+        };
         Technician: {
             readonly technician_id: number;
             readonly name: string;
@@ -935,6 +1460,38 @@ export interface components {
             email: string;
             name: string;
             role?: components["schemas"]["RoleEnum"];
+        };
+        VehicleCategory: {
+            readonly id: number;
+            name: string;
+            readonly vehicle_type: string;
+        };
+        /** @description Search.Detail: photos, specification, tariff, deposit, policies, rating, last service. */
+        VehicleDetail: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            year: number;
+            colour: string;
+            fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly category_id: number;
+            readonly home_branch: string;
+            readonly home_branch_id: number;
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            /** Format: decimal */
+            readonly average_rating: string | null;
+            /** Format: date */
+            last_service_date?: string | null;
+            readonly status: string;
+            readonly photos: string[];
+            readonly tariff: components["schemas"]["TariffSummary"] | null;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            readonly terms: components["schemas"]["QuoteTerms"] | null;
         };
         VerifyOTP: {
             /** Format: email */
@@ -1172,6 +1729,208 @@ export interface operations {
             };
         };
     };
+    api_v1_bookings_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /**
+                 * @description * `Draft` - Draft
+                 *     * `Pending Payment` - Pending Payment
+                 *     * `Confirmed` - Confirmed
+                 *     * `Active` - Active
+                 *     * `Completed` - Completed
+                 *     * `Cancelled` - Cancelled
+                 *     * `No-show` - No-show
+                 */
+                status?: "Active" | "Cancelled" | "Completed" | "Confirmed" | "Draft" | "No-show" | "Pending Payment";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBookingList"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["CreateBooking"];
+                "multipart/form-data": components["schemas"]["CreateBooking"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_hold_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_invoice_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invoice PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_bookings_pay_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["PayBooking"];
+                "multipart/form-data": components["schemas"]["PayBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
     api_v1_files_retrieve: {
         parameters: {
             query?: never;
@@ -1196,6 +1955,91 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_v1_fleet_branches_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branch"][];
+                };
+            };
+        };
+    };
+    api_v1_fleet_categories_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleCategory"][];
+                };
+            };
+        };
+    };
+    api_v1_fleet_search_list: {
+        parameters: {
+            query: {
+                branch: number;
+                category?: number | null;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                pickup_datetime: string;
+                return_datetime: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAvailableVehicleList"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_vehicles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleDetail"];
+                };
             };
         };
     };
@@ -1841,6 +2685,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_add_ons_list: {
+        parameters: {
+            query?: {
+                vehicle_type?: "Car" | "Two-Wheeler";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddOn"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_quote_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["QuoteRequest"];
+                "multipart/form-data": components["schemas"]["QuoteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Quote"];
                 };
             };
         };

@@ -1,4 +1,4 @@
 """Fleet services (business logic; views stay thin).
 
-Owner: Rohan, except availability.py (Nidhi).
+Owner: Rohan, except status.py (Nidhi), per CLAUDE.md.
 """

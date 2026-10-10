@@ -1,5 +1,14 @@
-"""Fleet API routes, mounted under /api/v1/."""
+"""Fleet API routes, mounted under /api/v1/fleet/."""
+
+from django.urls import path
+
+from . import views
 
 app_name = "fleet"
 
-urlpatterns: list = []
+urlpatterns = [
+    path("branches/", views.BranchListView.as_view(), name="branch-list"),
+    path("categories/", views.VehicleCategoryListView.as_view(), name="category-list"),
+    path("search/", views.VehicleSearchView.as_view(), name="search"),
+    path("vehicles/<int:pk>/", views.VehicleDetailView.as_view(), name="vehicle-detail"),
+]

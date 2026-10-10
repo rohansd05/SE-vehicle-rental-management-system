@@ -252,6 +252,244 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/bookings/:
+    get:
+      operationId: api_v1_bookings_list
+      description: History.View (GET, newest pickup first) and Book.Create (POST,
+        customers only).
+      summary: List bookings (History.View, History.Privacy)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - Active
+          - Cancelled
+          - Completed
+          - Confirmed
+          - Draft
+          - No-show
+          - Pending Payment
+        description: |-
+          * `Draft` - Draft
+          * `Pending Payment` - Pending Payment
+          * `Confirmed` - Confirmed
+          * `Active` - Active
+          * `Completed` - Completed
+          * `Cancelled` - Cancelled
+          * `No-show` - No-show
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookingList'
+          description: ''
+    post:
+      operationId: api_v1_bookings_create
+      description: 'Exp 4 sequence 1: checks the period (BR-5), the terms (Book.Quote.Terms,
+        SA-1), eligibility (Licence.is_valid(): BR-2, BR-3, BR-4), availability (Vehicle.check_availability(),
+        BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending
+        Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified,
+        licence_expired, licence_expires_before_return, licence_category, under_age,
+        customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`.'
+      summary: Create a booking and hold the vehicle (Booking.create_booking())
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+            examples:
+              TwoDaysWithAChildSeat:
+                value:
+                  vehicle: 12
+                  pickup_datetime: '2026-10-20T04:30:00Z'
+                  return_datetime: '2026-10-22T04:30:00Z'
+                  add_ons:
+                  - add_on: 3
+                    quantity: 1
+                  discount_code: WELCOME10
+                  terms_accepted: true
+                  safety_notice_acknowledged: false
+                summary: Two days with a child seat
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/{id}/:
+    get:
+      operationId: api_v1_bookings_retrieve
+      summary: A booking with its itemised price
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+  /api/v1/bookings/{id}/hold/:
+    post:
+      operationId: api_v1_bookings_hold_create
+      description: Rechecks eligibility and availability and re-prices at today's
+        tariff.
+      summary: Hold a Draft booking again (Book.Hold.Expire)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/{id}/invoice/:
+    get:
+      operationId: api_v1_bookings_invoice_retrieve
+      description: 'Pay.Invoice: the issued invoice as a PDF (History.Download).'
+      summary: Download the invoice PDF
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: The invoice PDF.
+  /api/v1/bookings/{id}/pay/:
+    post:
+      operationId: api_v1_bookings_pay_create
+      description: 'SE-9: the customer''s password is required. One gateway authorisation
+        for the rental and the deposit. Success: Confirmed, with booking reference,
+        pickup code, transaction id and invoice. 402 `payment_declined`: the hold
+        is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`.
+        Repeating the same idempotency key never charges twice (Pay.Idempotent).'
+      summary: Pay for a held booking and confirm it (Pay.Authorize, Book.Done)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayBooking'
+            examples:
+              SandboxCard:
+                value:
+                  payment_token: tok_visa
+                  idempotency_key: pay-7f3a9c21
+                  password: …
+                summary: Sandbox card
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/files/{token}/:
     get:
       operationId: api_v1_files_retrieve
@@ -276,6 +514,120 @@ paths:
           description: The file
         '404':
           description: No response body
+  /api/v1/fleet/branches/:
+    get:
+      operationId: api_v1_fleet_branches_list
+      description: The pickup branches a search can start from.
+      summary: Branches (pickup locations)
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Branch'
+          description: ''
+  /api/v1/fleet/categories/:
+    get:
+      operationId: api_v1_fleet_categories_list
+      description: Appendix A vehicle categories, for the search filter (Search.Filter).
+      summary: Vehicle categories
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleCategory'
+          description: ''
+  /api/v1/fleet/search/:
+    get:
+      operationId: api_v1_fleet_search_list
+      description: 'Vehicles at the pickup branch that can be booked for the whole
+        period: status Available (Appendix B), no Pending Payment, Confirmed or Active
+        booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold),
+        no Scheduled or In Progress maintenance window in the period, and an availability
+        date on or before the pickup (Fleet.Add). The period must be 4 hours to 30
+        days (BR-5) and start in the future; otherwise the answer is 400 with the
+        message on the field. Each result carries `estimate` (Search.Price): the base
+        charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based
+        charges; null if no tariff is in force.'
+      summary: Search available vehicles (Search.Available)
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: category
+        schema:
+          type: integer
+          nullable: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: pickup_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: return_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAvailableVehicleList'
+          description: ''
+  /api/v1/fleet/vehicles/{id}/:
+    get:
+      operationId: api_v1_fleet_vehicles_retrieve
+      description: Photographs (signed links), specification, the tariff in force,
+        the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating
+        and the last service date. `tariff` and `terms` are null while the category
+        has no tariff in force.
+      summary: A vehicle in detail (Search.Detail)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleDetail'
+          description: ''
   /api/v1/health/:
     get:
       operationId: api_v1_health_retrieve
@@ -1019,6 +1371,76 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/pricing/add-ons/:
+    get:
+      operationId: api_v1_pricing_add_ons_list
+      description: Active add-ons. With `vehicle_type`, only those offered with that
+        type.
+      summary: Add-ons on offer (Book.Addons)
+      parameters:
+      - in: query
+        name: vehicle_type
+        schema:
+          type: string
+          enum:
+          - Car
+          - Two-Wheeler
+      tags:
+      - Pricing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddOn'
+          description: ''
+  /api/v1/pricing/quote/:
+    post:
+      operationId: api_v1_pricing_quote_create
+      description: Base charge (whole days from 24 hours, otherwise whole hours after
+        a 15-minute grace), add-ons per billed day, the discount, then tax on the
+        discounted amount (D14 rate). The security deposit (BR-3) is separate and
+        not part of `total_payable`. Usage-based charges arise only at return. Nothing
+        is saved.
+      summary: Quote a booking (Tariff.calculate_price(), BR-6)
+      tags:
+      - Pricing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+            examples:
+              TwoDaysWithAChildSeatAndACode:
+                value:
+                  vehicle: 12
+                  pickup_datetime: '2026-10-20T04:30:00Z'
+                  return_datetime: '2026-10-22T04:30:00Z'
+                  add_ons:
+                  - add_on: 3
+                    quantity: 1
+                  discount_code: WELCOME10
+                summary: Two days with a child seat and a code
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
 components:
   schemas:
     AccessToken:
@@ -1033,6 +1455,473 @@ components:
       required:
       - access
       - user
+    AddOn:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vehicle_type:
+          type: string
+          readOnly: true
+          description: Car or Two-Wheeler; blank when offered with any vehicle.
+      required:
+      - daily_rate
+      - id
+      - name
+      - vehicle_type
+    AddOnCharge:
+      type: object
+      properties:
+        add_on_id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        days:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - add_on_id
+      - amount
+      - daily_rate
+      - days
+      - name
+      - quantity
+    AddOnRequest:
+      type: object
+      properties:
+        add_on:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+      - add_on
+    AvailableVehicle:
+      type: object
+      description: 'One search result: the specification a customer chooses by (Search.Filter
+        fields).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        category_id:
+          type: integer
+          readOnly: true
+        home_branch:
+          type: string
+          readOnly: true
+        home_branch_id:
+          type: integer
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        average_rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        last_service_date:
+          type: string
+          format: date
+          nullable: true
+        estimate:
+          allOf:
+          - $ref: '#/components/schemas/Estimate'
+          nullable: true
+          readOnly: true
+      required:
+      - average_rating
+      - brand
+      - category
+      - category_id
+      - colour
+      - engine_cc
+      - estimate
+      - fuel_type
+      - home_branch
+      - home_branch_id
+      - id
+      - model
+      - seating_capacity
+      - transmission
+      - vehicle_type
+      - year
+    BillingUnitEnum:
+      enum:
+      - day
+      - hour
+      type: string
+      description: |-
+        * `day` - day
+        * `hour` - hour
+    Booking:
+      type: object
+      description: A booking as its customer, branch staff or an Administrator sees
+        it (History.Privacy).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/BookingVehicle'
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        pickup_branch_id:
+          type: integer
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        hold_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        pickup_code:
+          type: string
+          readOnly: true
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingAddOnLine'
+          readOnly: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        discount_code:
+          type: string
+          readOnly: true
+          default: ''
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        terms_accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        safety_notice_acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        invoice_number:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - add_ons
+      - booking_reference
+      - confirmed_at
+      - created_at
+      - discount_amount
+      - discount_code
+      - hold_expires_at
+      - id
+      - invoice_number
+      - pickup_branch
+      - pickup_branch_id
+      - pickup_code
+      - pickup_datetime
+      - return_datetime
+      - safety_notice_acknowledged_at
+      - security_deposit
+      - status
+      - terms_accepted_at
+      - total_amount
+      - vehicle
+    BookingAddOnLine:
+      type: object
+      properties:
+        add_on_id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - add_on_id
+      - daily_rate
+      - name
+      - quantity
+    BookingDetail:
+      type: object
+      description: Adds the itemised price (Book.Quote.Display) and the payment transaction
+        (Pay.Confirm.OK).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/BookingVehicle'
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        pickup_branch_id:
+          type: integer
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        hold_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        pickup_code:
+          type: string
+          readOnly: true
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingAddOnLine'
+          readOnly: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        discount_code:
+          type: string
+          readOnly: true
+          default: ''
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        terms_accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        safety_notice_acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        invoice_number:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        price:
+          allOf:
+          - $ref: '#/components/schemas/Quote'
+          readOnly: true
+        transaction_id:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - add_ons
+      - booking_reference
+      - confirmed_at
+      - created_at
+      - discount_amount
+      - discount_code
+      - hold_expires_at
+      - id
+      - invoice_number
+      - pickup_branch
+      - pickup_branch_id
+      - pickup_code
+      - pickup_datetime
+      - price
+      - return_datetime
+      - safety_notice_acknowledged_at
+      - security_deposit
+      - status
+      - terms_accepted_at
+      - total_amount
+      - transaction_id
+      - vehicle
+    BookingError:
+      type: object
+      description: A refusal with a stable code, e.g. licence_not_verified, vehicle_unavailable.
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - detail
+    BookingStatusEnum:
+      enum:
+      - Draft
+      - Pending Payment
+      - Confirmed
+      - Active
+      - Completed
+      - Cancelled
+      - No-show
+      type: string
+      description: |-
+        * `Draft` - Draft
+        * `Pending Payment` - Pending Payment
+        * `Confirmed` - Confirmed
+        * `Active` - Active
+        * `Completed` - Completed
+        * `Cancelled` - Cancelled
+        * `No-show` - No-show
+    BookingVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        registration_no:
+          type: string
+          maxLength: 16
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+      required:
+      - brand
+      - category
+      - id
+      - model
+      - registration_no
+      - vehicle_type
+    Branch:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+          readOnly: true
+        branch_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+      required:
+      - address
+      - branch_id
+      - branch_name
     CancelJob:
       type: object
       properties:
@@ -1041,6 +1930,18 @@ components:
           maxLength: 1000
       required:
       - reason
+    CancellationRefund:
+      type: object
+      properties:
+        notice_hours_at_least:
+          type: integer
+        refund_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - notice_hours_at_least
+      - refund_percent
     CategoriesEnum:
       enum:
       - Car
@@ -1064,6 +1965,39 @@ components:
       - booking_reference
       - pickup_datetime
       - return_datetime
+    CreateBooking:
+      type: object
+      description: 'Book.Create: one vehicle, the period, add-ons, a discount code
+        and the terms (BK5).'
+      properties:
+        vehicle:
+          type: integer
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnRequest'
+        discount_code:
+          type: string
+          default: ''
+          maxLength: 32
+        terms_accepted:
+          type: boolean
+          description: 'Book.Quote.Terms: must be true.'
+        safety_notice_acknowledged:
+          type: boolean
+          default: false
+          description: 'SA-1: must be true for a two-wheeler.'
+      required:
+      - pickup_datetime
+      - return_datetime
+      - terms_accepted
+      - vehicle
     DatabaseEnum:
       enum:
       - ok
@@ -1087,6 +2021,40 @@ components:
           format: email
       required:
       - email
+    Estimate:
+      type: object
+      description: 'Search.Price: base charge plus tax for the period, an estimate
+        (PR9).'
+      properties:
+        billing_unit:
+          $ref: '#/components/schemas/BillingUnitEnum'
+        billing_count:
+          type: integer
+        total_payable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - billing_count
+      - billing_unit
+      - security_deposit
+      - total_payable
+    FuelTypeEnum:
+      enum:
+      - Petrol
+      - Diesel
+      - CNG
+      - Electric
+      type: string
+      description: |-
+        * `Petrol` - Petrol
+        * `Diesel` - Diesel
+        * `CNG` - CNG
+        * `Electric` - Electric
     Health:
       type: object
       properties:
@@ -1603,6 +2571,52 @@ components:
           pattern: ^[0-9]{6}$
       required:
       - code
+    PaginatedAvailableVehicleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableVehicle'
+    PaginatedBookingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
     PaginatedLicenceReviewList:
       type: object
       required:
@@ -1721,6 +2735,29 @@ components:
           maxLength: 15
         address:
           type: string
+    PayBooking:
+      type: object
+      description: 'Pay.Authorize with a gateway token (CO-2: never card details);
+        SE-9 re-authentication.'
+      properties:
+        payment_token:
+          type: string
+          description: 'Token from the gateway''s hosted fields. Sandbox: tok_visa,
+            tok_decline.'
+          maxLength: 255
+        idempotency_key:
+          type: string
+          description: 'Pay.Idempotent: one key per payment attempt; repeating it
+            never charges twice.'
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before payment.'
+      required:
+      - idempotency_key
+      - password
+      - payment_token
     Profile:
       type: object
       properties:
@@ -1784,6 +2821,154 @@ components:
       - mobile_no
       - name
       - role
+    Quote:
+      type: object
+      description: 'Book.Quote.Display: every charge itemised (UI-4); the deposit
+        apart (Pay.Deposit).'
+      properties:
+        tariff_id:
+          type: integer
+        billing_unit:
+          $ref: '#/components/schemas/BillingUnitEnum'
+        billing_count:
+          type: integer
+        unit_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        base_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnCharge'
+        add_ons_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rental_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount_code:
+          type: string
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        taxable_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        tax_rate_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total_payable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_helmets_per_rider:
+          type: integer
+        terms:
+          $ref: '#/components/schemas/QuoteTerms'
+      required:
+      - add_ons
+      - add_ons_total
+      - base_charge
+      - billing_count
+      - billing_unit
+      - discount_amount
+      - discount_code
+      - free_helmets_per_rider
+      - rental_charge
+      - security_deposit
+      - tariff_id
+      - tax_amount
+      - tax_rate_percent
+      - taxable_amount
+      - terms
+      - total_payable
+      - unit_rate
+    QuoteRequest:
+      type: object
+      description: 'Book.Quote.Display: a vehicle, a period (BR-5), add-ons (Book.Addons)
+        and a code (D17).'
+      properties:
+        vehicle:
+          type: integer
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnRequest'
+        discount_code:
+          type: string
+          default: ''
+          maxLength: 32
+      required:
+      - pickup_datetime
+      - return_datetime
+      - vehicle
+    QuoteTerms:
+      type: object
+      description: Book.Quote.Terms.
+      properties:
+        free_km_allowance_per_day:
+          type: integer
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_grace_minutes:
+          type: integer
+        late_return_hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_daily_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_full_day_after_hours:
+          type: integer
+        fuel_shortfall_service_charge_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        cancellation_refunds:
+          type: array
+          items:
+            $ref: '#/components/schemas/CancellationRefund'
+        no_show_retained_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - cancellation_refunds
+      - excess_km_rate
+      - free_km_allowance_per_day
+      - fuel_shortfall_service_charge_percent
+      - late_return_daily_cap
+      - late_return_full_day_after_hours
+      - late_return_grace_minutes
+      - late_return_hourly_rate
+      - no_show_retained_percent
     RecordWork:
       type: object
       description: Maint.Record.
@@ -1946,6 +3131,30 @@ components:
         * `Medium` - Medium
         * `High` - High
         * `Critical` - Critical
+    TariffSummary:
+      type: object
+      description: 'Search.Detail "the applicable tariff" (PR3: the weekly rate is
+        not applied, so not shown).'
+      properties:
+        hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_km_allowance_per_day:
+          type: integer
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - daily_rate
+      - excess_km_rate
+      - free_km_allowance_per_day
+      - hourly_rate
     Technician:
       type: object
       properties:
@@ -1981,6 +3190,126 @@ components:
       - email
       - id
       - name
+    VehicleCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        vehicle_type:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - vehicle_type
+    VehicleDetail:
+      type: object
+      description: 'Search.Detail: photos, specification, tariff, deposit, policies,
+        rating, last service.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        category_id:
+          type: integer
+          readOnly: true
+        home_branch:
+          type: string
+          readOnly: true
+        home_branch_id:
+          type: integer
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        average_rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        last_service_date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          readOnly: true
+        photos:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        tariff:
+          allOf:
+          - $ref: '#/components/schemas/TariffSummary'
+          nullable: true
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        terms:
+          allOf:
+          - $ref: '#/components/schemas/QuoteTerms'
+          nullable: true
+          readOnly: true
+      required:
+      - average_rating
+      - brand
+      - category
+      - category_id
+      - colour
+      - engine_cc
+      - fuel_type
+      - home_branch
+      - home_branch_id
+      - id
+      - model
+      - photos
+      - seating_capacity
+      - security_deposit
+      - status
+      - tariff
+      - terms
+      - transmission
+      - vehicle_type
+      - year
     VerifyOTP:
       type: object
       properties:

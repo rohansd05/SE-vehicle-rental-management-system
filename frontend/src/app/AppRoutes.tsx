@@ -6,11 +6,13 @@ import { PublicLayout } from '@/components/layout/PublicLayout'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { VerifyOtpPage } from '@/features/auth/VerifyOtpPage'
+import { bookingRoutes } from '@/features/booking/routes'
 import { LicenceQueuePage } from '@/features/licence/LicenceQueuePage'
 import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
 import { MyLicencePage } from '@/features/licence/MyLicencePage'
 import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { searchRoutes } from '@/features/search/routes'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { HelpPage } from '@/pages/HelpPage'
 import { NotAvailablePage } from '@/pages/NotAvailablePage'
@@ -90,6 +92,8 @@ export function AppRoutes() {
           }
         />
         {maintenanceRoutes()}
+        {searchRoutes()}
+        {bookingRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}

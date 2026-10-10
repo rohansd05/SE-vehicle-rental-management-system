@@ -38,14 +38,14 @@ EXPECTED = {
     AddOn: 5,
     DiscountCode: 2,  # one percent, one fixed (D17)
     FuelPrice: 4,
-    Vehicle: 20,
-    Car: 12,
-    TwoWheeler: 8,
-    VehicleDocument: 20,
-    User: 5,
-    Customer: 1,
-    Licence: 1,
-    LicenceCategory: 2,
+    Vehicle: 24,  # 20 + 4 bookable Andheri vehicles (apps/bookings/seed.py)
+    Car: 14,
+    TwoWheeler: 10,
+    VehicleDocument: 24,
+    User: 6,  # 5 + pending@vrms.test (apps/bookings/seed.py)
+    Customer: 2,
+    Licence: 2,
+    LicenceCategory: 4,
     BranchStaff: 1,
     MaintenanceTechnician: 1,
     Administrator: 2,  # the administrator and the branch manager
@@ -64,8 +64,8 @@ def _counts():
 def test_seed_creates_the_expected_demo_data():
     _seed()
     assert _counts() == EXPECTED
-    # Fleet.Audit: 5 branches, 5 users, 5 tariffs and 20 vehicles were audited.
-    assert AuditLog.objects.filter(action="Create").count() == 35
+    # Fleet.Audit: 5 branches, 6 users, 5 tariffs and 24 vehicles were audited.
+    assert AuditLog.objects.filter(action="Create").count() == 40
     assert AuditLog.objects.verify_chain()
 
 
@@ -81,7 +81,7 @@ def test_reset_reloads_the_same_data():
     _seed()
     _seed("--reset")
     assert _counts() == EXPECTED
-    assert AuditLog.objects.filter(action="Delete").count() == 35
+    assert AuditLog.objects.filter(action="Delete").count() == 40
     assert AuditLog.objects.verify_chain()
 
 
@@ -120,7 +120,7 @@ def test_reset_refuses_when_demo_data_is_in_use():
     BookingFactory(
         vehicle=vehicle,
         tariff=Tariff.objects.get(vehicle_category=vehicle.category),
-        customer=Customer.objects.get(),
+        customer=Customer.objects.get(user__email="customer@vrms.test"),
     )
     with pytest.raises(CommandError):
         _seed("--reset")
