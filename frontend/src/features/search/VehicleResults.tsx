@@ -3,6 +3,8 @@ import { Bike, Car, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useAgency } from '@/hooks/page'
+import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/dates'
 
 import type { AvailableVehicle } from './api'
@@ -14,6 +16,38 @@ function specification(vehicle: AvailableVehicle): string {
   if (vehicle.seating_capacity) parts.push(`${vehicle.seating_capacity} seats`)
   if (vehicle.engine_cc) parts.push(`${vehicle.engine_cc} cc`)
   return parts.join(' · ')
+}
+
+function billedFor(unit: 'day' | 'hour', count: number): string {
+  return `${count} ${unit}${count === 1 ? '' : 's'}`
+}
+
+/** Search.Price: the estimate for the searched period, marked as one; the deposit apart (Pay.Deposit). */
+function Estimate({ vehicle }: { vehicle: AvailableVehicle }) {
+  const { currency } = useAgency()
+  const estimate = vehicle.estimate
+  if (!estimate) {
+    return <p className="text-sm text-muted-foreground">No price is published for this category yet.</p>
+  }
+  return (
+    <div className="rounded-md bg-muted/60 px-3 py-2">
+      <p className="text-sm">
+        <span className="text-muted-foreground">Estimated price </span>
+        <span className="text-base font-semibold">{formatCurrency(estimate.total_payable, currency)}</span>
+        <span className="text-muted-foreground">
+          {' '}
+          for {billedFor(estimate.billing_unit, estimate.billing_count)}
+        </span>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Includes tax. Add-ons, discounts and usage-based charges are not included.
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Refundable security deposit {formatCurrency(estimate.security_deposit, currency)}, held
+        separately.
+      </p>
+    </div>
+  )
 }
 
 export function VehicleCard({ vehicle }: { vehicle: AvailableVehicle }) {
@@ -52,6 +86,7 @@ export function VehicleCard({ vehicle }: { vehicle: AvailableVehicle }) {
           <dt className="text-muted-foreground">Last serviced</dt>
           <dd>{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
         </dl>
+        <Estimate vehicle={vehicle} />
       </CardContent>
     </Card>
   )

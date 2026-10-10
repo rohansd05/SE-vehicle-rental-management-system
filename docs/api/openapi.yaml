@@ -321,7 +321,9 @@ paths:
         no Scheduled or In Progress maintenance window in the period, and an availability
         date on or before the pickup (Fleet.Add). The period must be 4 hours to 30
         days (BR-5) and start in the future; otherwise the answer is 400 with the
-        message on the field.'
+        message on the field. Each result carries `estimate` (Search.Price): the base
+        charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based
+        charges; null if no tariff is in force.'
       summary: Search available vehicles (Search.Available)
       parameters:
       - in: query
@@ -1106,6 +1108,76 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/pricing/add-ons/:
+    get:
+      operationId: api_v1_pricing_add_ons_list
+      description: Active add-ons. With `vehicle_type`, only those offered with that
+        type.
+      summary: Add-ons on offer (Book.Addons)
+      parameters:
+      - in: query
+        name: vehicle_type
+        schema:
+          type: string
+          enum:
+          - Car
+          - Two-Wheeler
+      tags:
+      - Pricing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddOn'
+          description: ''
+  /api/v1/pricing/quote/:
+    post:
+      operationId: api_v1_pricing_quote_create
+      description: Base charge (whole days from 24 hours, otherwise whole hours after
+        a 15-minute grace), add-ons per billed day, the discount, then tax on the
+        discounted amount (D14 rate). The security deposit (BR-3) is separate and
+        not part of `total_payable`. Usage-based charges arise only at return. Nothing
+        is saved.
+      summary: Quote a booking (Tariff.calculate_price(), BR-6)
+      tags:
+      - Pricing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+            examples:
+              TwoDaysWithAChildSeatAndACode:
+                value:
+                  vehicle: 12
+                  pickup_datetime: '2026-10-20T04:30:00Z'
+                  return_datetime: '2026-10-22T04:30:00Z'
+                  add_ons:
+                  - add_on: 3
+                    quantity: 1
+                  discount_code: WELCOME10
+                summary: Two days with a child seat and a code
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
 components:
   schemas:
     AccessToken:
@@ -1120,6 +1192,65 @@ components:
       required:
       - access
       - user
+    AddOn:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vehicle_type:
+          type: string
+          readOnly: true
+          description: Car or Two-Wheeler; blank when offered with any vehicle.
+      required:
+      - daily_rate
+      - id
+      - name
+      - vehicle_type
+    AddOnCharge:
+      type: object
+      properties:
+        add_on_id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        days:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - add_on_id
+      - amount
+      - daily_rate
+      - days
+      - name
+      - quantity
+    AddOnRequest:
+      type: object
+      properties:
+        add_on:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+      - add_on
     AvailableVehicle:
       type: object
       description: 'One search result: the specification a customer chooses by (Search.Filter
@@ -1180,6 +1311,11 @@ components:
           type: string
           format: date
           nullable: true
+        estimate:
+          allOf:
+          - $ref: '#/components/schemas/Estimate'
+          nullable: true
+          readOnly: true
       required:
       - average_rating
       - brand
@@ -1187,6 +1323,7 @@ components:
       - category_id
       - colour
       - engine_cc
+      - estimate
       - fuel_type
       - home_branch
       - home_branch_id
@@ -1196,6 +1333,14 @@ components:
       - transmission
       - vehicle_type
       - year
+    BillingUnitEnum:
+      enum:
+      - day
+      - hour
+      type: string
+      description: |-
+        * `day` - day
+        * `hour` - hour
     Branch:
       type: object
       properties:
@@ -1219,6 +1364,18 @@ components:
           maxLength: 1000
       required:
       - reason
+    CancellationRefund:
+      type: object
+      properties:
+        notice_hours_at_least:
+          type: integer
+        refund_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - notice_hours_at_least
+      - refund_percent
     CategoriesEnum:
       enum:
       - Car
@@ -1265,6 +1422,28 @@ components:
           format: email
       required:
       - email
+    Estimate:
+      type: object
+      description: 'Search.Price: base charge plus tax for the period, an estimate
+        (PR9).'
+      properties:
+        billing_unit:
+          $ref: '#/components/schemas/BillingUnitEnum'
+        billing_count:
+          type: integer
+        total_payable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - billing_count
+      - billing_unit
+      - security_deposit
+      - total_payable
     FuelTypeEnum:
       enum:
       - Petrol
@@ -1997,6 +2176,154 @@ components:
       - mobile_no
       - name
       - role
+    Quote:
+      type: object
+      description: 'Book.Quote.Display: every charge itemised (UI-4); the deposit
+        apart (Pay.Deposit).'
+      properties:
+        tariff_id:
+          type: integer
+        billing_unit:
+          $ref: '#/components/schemas/BillingUnitEnum'
+        billing_count:
+          type: integer
+        unit_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        base_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnCharge'
+        add_ons_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rental_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount_code:
+          type: string
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        taxable_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        tax_rate_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total_payable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_helmets_per_rider:
+          type: integer
+        terms:
+          $ref: '#/components/schemas/QuoteTerms'
+      required:
+      - add_ons
+      - add_ons_total
+      - base_charge
+      - billing_count
+      - billing_unit
+      - discount_amount
+      - discount_code
+      - free_helmets_per_rider
+      - rental_charge
+      - security_deposit
+      - tariff_id
+      - tax_amount
+      - tax_rate_percent
+      - taxable_amount
+      - terms
+      - total_payable
+      - unit_rate
+    QuoteRequest:
+      type: object
+      description: 'Book.Quote.Display: a vehicle, a period (BR-5), add-ons (Book.Addons)
+        and a code (D17).'
+      properties:
+        vehicle:
+          type: integer
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnRequest'
+        discount_code:
+          type: string
+          default: ''
+          maxLength: 32
+      required:
+      - pickup_datetime
+      - return_datetime
+      - vehicle
+    QuoteTerms:
+      type: object
+      description: Book.Quote.Terms.
+      properties:
+        free_km_allowance_per_day:
+          type: integer
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_grace_minutes:
+          type: integer
+        late_return_hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_daily_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        late_return_full_day_after_hours:
+          type: integer
+        fuel_shortfall_service_charge_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        cancellation_refunds:
+          type: array
+          items:
+            $ref: '#/components/schemas/CancellationRefund'
+        no_show_retained_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - cancellation_refunds
+      - excess_km_rate
+      - free_km_allowance_per_day
+      - fuel_shortfall_service_charge_percent
+      - late_return_daily_cap
+      - late_return_full_day_after_hours
+      - late_return_grace_minutes
+      - late_return_hourly_rate
+      - no_show_retained_percent
     RecordWork:
       type: object
       description: Maint.Record.

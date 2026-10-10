@@ -28,6 +28,7 @@ from apps.fleet.tests.factories import (
     TwoWheelerFactory,
     VehicleCategoryFactory,
 )
+from apps.pricing.tests.factories import TariffFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -180,6 +181,13 @@ def test_a_car_result_carries_its_specification(api_client, branch):
         "engine_cc": None,
         "average_rating": "4.00",
         "last_service_date": "2026-09-20",
+        # Search.Price: two days at the factory tariff's 1800.00, plus 18% tax (PR9).
+        "estimate": {
+            "billing_unit": "day",
+            "billing_count": 2,
+            "total_payable": "4248.00",
+            "security_deposit": "5000.00",
+        },
     }
 
 
@@ -191,6 +199,7 @@ def test_a_two_wheeler_result_carries_its_engine(api_client, branch):
     assert result["transmission"] is None
     assert result["seating_capacity"] is None
     assert result["average_rating"] is None
+    assert result["estimate"] is None  # no tariff in force for its category
 
 
 def test_a_booked_vehicle_is_left_out(api_client, branch):
@@ -239,9 +248,52 @@ def test_the_query_count_does_not_grow_with_the_results(
     category = VehicleCategoryFactory(name="Hatchback")
     CarFactory.create_batch(6, home_branch=branch, available_from=IN_SERVICE, category=category)
     TwoWheelerFactory.create_batch(6, home_branch=branch, available_from=IN_SERVICE)
-    with django_assert_max_num_queries(6):
+    TariffFactory(vehicle_category=category)
+    with django_assert_max_num_queries(7):
         response = search(api_client, branch)
     assert response.data["count"] == 12
+
+
+# ─── Estimated price (Search.Price) ───────────────────────────────────────
+
+
+def test_the_estimate_uses_each_categorys_tariff_in_force(api_client, branch):
+    scooter = TwoWheelerFactory(home_branch=branch, available_from=IN_SERVICE)
+    TariffFactory(
+        vehicle_category=scooter.category,
+        hourly_rate="60.00",
+        daily_rate="500.00",
+        effective_from=NOW - timedelta(days=60),
+    )
+    TariffFactory(  # later, so it is the one in force
+        vehicle_category=scooter.category,
+        hourly_rate="70.00",
+        daily_rate="600.00",
+        effective_from=NOW - timedelta(days=1),
+    )
+    TariffFactory(  # not in force yet
+        vehicle_category=scooter.category, daily_rate="900.00", effective_from=NOW + timedelta(days=1)
+    )
+    estimate = search(api_client, branch).data["results"][0]["estimate"]
+    assert estimate == {
+        "billing_unit": "day",
+        "billing_count": 2,
+        "total_payable": "1416.00",  # 2 x 600.00 + 18% tax
+        "security_deposit": "2000.00",
+    }
+
+
+def test_a_short_search_is_estimated_in_hours(api_client, branch):
+    car = CarFactory(home_branch=branch, available_from=IN_SERVICE)
+    TariffFactory(vehicle_category=car.category, effective_from=NOW - timedelta(days=1))
+    estimate = search(api_client, branch, PICKUP, PICKUP + timedelta(hours=5, minutes=10)).data[
+        "results"
+    ][0]["estimate"]
+    assert (estimate["billing_unit"], estimate["billing_count"], estimate["total_payable"]) == (
+        "hour",
+        5,
+        "885.00",  # 5 x 150.00 + 18%; 10 minutes is inside the grace (BR-6)
+    )
 
 
 # ─── Branches and categories ──────────────────────────────────────────────

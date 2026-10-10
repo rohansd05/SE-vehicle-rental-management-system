@@ -35,6 +35,7 @@ const CAR: AvailableVehicle = {
   engine_cc: null,
   average_rating: '4.50',
   last_service_date: '2026-09-20',
+  estimate: { billing_unit: 'day', billing_count: 2, total_payable: '4248.00', security_deposit: '5000.00' },
 }
 
 const SCOOTER: AvailableVehicle = {
@@ -51,6 +52,7 @@ const SCOOTER: AvailableVehicle = {
   engine_cc: 110,
   average_rating: null,
   last_service_date: null,
+  estimate: null,
 }
 
 // Local wall-clock times, as typed into datetime-local inputs.
@@ -133,6 +135,21 @@ describe('vehicle search (Search.Available)', () => {
     expect(within(scooter).getByText('Petrol · Grey · 110 cc')).toBeInTheDocument()
     expect(within(scooter).getByText('No ratings yet')).toBeInTheDocument()
     expect(within(scooter).getByText('Not recorded')).toBeInTheDocument()
+  })
+
+  it('marks each price as an estimate and shows the deposit apart (Search.Price)', async () => {
+    customerOnSearch()
+    const user = userEvent.setup()
+    await fillAndSearch(user)
+    const [car, scooter] = within(await screen.findByRole('list', { name: 'Available vehicles' })).getAllByRole(
+      'listitem',
+    )
+    expect(within(car).getByText('Estimated price').closest('p')).toHaveTextContent(
+      'Estimated price ₹4,248.00 for 2 days',
+    )
+    expect(within(car).getByText(/usage-based charges are not included/)).toBeInTheDocument()
+    expect(within(car).getByText(/Refundable security deposit ₹5,000.00/)).toBeInTheDocument()
+    expect(within(scooter).getByText('No price is published for this category yet.')).toBeInTheDocument()
   })
 
   it('sends the category when one is chosen', async () => {

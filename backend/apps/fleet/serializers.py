@@ -3,6 +3,9 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.pricing.serializers import EstimateSerializer
+from apps.pricing.services import estimate
+
 from .models import Branch, Car, TwoWheeler, Vehicle, VehicleCategory
 from .services.availability import RentalPeriodError, check_period
 
@@ -61,6 +64,8 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
     average_rating = serializers.DecimalField(
         max_digits=4, decimal_places=2, read_only=True, allow_null=True
     )
+    # Search.Price: null when the category has no tariff in force.
+    estimate = serializers.SerializerMethodField()
 
     class Meta:
         model = Vehicle
@@ -81,7 +86,19 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
             "engine_cc",
             "average_rating",
             "last_service_date",  # Search.Detail "date on which the vehicle was last serviced"
+            "estimate",
         ]
+
+    @extend_schema_field(EstimateSerializer(allow_null=True))
+    def get_estimate(self, vehicle: Vehicle) -> dict | None:
+        """Search.Price: base + tax for the searched period (PR9), from the context."""
+        tariff = self.context["tariffs"].get(vehicle.category_id)
+        if tariff is None:
+            return None
+        result = estimate(
+            tariff, vehicle.vehicle_type, self.context["pickup"], self.context["return_"]
+        )
+        return EstimateSerializer(result).data
 
     @staticmethod
     def _car(vehicle: Vehicle) -> Car | None:

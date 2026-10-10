@@ -216,7 +216,7 @@ export interface paths {
         };
         /**
          * Search available vehicles (Search.Available)
-         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field.
+         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field. Each result carries `estimate` (Search.Price): the base charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based charges; null if no tariff is in force.
          */
         get: operations["api_v1_fleet_search_list"];
         put?: never;
@@ -615,6 +615,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pricing/add-ons/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Add-ons on offer (Book.Addons)
+         * @description Active add-ons. With `vehicle_type`, only those offered with that type.
+         */
+        get: operations["api_v1_pricing_add_ons_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/quote/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quote a booking (Tariff.calculate_price(), BR-6)
+         * @description Base charge (whole days from 24 hours, otherwise whole hours after a 15-minute grace), add-ons per billed day, the discount, then tax on the discounted amount (D14 rate). The security deposit (BR-3) is separate and not part of `total_payable`. Usage-based charges arise only at return. Nothing is saved.
+         */
+        post: operations["api_v1_pricing_quote_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -623,6 +663,29 @@ export interface components {
         AccessToken: {
             access: string;
             user: components["schemas"]["UserSummary"];
+        };
+        AddOn: {
+            readonly id: number;
+            name: string;
+            /** Format: decimal */
+            daily_rate: string;
+            /** @description Car or Two-Wheeler; blank when offered with any vehicle. */
+            readonly vehicle_type: string;
+        };
+        AddOnCharge: {
+            add_on_id: number;
+            name: string;
+            quantity: number;
+            /** Format: decimal */
+            daily_rate: string;
+            days: number;
+            /** Format: decimal */
+            amount: string;
+        };
+        AddOnRequest: {
+            add_on: number;
+            /** @default 1 */
+            quantity: number;
         };
         /** @description One search result: the specification a customer chooses by (Search.Filter fields). */
         AvailableVehicle: {
@@ -644,7 +707,14 @@ export interface components {
             readonly average_rating: string | null;
             /** Format: date */
             last_service_date?: string | null;
+            readonly estimate: components["schemas"]["Estimate"] | null;
         };
+        /**
+         * @description * `day` - day
+         *     * `hour` - hour
+         * @enum {string}
+         */
+        BillingUnitEnum: "day" | "hour";
         Branch: {
             readonly branch_id: number;
             branch_name: string;
@@ -652,6 +722,11 @@ export interface components {
         };
         CancelJob: {
             reason: string;
+        };
+        CancellationRefund: {
+            notice_hours_at_least: number;
+            /** Format: decimal */
+            refund_percent: string;
         };
         /**
          * @description * `Car` - Car
@@ -678,6 +753,15 @@ export interface components {
         Email: {
             /** Format: email */
             email: string;
+        };
+        /** @description Search.Price: base charge plus tax for the period, an estimate (PR9). */
+        Estimate: {
+            billing_unit: components["schemas"]["BillingUnitEnum"];
+            billing_count: number;
+            /** Format: decimal */
+            total_payable: string;
+            /** Format: decimal */
+            security_deposit: string;
         };
         /**
          * @description * `Petrol` - Petrol
@@ -962,6 +1046,64 @@ export interface components {
             readonly address: string;
             readonly role: components["schemas"]["RoleEnum"];
             mobile_change_pending: boolean;
+        };
+        /** @description Book.Quote.Display: every charge itemised (UI-4); the deposit apart (Pay.Deposit). */
+        Quote: {
+            tariff_id: number;
+            billing_unit: components["schemas"]["BillingUnitEnum"];
+            billing_count: number;
+            /** Format: decimal */
+            unit_rate: string;
+            /** Format: decimal */
+            base_charge: string;
+            add_ons: components["schemas"]["AddOnCharge"][];
+            /** Format: decimal */
+            add_ons_total: string;
+            /** Format: decimal */
+            rental_charge: string;
+            discount_code: string;
+            /** Format: decimal */
+            discount_amount: string;
+            /** Format: decimal */
+            taxable_amount: string;
+            /** Format: decimal */
+            tax_rate_percent: string;
+            /** Format: decimal */
+            tax_amount: string;
+            /** Format: decimal */
+            total_payable: string;
+            /** Format: decimal */
+            security_deposit: string;
+            free_helmets_per_rider: number;
+            terms: components["schemas"]["QuoteTerms"];
+        };
+        /** @description Book.Quote.Display: a vehicle, a period (BR-5), add-ons (Book.Addons) and a code (D17). */
+        QuoteRequest: {
+            vehicle: number;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            /** @default  */
+            discount_code: string;
+        };
+        /** @description Book.Quote.Terms. */
+        QuoteTerms: {
+            free_km_allowance_per_day: number;
+            /** Format: decimal */
+            excess_km_rate: string;
+            late_return_grace_minutes: number;
+            /** Format: decimal */
+            late_return_hourly_rate: string;
+            /** Format: decimal */
+            late_return_daily_cap: string;
+            late_return_full_day_after_hours: number;
+            /** Format: decimal */
+            fuel_shortfall_service_charge_percent: string;
+            cancellation_refunds: components["schemas"]["CancellationRefund"][];
+            /** Format: decimal */
+            no_show_retained_percent: string;
         };
         /** @description Maint.Record. */
         RecordWork: {
@@ -2019,6 +2161,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_add_ons_list: {
+        parameters: {
+            query?: {
+                vehicle_type?: "Car" | "Two-Wheeler";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddOn"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_quote_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["QuoteRequest"];
+                "multipart/form-data": components["schemas"]["QuoteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Quote"];
                 };
             };
         };

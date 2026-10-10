@@ -14,6 +14,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 
 from apps.bookings.services import with_average_rating
+from apps.pricing.services import tariffs_in_force
 
 from .models import Branch, Vehicle, VehicleCategory
 from .serializers import (
@@ -70,7 +71,7 @@ class VehicleSearchView(ListAPIView):
             return Vehicle.objects.none()
         query = AvailabilitySearchSerializer(data=self.request.query_params)
         query.is_valid(raise_exception=True)
-        params = query.validated_data
+        params = self.search_params = query.validated_data
         vehicles = available_vehicles(
             branch=params["branch"],
             pickup=params["pickup_datetime"],
@@ -81,6 +82,18 @@ class VehicleSearchView(ListAPIView):
             vehicles.select_related("category", "home_branch", "car", "twowheeler")
         ).order_by("brand", "model", "pk")
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        params = getattr(self, "search_params", None)
+        if params is not None:
+            # Search.Price: one query for every category's tariff in force (BR-13).
+            context.update(
+                tariffs=tariffs_in_force(),
+                pickup=params["pickup_datetime"],
+                return_=params["return_datetime"],
+            )
+        return context
+
     @extend_schema(
         tags=[TAG],
         summary="Search available vehicles (Search.Available)",
@@ -90,7 +103,9 @@ class VehicleSearchView(ListAPIView):
             "period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In "
             "Progress maintenance window in the period, and an availability date on or before "
             "the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in "
-            "the future; otherwise the answer is 400 with the message on the field."
+            "the future; otherwise the answer is 400 with the message on the field. Each result "
+            "carries `estimate` (Search.Price): the base charge plus tax at the tariff in force, "
+            "excluding add-ons, discounts and usage-based charges; null if no tariff is in force."
         ),
         parameters=[AvailabilitySearchSerializer],
     )
