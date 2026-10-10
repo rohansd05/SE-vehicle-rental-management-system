@@ -206,7 +206,7 @@ def test_staff_scoped_to_their_branch(staff, vehicle):
         format="json",
     )
     assert response.status_code == 404
-    vehicles = [v["id"] for v in staff.get(url("vehicle-list")).json()["results"]]
+    vehicles = [v["id"] for v in staff.get(url("vehicle-list")).json()]
     assert vehicles == [vehicle.pk]
 
 

@@ -9,6 +9,7 @@ import { VerifyOtpPage } from '@/features/auth/VerifyOtpPage'
 import { LicenceQueuePage } from '@/features/licence/LicenceQueuePage'
 import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
 import { MyLicencePage } from '@/features/licence/MyLicencePage'
+import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { HelpPage } from '@/pages/HelpPage'
@@ -88,6 +89,7 @@ export function AppRoutes() {
             </RequireRole>
           }
         />
+        {maintenanceRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}

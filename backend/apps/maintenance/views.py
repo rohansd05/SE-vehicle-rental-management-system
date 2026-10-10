@@ -407,6 +407,7 @@ class VehicleListView(ListAPIView):
     permission_classes = [JOB_MANAGERS]
     serializer_class = MaintenanceVehicleSerializer
     filterset_fields = ["status"]
+    pagination_class = None  # a picker: every vehicle of the branch
 
     def get_queryset(self):
         return scoped_vehicles(self.request.user).order_by("registration_no")

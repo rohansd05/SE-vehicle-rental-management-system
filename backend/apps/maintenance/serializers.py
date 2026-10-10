@@ -69,9 +69,11 @@ class PartUsedSerializer(serializers.ModelSerializer):
 
 class MaintenanceJobSerializer(serializers.ModelSerializer):
     vehicle = MaintenanceVehicleSerializer(read_only=True)
-    technician = TechnicianSerializer(read_only=True)
+    technician = TechnicianSerializer(read_only=True, allow_null=True)
     reported_by = serializers.CharField(source="reported_by.name", read_only=True)
-    closed_by = serializers.CharField(source="closed_by.name", read_only=True, default=None)
+    closed_by = serializers.CharField(
+        source="closed_by.name", read_only=True, default=None, allow_null=True
+    )
     parts = PartUsedSerializer(many=True, read_only=True)
     awaiting_clearance = serializers.BooleanField(read_only=True)
     missing_work = serializers.SerializerMethodField(

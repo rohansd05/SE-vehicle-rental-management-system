@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import { ROLES, type Role } from '@/api/types'
+import { MAINTENANCE_NAV_ITEMS } from '@/features/maintenance/navigation'
 
 export interface NavItem {
   to: string
@@ -93,9 +94,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Maintenance jobs',
     icon: Wrench,
     roles: ['MAINTENANCE_TECHNICIAN'],
-    available: false,
+    available: true,
     description: 'The jobs assigned to you, and the work and parts you record.',
   },
+  ...MAINTENANCE_NAV_ITEMS,
   {
     to: '/app/fleet',
     label: 'Fleet',

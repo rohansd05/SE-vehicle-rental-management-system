@@ -39,6 +39,7 @@ from apps.fleet.models import (
     VehicleCategory,
     VehicleDocument,
 )
+from apps.maintenance.seed import delete_demo_jobs, seed_demo_jobs
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 
 DEMO_PASSWORD = "Demo@1234"
@@ -218,6 +219,7 @@ class Command(BaseCommand):
         self._seed_discount_codes()
         self._seed_fuel_prices(administrator)
         self._seed_vehicles(branches, categories)
+        seed_demo_jobs(self._count)
 
     def _seed_branches(self) -> dict[str, Branch]:
         branches = {}
@@ -443,6 +445,7 @@ class Command(BaseCommand):
         try:
             self._delete_audited(Tariff.objects.filter(vehicle_category__name__in=CATEGORIES))
             FuelPrice.objects.filter(effective_from=DEMO_EFFECTIVE_FROM).delete()
+            delete_demo_jobs()
             self._delete_audited(Vehicle.objects.filter(registration_no__in=demo_registrations()))
             # The licence (deleted with its customer) protects the admin who verified it.
             Customer.objects.filter(user__email__in=demo_emails).delete()

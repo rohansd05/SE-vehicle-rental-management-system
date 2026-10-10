@@ -878,12 +878,6 @@ paths:
         service due.
       summary: Vehicles of the caller's branch (all for an Administrator)
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
       - in: query
         name: status
         schema:
@@ -903,7 +897,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedMaintenanceVehicleList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceVehicle'
           description: ''
   /api/v1/maintenance/vehicles/{id}/history/:
     get:
@@ -1387,6 +1383,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/Technician'
           readOnly: true
+          nullable: true
         reported_problem:
           type: string
           readOnly: true
@@ -1459,6 +1456,7 @@ components:
         closed_by:
           type: string
           readOnly: true
+          nullable: true
         closed_at:
           type: string
           format: date-time
@@ -1651,29 +1649,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MaintenanceJob'
-    PaginatedMaintenanceVehicleList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/MaintenanceVehicle'
     PartInput:
       type: object
       properties:
