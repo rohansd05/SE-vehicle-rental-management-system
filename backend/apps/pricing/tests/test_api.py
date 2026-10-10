@@ -93,7 +93,9 @@ def test_a_quote_cannot_be_read_with_get(customer_client):
 
 
 def test_the_quote_is_itemised_with_the_deposit_apart(customer_client, car):
-    seat = AddOnFactory(name="Child seat", daily_rate=Decimal("100.00"), vehicle_type=VehicleType.CAR)
+    seat = AddOnFactory(
+        name="Child seat", daily_rate=Decimal("100.00"), vehicle_type=VehicleType.CAR
+    )
     DiscountCodeFactory(code="WELCOME10", valid_from=NOW - timedelta(days=1))
     response = post_quote(
         customer_client,
@@ -130,7 +132,10 @@ def test_the_quote_is_itemised_with_the_deposit_apart(customer_client, car):
         "free_helmets_per_rider": 0,
     }
     assert terms["excess_km_rate"] == "12.00"
-    assert terms["cancellation_refunds"][0] == {"notice_hours_at_least": 48, "refund_percent": "100.00"}
+    assert terms["cancellation_refunds"][0] == {
+        "notice_hours_at_least": 48,
+        "refund_percent": "100.00",
+    }
 
 
 def test_add_ons_and_code_are_optional(customer_client, car):
@@ -182,9 +187,7 @@ def test_an_add_on_for_the_other_vehicle_type_is_refused(customer_client, car):
     helmet = AddOnFactory(name="Additional helmet", vehicle_type=VehicleType.TWO_WHEELER)
     response = post_quote(customer_client, body(car, add_ons=[{"add_on": helmet.pk}]))
     assert response.status_code == 400
-    assert response.json() == {
-        "add_ons": ["Additional helmet is only offered with a two-wheeler."]
-    }
+    assert response.json() == {"add_ons": ["Additional helmet is only offered with a two-wheeler."]}
 
 
 def test_a_quantity_below_one_is_refused(customer_client, car):

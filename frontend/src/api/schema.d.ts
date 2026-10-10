@@ -144,6 +144,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookings (History.View, History.Privacy)
+         * @description History.View (GET, newest pickup first) and Book.Create (POST, customers only).
+         */
+        get: operations["api_v1_bookings_list"];
+        put?: never;
+        /**
+         * Create a booking and hold the vehicle (Booking.create_booking())
+         * @description Exp 4 sequence 1: checks the period (BR-5), the terms (Book.Quote.Terms, SA-1), eligibility (Licence.is_valid(): BR-2, BR-3, BR-4), availability (Vehicle.check_availability(), BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified, licence_expired, licence_expires_before_return, licence_category, under_age, customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`.
+         */
+        post: operations["api_v1_bookings_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A booking with its itemised price */
+        get: operations["api_v1_bookings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/hold/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hold a Draft booking again (Book.Hold.Expire)
+         * @description Rechecks eligibility and availability and re-prices at today's tariff.
+         */
+        post: operations["api_v1_bookings_hold_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/invoice/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the invoice PDF
+         * @description Pay.Invoice: the issued invoice as a PDF (History.Download).
+         */
+        get: operations["api_v1_bookings_invoice_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/pay/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay for a held booking and confirm it (Pay.Authorize, Book.Done)
+         * @description SE-9: the customer's password is required. One gateway authorisation for the rental and the deposit. Success: Confirmed, with booking reference, pickup code, transaction id and invoice. 402 `payment_declined`: the hold is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`. Repeating the same idempotency key never charges twice (Pay.Idempotent).
+         */
+        post: operations["api_v1_bookings_pay_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/files/{token}/": {
         parameters: {
             query?: never;
@@ -715,6 +816,107 @@ export interface components {
          * @enum {string}
          */
         BillingUnitEnum: "day" | "hour";
+        /** @description A booking as its customer, branch staff or an Administrator sees it (History.Privacy). */
+        Booking: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly pickup_branch: string;
+            readonly pickup_branch_id: number;
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            /** Format: date-time */
+            readonly hold_expires_at: string | null;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly pickup_code: string;
+            readonly add_ons: components["schemas"]["BookingAddOnLine"][];
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @default  */
+            readonly discount_code: string;
+            /** Format: decimal */
+            readonly discount_amount: string;
+            /** Format: date-time */
+            readonly terms_accepted_at: string | null;
+            /** Format: date-time */
+            readonly safety_notice_acknowledged_at: string | null;
+            readonly invoice_number: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        BookingAddOnLine: {
+            add_on_id: number;
+            name: string;
+            quantity: number;
+            /** Format: decimal */
+            daily_rate: string;
+        };
+        /** @description Adds the itemised price (Book.Quote.Display) and the payment transaction (Pay.Confirm.OK). */
+        BookingDetail: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly pickup_branch: string;
+            readonly pickup_branch_id: number;
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            /** Format: date-time */
+            readonly hold_expires_at: string | null;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly pickup_code: string;
+            readonly add_ons: components["schemas"]["BookingAddOnLine"][];
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @default  */
+            readonly discount_code: string;
+            /** Format: decimal */
+            readonly discount_amount: string;
+            /** Format: date-time */
+            readonly terms_accepted_at: string | null;
+            /** Format: date-time */
+            readonly safety_notice_acknowledged_at: string | null;
+            readonly invoice_number: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly price: components["schemas"]["Quote"];
+            readonly transaction_id: string | null;
+        };
+        /** @description A refusal with a stable code, e.g. licence_not_verified, vehicle_unavailable. */
+        BookingError: {
+            detail: string;
+            code: string;
+        };
+        /**
+         * @description * `Draft` - Draft
+         *     * `Pending Payment` - Pending Payment
+         *     * `Confirmed` - Confirmed
+         *     * `Active` - Active
+         *     * `Completed` - Completed
+         *     * `Cancelled` - Cancelled
+         *     * `No-show` - No-show
+         * @enum {string}
+         */
+        BookingStatusEnum: "Draft" | "Pending Payment" | "Confirmed" | "Active" | "Completed" | "Cancelled" | "No-show";
+        BookingVehicle: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: string;
+        };
         Branch: {
             readonly branch_id: number;
             branch_name: string;
@@ -740,6 +942,24 @@ export interface components {
             pickup_datetime: string;
             /** Format: date-time */
             return_datetime: string;
+        };
+        /** @description Book.Create: one vehicle, the period, add-ons, a discount code and the terms (BK5). */
+        CreateBooking: {
+            vehicle: number;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            /** @default  */
+            discount_code: string;
+            /** @description Book.Quote.Terms: must be true. */
+            terms_accepted: boolean;
+            /**
+             * @description SA-1: must be true for a two-wheeler.
+             * @default false
+             */
+            safety_notice_acknowledged: boolean;
         };
         /**
          * @description * `ok` - ok
@@ -972,6 +1192,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["AvailableVehicle"][];
         };
+        PaginatedBookingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Booking"][];
+        };
         PaginatedLicenceReviewList: {
             /** @example 123 */
             count: number;
@@ -1027,6 +1262,15 @@ export interface components {
             name?: string;
             mobile_no?: string;
             address?: string;
+        };
+        /** @description Pay.Authorize with a gateway token (CO-2: never card details); SE-9 re-authentication. */
+        PayBooking: {
+            /** @description Token from the gateway's hosted fields. Sandbox: tok_visa, tok_decline. */
+            payment_token: string;
+            /** @description Pay.Idempotent: one key per payment attempt; repeating it never charges twice. */
+            idempotency_key: string;
+            /** @description SE-9: re-authentication before payment. */
+            password: string;
         };
         Profile: {
             readonly id: number;
@@ -1424,6 +1668,208 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /**
+                 * @description * `Draft` - Draft
+                 *     * `Pending Payment` - Pending Payment
+                 *     * `Confirmed` - Confirmed
+                 *     * `Active` - Active
+                 *     * `Completed` - Completed
+                 *     * `Cancelled` - Cancelled
+                 *     * `No-show` - No-show
+                 */
+                status?: "Active" | "Cancelled" | "Completed" | "Confirmed" | "Draft" | "No-show" | "Pending Payment";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBookingList"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["CreateBooking"];
+                "multipart/form-data": components["schemas"]["CreateBooking"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_hold_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_invoice_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invoice PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_bookings_pay_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["PayBooking"];
+                "multipart/form-data": components["schemas"]["PayBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
                 };
             };
         };

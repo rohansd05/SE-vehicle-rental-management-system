@@ -69,9 +69,7 @@ def check_period(pickup: datetime, return_: datetime, *, now: datetime | None = 
     length = return_ - pickup
     if length < settings.RENTAL_PERIOD_MINIMUM:
         hours = int(settings.RENTAL_PERIOD_MINIMUM.total_seconds() // 3600)
-        raise RentalPeriodError(
-            "return_datetime", f"A rental lasts at least {hours} hours (BR-5)."
-        )
+        raise RentalPeriodError("return_datetime", f"A rental lasts at least {hours} hours (BR-5).")
     if length > settings.RENTAL_PERIOD_MAXIMUM:
         raise RentalPeriodError(
             "return_datetime",

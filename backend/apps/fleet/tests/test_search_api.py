@@ -73,7 +73,9 @@ def search(client, branch, pickup=PICKUP, return_=RETURN, **extra):
 @pytest.mark.parametrize("role", ["anonymous", *ROLE_FACTORIES])
 @pytest.mark.parametrize("name", ["fleet:search", "fleet:branch-list", "fleet:category-list"])
 def test_every_visitor_may_search_and_browse(api_client, branch, role, name):
-    client = api_client if role == "anonymous" else authenticated_client(ROLE_FACTORIES[role]().user)
+    client = (
+        api_client if role == "anonymous" else authenticated_client(ROLE_FACTORIES[role]().user)
+    )
     if name == "fleet:search":
         response = search(client, branch)
     else:
@@ -160,7 +162,9 @@ def test_a_car_result_carries_its_specification(api_client, branch):
         seating_capacity=5,
         last_service_date=date(2026, 9, 20),
     )
-    RatingFactory(booking__vehicle=car, booking__tariff__vehicle_category=car.category, vehicle_rating=4)
+    RatingFactory(
+        booking__vehicle=car, booking__tariff__vehicle_category=car.category, vehicle_rating=4
+    )
     response = search(api_client, branch)
     assert response.status_code == 200
     assert response.data["count"] == 1
@@ -272,7 +276,9 @@ def test_the_estimate_uses_each_categorys_tariff_in_force(api_client, branch):
         effective_from=NOW - timedelta(days=1),
     )
     TariffFactory(  # not in force yet
-        vehicle_category=scooter.category, daily_rate="900.00", effective_from=NOW + timedelta(days=1)
+        vehicle_category=scooter.category,
+        daily_rate="900.00",
+        effective_from=NOW + timedelta(days=1),
     )
     estimate = search(api_client, branch).data["results"][0]["estimate"]
     assert estimate == {

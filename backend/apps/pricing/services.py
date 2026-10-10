@@ -224,7 +224,10 @@ def quote_terms(tariff: Tariff) -> dict:
                 ),
                 "refund_percent": settings.CANCELLATION_REFUND_PERCENT_PARTIAL,
             },
-            {"notice_hours_at_least": 0, "refund_percent": settings.CANCELLATION_REFUND_PERCENT_LATE},
+            {
+                "notice_hours_at_least": 0,
+                "refund_percent": settings.CANCELLATION_REFUND_PERCENT_LATE,
+            },
         ],
         "no_show_retained_percent": settings.NO_SHOW_RETAINED_PERCENT,
     }
@@ -257,9 +260,7 @@ def tariffs_in_force(at: datetime | None = None) -> dict[int, Tariff]:
     return {tariff.vehicle_category_id: tariff for tariff in tariffs}
 
 
-def resolve_add_ons(
-    requested: list[tuple[int, int]], vehicle_type: str
-) -> list[tuple[AddOn, int]]:
+def resolve_add_ons(requested: list[tuple[int, int]], vehicle_type: str) -> list[tuple[AddOn, int]]:
     """Book.Addons: active add-ons that suit the vehicle type, each chosen once."""
     ids = [add_on_id for add_on_id, _ in requested]
     if len(ids) != len(set(ids)):

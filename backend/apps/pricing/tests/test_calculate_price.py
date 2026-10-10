@@ -215,9 +215,7 @@ def test_an_explicit_tax_rate_wins():
 
 def test_the_deposit_is_br3s_amount_for_the_vehicle_type():
     assert price(timedelta(days=1), vehicle_type=CAR).security_deposit == Decimal("5000.00")
-    assert price(timedelta(days=1), vehicle_type=TWO_WHEELER).security_deposit == Decimal(
-        "2000.00"
-    )
+    assert price(timedelta(days=1), vehicle_type=TWO_WHEELER).security_deposit == Decimal("2000.00")
 
 
 @override_settings(SECURITY_DEPOSIT_CAR=Decimal("6000.00"))

@@ -42,7 +42,9 @@ def test_a_future_tariff_can_be_deleted():
 
 
 def test_a_future_tariff_can_be_changed_and_deleted_in_the_admin(model_admin, superuser):
-    tariff = Tariff.objects.get(pk=TariffFactory(effective_from=timezone.now() + timedelta(days=3)).pk)
+    tariff = Tariff.objects.get(
+        pk=TariffFactory(effective_from=timezone.now() + timedelta(days=3)).pk
+    )
     assert model_admin.has_change_permission(_request(superuser), tariff)
     assert model_admin.has_delete_permission(_request(superuser), tariff)
 

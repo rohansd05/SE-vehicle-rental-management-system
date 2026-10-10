@@ -215,6 +215,7 @@ SPECTACULAR_SETTINGS = {
     # Several serializers have a "status" field; give each enum a clear name.
     "ENUM_NAME_OVERRIDES": {
         "LicenceStatusEnum": "apps.accounts.models.Licence.Status",
+        "BookingStatusEnum": "apps.bookings.models.Booking.Status",
         "HealthStatusEnum": ["ok", "degraded"],
     },
     "SWAGGER_UI_DIST": "SIDECAR",

@@ -50,7 +50,9 @@ def test_current_tariff_defaults_to_now():
 
 
 def test_tariffs_in_force_gives_one_per_category():
-    hatch, suv, sedan = (VehicleCategoryFactory(name=name) for name in ("Hatchback", "SUV", "Sedan"))
+    hatch, suv, sedan = (
+        VehicleCategoryFactory(name=name) for name in ("Hatchback", "SUV", "Sedan")
+    )
     TariffFactory(vehicle_category=hatch, effective_from=NOW - timedelta(days=60))
     hatch_now = TariffFactory(vehicle_category=hatch, effective_from=NOW - timedelta(days=1))
     suv_now = TariffFactory(vehicle_category=suv, effective_from=NOW - timedelta(days=9))
@@ -78,7 +80,10 @@ def test_add_ons_for_the_vehicle_type_or_any_type_are_accepted():
     [
         (lambda: [(999999, 1)], "not available"),
         (lambda: [(AddOnFactory(is_active=False).pk, 1)], "not available"),
-        (lambda: [(AddOnFactory(name="Child seat", vehicle_type=CAR).pk, 1)], "only offered with a car"),
+        (
+            lambda: [(AddOnFactory(name="Child seat", vehicle_type=CAR).pk, 1)],
+            "only offered with a car",
+        ),
     ],
     ids=["unknown", "inactive", "wrong-vehicle-type"],
 )
@@ -110,7 +115,10 @@ def test_a_code_is_matched_regardless_of_case():
     ("kwargs", "message"),
     [
         ({"is_active": False}, "not valid now"),
-        ({"valid_from": NOW + timedelta(hours=1), "valid_to": NOW + timedelta(days=1)}, "not valid now"),
+        (
+            {"valid_from": NOW + timedelta(hours=1), "valid_to": NOW + timedelta(days=1)},
+            "not valid now",
+        ),
         ({"valid_from": NOW - timedelta(days=2), "valid_to": NOW}, "not valid now"),  # end excluded
         ({"usage_limit": 3, "times_used": 3}, "used up"),
     ],
@@ -142,9 +150,13 @@ def test_a_code_under_its_limit_or_unlimited_is_accepted():
 def test_quote_prices_a_vehicle_at_its_tariff_with_add_ons_and_a_code():
     scooter = TwoWheelerFactory()
     tariff = TariffFactory(
-        vehicle_category=scooter.category, hourly_rate=Decimal("60.00"), daily_rate=Decimal("500.00")
+        vehicle_category=scooter.category,
+        hourly_rate=Decimal("60.00"),
+        daily_rate=Decimal("500.00"),
     )
-    helmet = AddOnFactory(name="Additional helmet", daily_rate=Decimal("50.00"), vehicle_type=TWO_WHEELER)
+    helmet = AddOnFactory(
+        name="Additional helmet", daily_rate=Decimal("50.00"), vehicle_type=TWO_WHEELER
+    )
     DiscountCodeFactory(code="FLAT100", discount_type="Fixed", value=Decimal("100.00"))
 
     result = quote(

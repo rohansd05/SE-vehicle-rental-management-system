@@ -113,7 +113,9 @@ def test_a_booking_that_holds_the_vehicle_excludes_it(branch, car, status):
     assert found(branch) == set()
 
 
-@pytest.mark.parametrize("status", [Status.DRAFT, Status.CANCELLED, Status.COMPLETED, Status.NO_SHOW])
+@pytest.mark.parametrize(
+    "status", [Status.DRAFT, Status.CANCELLED, Status.COMPLETED, Status.NO_SHOW]
+)
 def test_a_booking_that_does_not_hold_the_vehicle_is_ignored(branch, car, status):
     book(car, PICKUP, RETURN, status)
     assert found(branch) == {car.pk}
@@ -173,7 +175,9 @@ def _job(vehicle, status, start, end):
     )
 
 
-@pytest.mark.parametrize("status", [MaintenanceJob.Status.SCHEDULED, MaintenanceJob.Status.IN_PROGRESS])
+@pytest.mark.parametrize(
+    "status", [MaintenanceJob.Status.SCHEDULED, MaintenanceJob.Status.IN_PROGRESS]
+)
 def test_an_open_maintenance_window_in_the_period_excludes_the_vehicle(branch, car, status):
     _job(car, status, PICKUP + timedelta(hours=3), PICKUP + timedelta(hours=5))
     assert found(branch) == set()
@@ -181,7 +185,11 @@ def test_an_open_maintenance_window_in_the_period_excludes_the_vehicle(branch, c
 
 @pytest.mark.parametrize(
     "status",
-    [MaintenanceJob.Status.REPORTED, MaintenanceJob.Status.COMPLETED, MaintenanceJob.Status.CANCELLED],
+    [
+        MaintenanceJob.Status.REPORTED,
+        MaintenanceJob.Status.COMPLETED,
+        MaintenanceJob.Status.CANCELLED,
+    ],
 )
 def test_a_closed_or_unscheduled_job_is_ignored(branch, car, status):
     _job(car, status, PICKUP, RETURN)

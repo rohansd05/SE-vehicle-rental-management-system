@@ -72,9 +72,7 @@ class QuoteTermsSerializer(serializers.Serializer):
     late_return_hourly_rate = _money()
     late_return_daily_cap = _money()
     late_return_full_day_after_hours = serializers.IntegerField()
-    fuel_shortfall_service_charge_percent = serializers.DecimalField(
-        max_digits=5, decimal_places=2
-    )
+    fuel_shortfall_service_charge_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
     cancellation_refunds = CancellationRefundSerializer(many=True)
     no_show_retained_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
 
