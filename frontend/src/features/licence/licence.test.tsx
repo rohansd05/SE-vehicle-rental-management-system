@@ -81,7 +81,8 @@ describe('licence status card', () => {
 })
 
 describe('licence submission (customer)', () => {
-  it('rejects a file of the wrong type before upload', async () => {
+  // First full-app render in this file: pays for loading the licence route.
+  it('rejects a file of the wrong type before upload', { timeout: 15_000 }, async () => {
     customerWith(EMPTY)
     const user = userEvent.setup({ applyAccept: false })
     const input = await screen.findByLabelText('Front of the licence')
@@ -100,7 +101,9 @@ describe('licence submission (customer)', () => {
     ).toBeInTheDocument()
   })
 
-  it('submits every field and both images, then shows Pending Verification', async () => {
+  // Types every field key by key and uploads two files: slow under a full-suite
+  // load, and a timed-out test keeps running and can upload into the next test.
+  it('submits every field and both images, then shows Pending Verification', { timeout: 15_000 }, async () => {
     let received: FormData | undefined
     customerWith(EMPTY)
     server.use(
@@ -120,7 +123,7 @@ describe('licence submission (customer)', () => {
     await user.click(screen.getByRole('button', { name: 'Submit for verification' }))
 
     expect(await screen.findByText(/Your licence has been submitted/)).toBeInTheDocument()
-    expect(screen.getByText('Pending Verification')).toBeInTheDocument()
+    expect(await screen.findByText('Pending Verification')).toBeInTheDocument()
     expect(received?.get('licence_number')).toBe('MH02 20190012345')
     expect(received?.getAll('categories')).toEqual(['Car'])
     // jsdom + Node fetch turn a File into a Blob named "blob"; browsers keep the
@@ -129,7 +132,7 @@ describe('licence submission (customer)', () => {
     expect((received!.get('back_image') as Blob).size).toBe(2048)
   })
 
-  it('requires both photos', async () => {
+  it('requires both photos', { timeout: 15_000 }, async () => {
     customerWith(EMPTY)
     const user = userEvent.setup()
     await user.type(await screen.findByLabelText('Licence number'), 'X1')
@@ -139,7 +142,7 @@ describe('licence submission (customer)', () => {
     await user.click(screen.getByLabelText('Two-Wheeler'))
     await user.click(screen.getByRole('button', { name: 'Submit for verification' }))
     expect(await screen.findByText('Add a photo of the front of the licence.')).toBeInTheDocument()
-    expect(screen.getByText('Add a photo of the back of the licence.')).toBeInTheDocument()
+    expect(await screen.findByText('Add a photo of the back of the licence.')).toBeInTheDocument()
   })
 
   it('refuses an already-expired licence (BR-2)', async () => {
