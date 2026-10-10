@@ -167,6 +167,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fleet/branches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Branches (pickup locations)
+         * @description The pickup branches a search can start from.
+         */
+        get: operations["api_v1_fleet_branches_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vehicle categories
+         * @description Appendix A vehicle categories, for the search filter (Search.Filter).
+         */
+        get: operations["api_v1_fleet_categories_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search available vehicles (Search.Available)
+         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field.
+         */
+        get: operations["api_v1_fleet_search_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/": {
         parameters: {
             query?: never;
@@ -564,6 +624,32 @@ export interface components {
             access: string;
             user: components["schemas"]["UserSummary"];
         };
+        /** @description One search result: the specification a customer chooses by (Search.Filter fields). */
+        AvailableVehicle: {
+            readonly id: number;
+            brand: string;
+            model: string;
+            year: number;
+            colour: string;
+            fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly category_id: number;
+            readonly home_branch: string;
+            readonly home_branch_id: number;
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            /** Format: decimal */
+            readonly average_rating: string | null;
+            /** Format: date */
+            last_service_date?: string | null;
+        };
+        Branch: {
+            readonly branch_id: number;
+            branch_name: string;
+            address: string;
+        };
         CancelJob: {
             reason: string;
         };
@@ -593,6 +679,14 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        /**
+         * @description * `Petrol` - Petrol
+         *     * `Diesel` - Diesel
+         *     * `CNG` - CNG
+         *     * `Electric` - Electric
+         * @enum {string}
+         */
+        FuelTypeEnum: "Petrol" | "Diesel" | "CNG" | "Electric";
         Health: {
             status: components["schemas"]["HealthStatusEnum"];
             database: components["schemas"]["DatabaseEnum"];
@@ -779,6 +873,21 @@ export interface components {
         OTPCode: {
             code: string;
         };
+        PaginatedAvailableVehicleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AvailableVehicle"][];
+        };
         PaginatedLicenceReviewList: {
             /** @example 123 */
             count: number;
@@ -935,6 +1044,11 @@ export interface components {
             email: string;
             name: string;
             role?: components["schemas"]["RoleEnum"];
+        };
+        VehicleCategory: {
+            readonly id: number;
+            name: string;
+            readonly vehicle_type: string;
         };
         VerifyOTP: {
             /** Format: email */
@@ -1196,6 +1310,70 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_v1_fleet_branches_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branch"][];
+                };
+            };
+        };
+    };
+    api_v1_fleet_categories_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleCategory"][];
+                };
+            };
+        };
+    };
+    api_v1_fleet_search_list: {
+        parameters: {
+            query: {
+                branch: number;
+                category?: number | null;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                pickup_datetime: string;
+                return_datetime: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAvailableVehicleList"];
+                };
             };
         };
     };

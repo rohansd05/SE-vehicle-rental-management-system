@@ -11,6 +11,7 @@ import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
 import { MyLicencePage } from '@/features/licence/MyLicencePage'
 import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { searchRoutes } from '@/features/search/routes'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { HelpPage } from '@/pages/HelpPage'
 import { NotAvailablePage } from '@/pages/NotAvailablePage'
@@ -90,6 +91,7 @@ export function AppRoutes() {
           }
         />
         {maintenanceRoutes()}
+        {searchRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}

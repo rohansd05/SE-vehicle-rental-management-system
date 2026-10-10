@@ -276,6 +276,93 @@ paths:
           description: The file
         '404':
           description: No response body
+  /api/v1/fleet/branches/:
+    get:
+      operationId: api_v1_fleet_branches_list
+      description: The pickup branches a search can start from.
+      summary: Branches (pickup locations)
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Branch'
+          description: ''
+  /api/v1/fleet/categories/:
+    get:
+      operationId: api_v1_fleet_categories_list
+      description: Appendix A vehicle categories, for the search filter (Search.Filter).
+      summary: Vehicle categories
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleCategory'
+          description: ''
+  /api/v1/fleet/search/:
+    get:
+      operationId: api_v1_fleet_search_list
+      description: 'Vehicles at the pickup branch that can be booked for the whole
+        period: status Available (Appendix B), no Pending Payment, Confirmed or Active
+        booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold),
+        no Scheduled or In Progress maintenance window in the period, and an availability
+        date on or before the pickup (Fleet.Add). The period must be 4 hours to 30
+        days (BR-5) and start in the future; otherwise the answer is 400 with the
+        message on the field.'
+      summary: Search available vehicles (Search.Available)
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: category
+        schema:
+          type: integer
+          nullable: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: pickup_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: return_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAvailableVehicleList'
+          description: ''
   /api/v1/health/:
     get:
       operationId: api_v1_health_retrieve
@@ -1033,6 +1120,97 @@ components:
       required:
       - access
       - user
+    AvailableVehicle:
+      type: object
+      description: 'One search result: the specification a customer chooses by (Search.Filter
+        fields).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        category_id:
+          type: integer
+          readOnly: true
+        home_branch:
+          type: string
+          readOnly: true
+        home_branch_id:
+          type: integer
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        average_rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        last_service_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - average_rating
+      - brand
+      - category
+      - category_id
+      - colour
+      - engine_cc
+      - fuel_type
+      - home_branch
+      - home_branch_id
+      - id
+      - model
+      - seating_capacity
+      - transmission
+      - vehicle_type
+      - year
+    Branch:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+          readOnly: true
+        branch_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+      required:
+      - address
+      - branch_id
+      - branch_name
     CancelJob:
       type: object
       properties:
@@ -1087,6 +1265,18 @@ components:
           format: email
       required:
       - email
+    FuelTypeEnum:
+      enum:
+      - Petrol
+      - Diesel
+      - CNG
+      - Electric
+      type: string
+      description: |-
+        * `Petrol` - Petrol
+        * `Diesel` - Diesel
+        * `CNG` - CNG
+        * `Electric` - Electric
     Health:
       type: object
       properties:
@@ -1603,6 +1793,29 @@ components:
           pattern: ^[0-9]{6}$
       required:
       - code
+    PaginatedAvailableVehicleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableVehicle'
     PaginatedLicenceReviewList:
       type: object
       required:
@@ -1981,6 +2194,22 @@ components:
       - email
       - id
       - name
+    VehicleCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        vehicle_type:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - vehicle_type
     VerifyOTP:
       type: object
       properties:

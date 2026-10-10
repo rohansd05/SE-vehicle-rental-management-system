@@ -46,7 +46,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Find a vehicle',
     icon: Search,
     roles: ['CUSTOMER'],
-    available: false,
+    available: true,
     description: 'Search cars and two-wheelers that are free for your dates.',
   },
   {

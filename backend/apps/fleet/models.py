@@ -4,7 +4,7 @@ Vehicle is a concrete base (Exp 3 «interface» Vehicle); Car and TwoWheeler
 are multi-table children, so every booking points at the single vehicle
 table. Mappings and SRS additions are listed in docs/model-mapping.md.
 
-Owner: Rohan (WBS 1.4.1); fleet/services/availability.py is Nidhi's.
+Owner: Rohan (WBS 1.4.1); fleet/services/status.py is Nidhi's (CLAUDE.md).
 """
 
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
@@ -128,6 +128,12 @@ class Vehicle(TimeStampedModel):
     def vehicle_type(self) -> str:
         """Appendix A "vehicle type", derived from the category."""
         return self.category.vehicle_type
+
+    def check_availability(self, pickup, return_) -> bool:
+        """Exp 3 Vehicle.check_availability(); the rules are in fleet/services/availability.py."""
+        from apps.fleet.services.availability import is_available
+
+        return is_available(self, pickup, return_)
 
     def update_status(self, new_status: str, *, actor, reason: str, request=None) -> "Vehicle":
         """Exp 3 Vehicle.update_status(); the state machine is in fleet/services/status.py."""
