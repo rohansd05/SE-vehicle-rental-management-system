@@ -29,6 +29,7 @@ disputes over charges, and missed vehicle servicing.
 ## Features
 
 **Customer**
+
 - Browse the vehicle catalogue and view published tariffs without an account
 - Real-time availability search with filters for type, category, fuel,
   transmission, price and rating
@@ -41,16 +42,19 @@ disputes over charges, and missed vehicle servicing.
 - Rate the vehicle and the service after a completed rental
 
 **Branch Staff**
+
 - Retrieve a booking by reference, pickup code or customer mobile number
 - Photographic handover and return checklists with digital customer signature
 - Automatic itemised settlement against the security deposit
 - Flag a vehicle for maintenance during return
 
 **Maintenance Technician**
+
 - Receive assigned jobs, record work, parts and labour cost
 - Close a job and return the vehicle to service
 
 **Administrator**
+
 - Fleet master data, statutory document tracking and vehicle retirement
 - Tariff definition with effective dates and full historical retention
 - Staff account management and customer blacklist
@@ -62,19 +66,19 @@ disputes over charges, and missed vehicle servicing.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Django 5.2 LTS, Django REST Framework |
-| Database | PostgreSQL 16 |
-| Async tasks | Celery + Valkey (Redis-protocol broker), Celery Beat for scheduled jobs |
-| Auth | JWT (SimpleJWT), bcrypt password hashing |
-| API docs | drf-spectacular (OpenAPI 3.0) |
-| Frontend | React 18, TypeScript, Vite |
-| Styling | Tailwind CSS, shadcn/ui (Radix primitives) |
-| Data fetching | TanStack Query |
-| Forms | React Hook Form + Zod |
-| Charts | Recharts |
-| Testing | pytest, pytest-django, factory-boy, Vitest |
+| Layer         | Technology                                                              |
+| ------------- | ----------------------------------------------------------------------- |
+| Backend       | Django 5.2 LTS, Django REST Framework                                   |
+| Database      | PostgreSQL 16                                                           |
+| Async tasks   | Celery + Valkey (Redis-protocol broker), Celery Beat for scheduled jobs |
+| Auth          | JWT (SimpleJWT), bcrypt password hashing                                |
+| API docs      | drf-spectacular (OpenAPI 3.0)                                           |
+| Frontend      | React 18, TypeScript, Vite                                              |
+| Styling       | Tailwind CSS, shadcn/ui (Radix primitives)                              |
+| Data fetching | TanStack Query                                                          |
+| Forms         | React Hook Form + Zod                                                   |
+| Charts        | Recharts                                                                |
+| Testing       | pytest, pytest-django, factory-boy, Vitest                              |
 
 ---
 
@@ -115,8 +119,8 @@ Django runs natively in a Python virtual environment.
 ### Clone
 
 ```powershell
-git clone https://github.com/rohansd05/vehicle-rental-management-system.git
-cd vehicle-rental-management-system
+git clone https://github.com/rohansd05/SE-vehicle-rental-management-system.git
+cd SE-vehicle-rental-management-system
 ```
 
 ### Start PostgreSQL and Valkey
@@ -160,25 +164,25 @@ All backend configuration is read from `backend/.env`. Copy
 `backend/.env.example` to `backend/.env` and fill in your own values. Never
 commit `.env`.
 
-| Variable | Description |
-|---|---|
-| `SECRET_KEY` | Django secret key |
-| `DEBUG` | `True` in development only |
-| `ALLOWED_HOSTS` | Comma-separated host names |
-| `NUM_PROXIES` | Reverse proxies in front of Django: `0` locally, `1` behind Caddy (client IP for throttling and audit) |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins, e.g. `http://localhost:5173` |
-| `DATABASE_URL` | `postgres://vrms:vrms_dev_password@localhost:5432/vrms` (matches `docker-compose.yml`) |
-| `REDIS_URL` | `redis://localhost:6379/0` (Valkey; Celery broker and result backend) |
-| `AGENCY_NAME` | Agency name shown by the API and UI (never hardcoded) |
-| `CURRENCY` | `INR` |
-| `AGENCY_TAX_REGISTRATION` | Tax registration (e.g. GSTIN) printed on every invoice (Pay.Invoice) |
-| `PAYMENT_GATEWAY_BACKEND` | `mock` (sandbox implementation) |
-| `PAYMENT_GATEWAY_KEY_ID` / `PAYMENT_GATEWAY_KEY_SECRET` | Gateway test-mode credentials |
-| `NOTIFICATION_BACKEND` | `mock` (sandbox implementation) |
-| `SMS_ACCOUNT_SID` / `SMS_AUTH_TOKEN` | SMS provider credentials |
-| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | Mail service settings |
-| `MEDIA_URL_EXPIRY_SECONDS` | Signed document link lifetime (default 900) |
-| `SECURE_HSTS_SECONDS` | Production only: HSTS max-age |
+| Variable                                                                                                                     | Description                                                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `SECRET_KEY`                                                                                                               | Django secret key                                                                                         |
+| `DEBUG`                                                                                                                    | `True` in development only                                                                              |
+| `ALLOWED_HOSTS`                                                                                                            | Comma-separated host names                                                                                |
+| `NUM_PROXIES`                                                                                                              | Reverse proxies in front of Django:`0` locally, `1` behind Caddy (client IP for throttling and audit) |
+| `CSRF_TRUSTED_ORIGINS`                                                                                                     | Comma-separated origins, e.g.`http://localhost:5173`                                                    |
+| `DATABASE_URL`                                                                                                             | `postgres://vrms:vrms_dev_password@localhost:5432/vrms` (matches `docker-compose.yml`)                |
+| `REDIS_URL`                                                                                                                | `redis://localhost:6379/0` (Valkey; Celery broker and result backend)                                   |
+| `AGENCY_NAME`                                                                                                              | Agency name shown by the API and UI (never hardcoded)                                                     |
+| `CURRENCY`                                                                                                                 | `INR`                                                                                                   |
+| `AGENCY_TAX_REGISTRATION`                                                                                                  | Tax registration (e.g. GSTIN) printed on every invoice (Pay.Invoice)                                      |
+| `PAYMENT_GATEWAY_BACKEND`                                                                                                  | `mock` (sandbox implementation)                                                                         |
+| `PAYMENT_GATEWAY_KEY_ID` / `PAYMENT_GATEWAY_KEY_SECRET`                                                                  | Gateway test-mode credentials                                                                             |
+| `NOTIFICATION_BACKEND`                                                                                                     | `mock` (sandbox implementation)                                                                         |
+| `SMS_ACCOUNT_SID` / `SMS_AUTH_TOKEN`                                                                                     | SMS provider credentials                                                                                  |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | Mail service settings                                                                                     |
+| `MEDIA_URL_EXPIRY_SECONDS`                                                                                                 | Signed document link lifetime (default 900)                                                               |
+| `SECURE_HSTS_SECONDS`                                                                                                      | Production only: HSTS max-age                                                                             |
 
 All external integrations run in **sandbox mode**. No live financial
 settlement takes place.
@@ -204,26 +208,26 @@ cd backend; .\venv\Scripts\celery.exe -A config beat -l info
 cd frontend; npm run dev
 ```
 
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:5173 |
-| API | http://localhost:8000/api/v1/ |
-| Health check | http://localhost:8000/api/v1/health/ |
-| API docs (Swagger) | http://localhost:8000/api/docs/ |
-| Django admin | http://localhost:8000/admin/ |
+| Service            | URL                                  |
+| ------------------ | ------------------------------------ |
+| Frontend           | http://localhost:5173                |
+| API                | http://localhost:8000/api/v1/        |
+| Health check       | http://localhost:8000/api/v1/health/ |
+| API docs (Swagger) | http://localhost:8000/api/docs/      |
+| Django admin       | http://localhost:8000/admin/         |
 
 ### Demo accounts
 
 Created by `manage.py seed_demo`. Demo data only; never use these accounts
 or this password in production.
 
-| Role | E-mail | Password |
-|---|---|---|
-| Customer | customer@vrms.test | Demo@1234 |
-| Branch Staff | staff@vrms.test | Demo@1234 |
-| Technician | tech@vrms.test | Demo@1234 |
-| Administrator | admin@vrms.test | Demo@1234 |
-| Branch Manager | manager@vrms.test | Demo@1234 |
+| Role           | E-mail             | Password  |
+| -------------- | ------------------ | --------- |
+| Customer       | customer@vrms.test | Demo@1234 |
+| Branch Staff   | staff@vrms.test    | Demo@1234 |
+| Technician     | tech@vrms.test     | Demo@1234 |
+| Administrator  | admin@vrms.test    | Demo@1234 |
+| Branch Manager | manager@vrms.test  | Demo@1234 |
 
 ---
 
@@ -288,16 +292,16 @@ cd backend
 
 ### Authentication and licence endpoints (`/api/v1/`)
 
-| Method and path | Who may call it |
-|---|---|
-| `POST auth/register/` | Anyone (creates a customer account; staff accounts are created in the Django admin) |
-| `POST auth/verify-otp/`, `POST auth/resend-otp/` | Anyone |
-| `POST auth/login/`, `POST auth/refresh/`, `POST auth/logout/` | Anyone (refresh and logout act on the refresh cookie) |
-| `POST auth/password/change/` | Any signed-in user |
-| `GET`/`PATCH me/`, `POST me/verify-mobile/` | Any signed-in user |
-| `GET`/`POST licence/` | Customer |
-| `GET licences/`, `POST licences/{id}/approve/`, `POST licences/{id}/reject/` | Branch Staff, Administrator |
-| `GET files/{token}/` | Anyone holding a valid signed link (expires after 15 minutes, SI-3) |
+| Method and path                                                                    | Who may call it                                                                     |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `POST auth/register/`                                                            | Anyone (creates a customer account; staff accounts are created in the Django admin) |
+| `POST auth/verify-otp/`, `POST auth/resend-otp/`                               | Anyone                                                                              |
+| `POST auth/login/`, `POST auth/refresh/`, `POST auth/logout/`                | Anyone (refresh and logout act on the refresh cookie)                               |
+| `POST auth/password/change/`                                                     | Any signed-in user                                                                  |
+| `GET`/`PATCH me/`, `POST me/verify-mobile/`                                  | Any signed-in user                                                                  |
+| `GET`/`POST licence/`                                                          | Customer                                                                            |
+| `GET licences/`, `POST licences/{id}/approve/`, `POST licences/{id}/reject/` | Branch Staff, Administrator                                                         |
+| `GET files/{token}/`                                                             | Anyone holding a valid signed link (expires after 15 minutes, SI-3)                 |
 
 Sign-in returns `{access, user}` and sets the refresh token in the httpOnly
 `vrms_refresh` cookie (D21). Send `Authorization: Bearer <access>`; call
@@ -312,18 +316,18 @@ registering.
 
 Course deliverables are in `docs/experiments/`:
 
-| # | Deliverable |
-|---|---|
-| 1 | Software Requirements Specification (IEEE 830) |
-| 2 | Use Case Diagram and Descriptions |
-| 3 | Class Diagram |
-| 4 | Interaction Diagrams (Sequence, Collaboration) |
-| 5 | Activity Diagram |
-| 6 | Data Flow Diagrams (Level 0 and 1) |
-| 7 | Work Breakdown Structure and Schedule |
-| 8 | Risk Mitigation, Monitoring and Management Plan |
-| 9 | Module Implementation |
-| 10 | Test Cases and Unit Testing |
+| #  | Deliverable                                     |
+| -- | ----------------------------------------------- |
+| 1  | Software Requirements Specification (IEEE 830)  |
+| 2  | Use Case Diagram and Descriptions               |
+| 3  | Class Diagram                                   |
+| 4  | Interaction Diagrams (Sequence, Collaboration)  |
+| 5  | Activity Diagram                                |
+| 6  | Data Flow Diagrams (Level 0 and 1)              |
+| 7  | Work Breakdown Structure and Schedule           |
+| 8  | Risk Mitigation, Monitoring and Management Plan |
+| 9  | Module Implementation                           |
+| 10 | Test Cases and Unit Testing                     |
 
 The SRS is the authoritative specification. Business rules BR-1 to BR-16
 in Section 5.5 are referenced throughout the codebase; any change to a rule
@@ -333,10 +337,10 @@ must be reflected in every requirement and test that references it.
 
 ## Team
 
-| Name | UID | Division | Batch |
-|---|---|---|---|
-| Rohan Dhumal | 2024300049 | A | A3 |
-| Nidhi Rajkamal Dhyani | 2024300050 | A | A3 |
+| Name                  | UID        | Division | Batch |
+| --------------------- | ---------- | -------- | ----- |
+| Rohan Dhumal          | 2024300049 | A        | A3    |
+| Nidhi Rajkamal Dhyani | 2024300050 | A        | A3    |
 
 Department of Computer Engineering
 Sardar Patel Institute of Technology, Andheri (W), Mumbai
