@@ -1,0 +1,1 @@
+"""VRMS Django apps."""
