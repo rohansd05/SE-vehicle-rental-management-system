@@ -1,0 +1,46 @@
+[project]
+name = "vrms-backend"
+version = "0.1.0"
+description = "Vehicle Rental Management System - Django REST API"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["venv", "*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config", "integrations"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = '''
+/(
+    venv
+  | .*/migrations
+)/
+'''
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "--strict-markers"
+markers = [
+    "concurrency: concurrent booking tests (Reliability-1); run with -m concurrency",
+]
+filterwarnings = [
+    # STATIC_ROOT only exists after collectstatic; irrelevant to tests.
+    "ignore:No directory at:UserWarning:django.core.handlers.base",
+]
+
+[tool.coverage.run]
+source = ["apps"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

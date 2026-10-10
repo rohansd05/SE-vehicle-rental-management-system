@@ -1,0 +1,39 @@
+# Licence policy: CO-7 as amended by D2 (see docs/decisions.md).
+# MIT / Apache 2.0 / BSD, plus LGPL used unmodified (psycopg) and HPND (Pillow).
+
+# ─── Core ────────────────────────────────────────────────
+Django==5.2.17
+djangorestframework==3.16.0
+django-filter==25.1
+djangorestframework-simplejwt==5.5.0
+drf-spectacular==0.28.0
+drf-spectacular-sidecar==2025.6.1
+
+# ─── Database ────────────────────────────────────────────
+psycopg[binary]==3.2.9
+
+# ─── Async tasks & scheduling (broker: Valkey, D2) ───────
+celery==5.5.2
+redis==5.2.1
+django-celery-beat==2.8.1
+
+# ─── Security & auth ─────────────────────────────────────
+bcrypt==4.2.1
+django-axes==7.0.2
+
+# ─── Files, images, documents (D3) ───────────────────────
+Pillow==11.1.0
+reportlab==4.4.10
+qrcode==8.0
+
+# ─── External services ───────────────────────────────────
+razorpay==1.4.2
+twilio==9.4.1
+requests==2.32.5
+
+# ─── Configuration (D5) ──────────────────────────────────
+django-environ==0.12.0
+
+# ─── Serving ─────────────────────────────────────────────
+gunicorn==23.0.0
+whitenoise==6.8.2
