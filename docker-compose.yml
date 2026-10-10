@@ -1,0 +1,41 @@
+# Development services only (D3): PostgreSQL and Valkey for a natively run
+# Django. The production stack (D1) is a separate compose file, not built yet.
+# Credentials match backend/.env.example (DATABASE_URL, REDIS_URL).
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vrms
+      POSTGRES_USER: vrms
+      POSTGRES_PASSWORD: vrms_dev_password
+    ports:
+      # Defaults to 5432. If that port is taken (e.g. by a native Windows
+      # PostgreSQL service), set POSTGRES_HOST_PORT in a root .env and use
+      # the same port in backend/.env DATABASE_URL.
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vrms -d vrms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  valkey_data:

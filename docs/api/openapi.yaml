@@ -1,0 +1,1051 @@
+openapi: 3.0.3
+info:
+  title: Vehicle Rental Management System API
+  version: 1.0.0
+  description: REST + JSON API documented with OpenAPI 3.0 (CO-4).
+paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: api_v1_auth_login_create
+      description: Returns the access token (5 minutes) and the user, and sets the
+        refresh cookie (30 minutes). The refresh token is never in a response body
+        (D21). It is set as the httpOnly, SameSite=Strict cookie `vrms_refresh`, scoped
+        to /api/v1/auth/, which the browser sends back automatically. Keep the access
+        token in memory only.
+      summary: Sign in
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+            examples:
+              SignIn:
+                value:
+                  email: customer@vrms.test
+                  password: Demo@1234
+                summary: Sign in
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: Account locked (SE-8)
+  /api/v1/auth/logout/:
+    post:
+      operationId: api_v1_auth_logout_create
+      description: No request body and no access token needed. Blacklists the refresh
+        token in the cookie, if any, and always clears the cookie. The refresh token
+        is never in a response body (D21). It is set as the httpOnly, SameSite=Strict
+        cookie `vrms_refresh`, scoped to /api/v1/auth/, which the browser sends back
+        automatically. Keep the access token in memory only.
+      summary: Sign out
+      tags:
+      - Authentication
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/password/change/:
+    post:
+      operationId: api_v1_auth_password_change_create
+      description: Change the password; every session ends and the user signs in again.
+      summary: Change password
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+            examples:
+              ChangePassword:
+                value:
+                  current_password: Demo@1234
+                  new_password: N3w!Passw0rd-2026
+                summary: Change password
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '400':
+          description: Invalid
+  /api/v1/auth/refresh/:
+    post:
+      operationId: api_v1_auth_refresh_create
+      description: No request body. Reads the refresh cookie, blacklists it, sets
+        a new one and returns a new access token and the user (also used to restore
+        a session when the page loads). 401 with code `session_ended` when the cookie
+        is missing, expired or already used; the cookie is then cleared. The refresh
+        token is never in a response body (D21). It is set as the httpOnly, SameSite=Strict
+        cookie `vrms_refresh`, scoped to /api/v1/auth/, which the browser sends back
+        automatically. Keep the access token in memory only.
+      summary: Refresh the access token
+      tags:
+      - Authentication
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: api_v1_auth_register_create
+      description: 'SE-7: create an inactive customer account and send an OTP by SMS.'
+      summary: Register as a customer
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+            examples:
+              Register:
+                value:
+                  email: asha@example.com
+                  password: Str0ng!Passw0rd
+                  name: Asha Rao
+                  mobile_no: '+919812345678'
+                  address: 14 Hill Road, Bandra (W), Mumbai 400050
+                  date_of_birth: '1996-04-12'
+                  emergency_contact_name: Ravi Rao
+                  emergency_contact_mobile: '+919812300000'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: ''
+        '400':
+          description: Invalid
+  /api/v1/auth/resend-otp/:
+    post:
+      operationId: api_v1_auth_resend_otp_create
+      description: Send a new registration code; the previous one stops working.
+      summary: Resend the registration OTP
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Email'
+            examples:
+              Resend:
+                value:
+                  email: asha@example.com
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Email'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Email'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/auth/verify-otp/:
+    post:
+      operationId: api_v1_auth_verify_otp_create
+      description: 'SE-7: verify the registration code and activate the account.'
+      summary: Verify the registration OTP
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTP'
+            examples:
+              Verify:
+                value:
+                  email: asha@example.com
+                  code: '123456'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyOTP'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyOTP'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/files/{token}/:
+    get:
+      operationId: api_v1_files_retrieve
+      description: |-
+        Serve one stored file to whoever holds a valid, unexpired link.
+
+        The signature is the credential, so no session or token is needed; a
+        forged or expired link gets a 404 that says nothing about the file.
+      summary: Download a stored file through a signed link (SI-3)
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Files
+      security:
+      - {}
+      responses:
+        '200':
+          description: The file
+        '404':
+          description: No response body
+  /api/v1/health/:
+    get:
+      operationId: api_v1_health_retrieve
+      description: |-
+        Liveness and readiness check, also the source of the agency name (D7).
+
+        Public on purpose: used by deployment health checks and by the home page
+        before anyone signs in. It exposes no user or business data.
+      tags:
+      - System
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+  /api/v1/licence/:
+    get:
+      operationId: api_v1_licence_retrieve
+      description: 'The customer''s own driving licence (Book.Eligible.No: submit
+        a licence now).'
+      summary: My driving licence
+      tags:
+      - Licence
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Licence'
+          description: ''
+    post:
+      operationId: api_v1_licence_create
+      description: 'Multipart form. Both images are required (Appendix A front and
+        back image): JPG or PNG, at most 5 MB. An already-expired licence is refused
+        (BR-2). The licence then awaits verification by branch staff or an administrator.'
+      summary: Submit or resubmit my driving licence
+      tags:
+      - Licence
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LicenceSubmit'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Licence'
+          description: ''
+        '400':
+          description: Invalid
+  /api/v1/licences/:
+    get:
+      operationId: api_v1_licences_list
+      description: |-
+        Licences awaiting verification, oldest first.
+
+        Licences are not tied to a branch, so every branch's staff see the queue.
+      summary: Licences pending verification
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Licence verification
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLicenceReviewList'
+          description: ''
+  /api/v1/licences/{id}/approve/:
+    post:
+      operationId: api_v1_licences_approve_create
+      summary: Approve a licence
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Licence verification
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenceReview'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/licences/{id}/reject/:
+    post:
+      operationId: api_v1_licences_reject_create
+      summary: Reject a licence (a reason is required)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Licence verification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenceReject'
+            examples:
+              Reject:
+                value:
+                  reason: The photograph of the back of the licence is unreadable.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LicenceReject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LicenceReject'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenceReview'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/me/:
+    get:
+      operationId: api_v1_me_retrieve
+      description: The signed-in user's own profile.
+      summary: My profile
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    patch:
+      operationId: api_v1_me_partial_update
+      description: Name and address change at once. A new mobile number is applied
+        only after the code sent to it is confirmed at /api/v1/me/verify-mobile/ (SE-7).
+      summary: Update my profile
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+            examples:
+              ChangeMobile:
+                value:
+                  mobile_no: '+919898989898'
+                summary: Change mobile
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileUpdateResponse'
+          description: ''
+  /api/v1/me/verify-mobile/:
+    post:
+      operationId: api_v1_me_verify_mobile_create
+      description: 'SE-7: confirm a new mobile number with the code sent to it.'
+      summary: Confirm a new mobile number
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OTPCode'
+            examples:
+              Confirm:
+                value:
+                  code: '123456'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OTPCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OTPCode'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+components:
+  schemas:
+    AccessToken:
+      type: object
+      description: 'Sign-in and refresh response (D21): the refresh token is in the
+        cookie only.'
+      properties:
+        access:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+      required:
+      - access
+      - user
+    CategoriesEnum:
+      enum:
+      - Car
+      - Two-Wheeler
+      type: string
+      description: |-
+        * `Car` - Car
+        * `Two-Wheeler` - Two-Wheeler
+    DatabaseEnum:
+      enum:
+      - ok
+      - unreachable
+      type: string
+      description: |-
+        * `ok` - ok
+        * `unreachable` - unreachable
+    Detail:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    Email:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatusEnum'
+        database:
+          $ref: '#/components/schemas/DatabaseEnum'
+        agency_name:
+          type: string
+        currency:
+          type: string
+      required:
+      - agency_name
+      - currency
+      - database
+      - status
+    HealthStatusEnum:
+      enum:
+      - ok
+      - degraded
+      type: string
+      description: |-
+        * `ok` - ok
+        * `degraded` - degraded
+    Licence:
+      type: object
+      description: A licence as its owner, branch staff and administrators see it.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        licence_number:
+          type: string
+          readOnly: true
+        issuing_authority:
+          type: string
+          readOnly: true
+        issue_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        categories:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LicenceStatusEnum'
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        front_image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        back_image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - back_image_url
+      - categories
+      - expiry_date
+      - front_image_url
+      - id
+      - issue_date
+      - issuing_authority
+      - licence_number
+      - rejection_reason
+      - status
+      - updated_at
+      - verified_at
+    LicenceCustomer:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        mobile_no:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+      required:
+      - customer_id
+      - date_of_birth
+      - email
+      - mobile_no
+      - name
+    LicenceReject:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
+    LicenceReview:
+      type: object
+      description: 'For verification: the licence plus the customer it belongs to
+        (BR-2).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        licence_number:
+          type: string
+          readOnly: true
+        issuing_authority:
+          type: string
+          readOnly: true
+        issue_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        categories:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LicenceStatusEnum'
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        front_image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        back_image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        customer:
+          allOf:
+          - $ref: '#/components/schemas/LicenceCustomer'
+          readOnly: true
+      required:
+      - back_image_url
+      - categories
+      - customer
+      - expiry_date
+      - front_image_url
+      - id
+      - issue_date
+      - issuing_authority
+      - licence_number
+      - rejection_reason
+      - status
+      - updated_at
+      - verified_at
+    LicenceStatusEnum:
+      enum:
+      - Not Submitted
+      - Pending Verification
+      - Verified
+      - Rejected
+      - Expired
+      type: string
+      description: |-
+        * `Not Submitted` - Not Submitted
+        * `Pending Verification` - Pending Verification
+        * `Verified` - Verified
+        * `Rejected` - Rejected
+        * `Expired` - Expired
+    LicenceSubmit:
+      type: object
+      description: 'Appendix A licence: number, authority, 1:m category, dates, both
+        images.'
+      properties:
+        licence_number:
+          type: string
+          maxLength: 32
+        issuing_authority:
+          type: string
+          maxLength: 150
+        issue_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          format: date
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoriesEnum'
+          maxItems: 2
+          minItems: 1
+        front_image:
+          type: string
+          format: uri
+          writeOnly: true
+          description: JPG or PNG image, at most 5 MB (Appendix A front/back image).
+        back_image:
+          type: string
+          format: uri
+          writeOnly: true
+          description: JPG or PNG image, at most 5 MB (Appendix A front/back image).
+      required:
+      - back_image
+      - categories
+      - expiry_date
+      - front_image
+      - issue_date
+      - issuing_authority
+      - licence_number
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    OTPCode:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 6
+          pattern: ^[0-9]{6}$
+      required:
+      - code
+    PaginatedLicenceReviewList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenceReview'
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
+    PatchedProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        mobile_no:
+          type: string
+          pattern: ^\+?[0-9]{10,15}$
+          maxLength: 15
+        address:
+          type: string
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        mobile_no:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+      required:
+      - address
+      - email
+      - id
+      - mobile_no
+      - name
+      - role
+    ProfileUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        mobile_no:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        mobile_change_pending:
+          type: boolean
+      required:
+      - address
+      - email
+      - id
+      - mobile_change_pending
+      - mobile_no
+      - name
+      - role
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        name:
+          type: string
+          maxLength: 150
+        mobile_no:
+          type: string
+          pattern: ^\+?[0-9]{10,15}$
+          maxLength: 15
+        address:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        emergency_contact_name:
+          type: string
+          maxLength: 150
+        emergency_contact_mobile:
+          type: string
+          pattern: ^\+?[0-9]{10,15}$
+          maxLength: 15
+      required:
+      - address
+      - date_of_birth
+      - email
+      - emergency_contact_mobile
+      - emergency_contact_name
+      - mobile_no
+      - name
+      - password
+    RegisterResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        detail:
+          type: string
+      required:
+      - detail
+      - email
+    RoleEnum:
+      enum:
+      - CUSTOMER
+      - BRANCH_STAFF
+      - MAINTENANCE_TECHNICIAN
+      - ADMINISTRATOR
+      - BRANCH_MANAGER
+      type: string
+      description: |-
+        * `CUSTOMER` - Customer
+        * `BRANCH_STAFF` - Branch Staff
+        * `MAINTENANCE_TECHNICIAN` - Maintenance Technician
+        * `ADMINISTRATOR` - Administrator
+        * `BRANCH_MANAGER` - Branch Manager
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - id
+      - name
+    VerifyOTP:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          maxLength: 6
+          pattern: ^[0-9]{6}$
+      required:
+      - code
+      - email
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
