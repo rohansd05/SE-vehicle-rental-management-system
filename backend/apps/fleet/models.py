@@ -129,6 +129,12 @@ class Vehicle(TimeStampedModel):
         """Appendix A "vehicle type", derived from the category."""
         return self.category.vehicle_type
 
+    def update_status(self, new_status: str, *, actor, reason: str, request=None) -> "Vehicle":
+        """Exp 3 Vehicle.update_status(); the state machine is in fleet/services/status.py."""
+        from apps.fleet.services.status import update_status
+
+        return update_status(self, new_status, actor=actor, reason=reason, request=request)
+
 
 class Car(Vehicle):
     """Exp 3 Car."""

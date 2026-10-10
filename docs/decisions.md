@@ -360,6 +360,19 @@ The SRS does not settle these; the frontend implements them as listed.
 | F8 | Planned features in the menu | Shown with a "Soon" label and an honest "not available yet" page; no sample data. |
 | F9 | Registration fields | Date of birth (BR-2) and an emergency contact (SA-4) are asked at registration, because the backend requires them. |
 
+## Maintenance module: proposed items (awaiting team approval)
+
+The SRS does not settle these; `apps/fleet/services/status.py` and
+`apps/maintenance` implement them as listed.
+
+| # | Item | Proposal |
+|---|---|---|
+| M1 | Who clears an Unsafe flag | **Administrator only** (role Administrator, active). **Conflicts with the SRS wording:** BR-16, SA-3 and SE-6 also allow "an authorised technician". Exp 4 sequence diagram 3 shows only the Administrator clearing the flag, and the system has no way to mark a technician as authorised. Proposal: keep Administrator only until the team defines what makes a technician authorised. |
+| M2 | Retired is terminal | No transition leaves Retired, including to Unsafe. Appendix B's "any status → Unsafe" read literally would let a retired vehicle be flagged and then cleared back to Available. |
+| M3 | Branch Manager and the status rules | A Branch Manager is not treated as an Administrator for clearing an Unsafe flag (BR-16) or retiring a vehicle (Fleet.Retire); both name the Administrator. |
+| M4 | "Future booking" for Fleet.Retire | A booking that is Active (even if overdue), or Pending Payment or Confirmed with a return time still ahead. |
+| M5 | Same-status request | Asking for the status a vehicle already has is a no-op: no error and no audit entry, since nothing changed. |
+
 ---
 
 ## Third-party packages and licences
