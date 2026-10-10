@@ -7,11 +7,7 @@ picking one.
 
 ## What this project is
 
-Vehicle Rental Management System (VRMS) — a Django REST Framework backend
-+ React/TypeScript frontend, built from a fixed academic SRS. This is not
-a greenfield app where you can invent requirements. Every business rule,
-status, and field name already exists in `docs/experiments/` and must be
-matched exactly, not reinterpreted.
+Vehicle Rental Management System (VRMS) — a Django REST Framework backend and a React/TypeScript frontend, built from a fixed academic SRS. This is not a greenfield app where you can invent requirements. Every business rule, status, and field name already exists in `docs/experiments/` and must be matched exactly, not reinterpreted.
 
 ## Non-negotiable source of truth
 
@@ -145,17 +141,15 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   clears the cookie. The frontend keeps the access token in memory only,
   never in localStorage or sessionStorage.
 
-## Ownership
+## Team workflow (from 10 Oct 2026)
+- Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.
+- Every agent session works in stages and stops after each stage so a human can review and commit.
 
-Nidhi is building every app until she hands over to Rohan. The split and
-rule below apply from that handoff.
+## Ownership until 13 Oct 2026
+- Rohan, Book Vehicle module: apps/bookings, apps/payments, apps/pricing, apps/fleet (except fleet/services/status.py), frontend features search, booking, payment, history.
+- Nidhi, Close Maintenance Job module: apps/maintenance, apps/fleet/services/status.py (the shared vehicle status service), frontend technician and maintenance features.
+- Shared files (frontend router, navigation, seed_demo, generated API types): one-line additions only. After merging, regenerate API types with `npm run api:types` instead of merging that file by hand.
 
-- **Rohan:** accounts, fleet (except availability), bookings, payments,
-  notifications, reports, core (WBS 1.4.1, 1.4.3, 1.4.5).
-- **Nidhi:** pricing, `fleet/services/availability.py` plus the search
-  API/UI, rentals, maintenance (WBS 1.4.2, 1.4.4).
-- **Rule:** only an app's owner edits its `models.py` or migrations;
-  anyone else asks the owner.
 
 ## Things to never do
 
