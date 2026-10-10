@@ -30,5 +30,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // On slower laptops more workers make jsdom tests time out at random;
+    // two workers pass the whole suite and run each test 2-3x faster.
+    maxWorkers: 2,
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
   },
 })

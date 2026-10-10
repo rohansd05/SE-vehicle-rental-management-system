@@ -7,8 +7,9 @@ import { setAccessToken } from '@/lib/session'
 
 import { server } from './server'
 
-// Forms with several fields re-render many times under jsdom; one second is tight.
-configure({ asyncUtilTimeout: 3000 })
+// Forms with several fields re-render many times under jsdom; one second is
+// tight, and slower laptops need more.
+configure({ asyncUtilTimeout: 5000 })
 
 // jsdom has no object URLs; the licence image preview needs them.
 if (!URL.createObjectURL) {
