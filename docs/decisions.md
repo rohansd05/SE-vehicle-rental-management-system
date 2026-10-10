@@ -372,6 +372,21 @@ The SRS does not settle these; `apps/fleet/services/status.py` and
 | M3 | Branch Manager and the status rules | A Branch Manager is not treated as an Administrator for clearing an Unsafe flag (BR-16) or retiring a vehicle (Fleet.Retire); both name the Administrator. |
 | M4 | "Future booking" for Fleet.Retire | A booking that is Active (even if overdue), or Pending Payment or Confirmed with a return time still ahead. |
 | M5 | Same-status request | Asking for the status a vehicle already has is a no-op: no error and no audit entry, since nothing changed. |
+| M6 | Downtime | Entered by the technician in hours with the work record, and required before the job can close. The SRS lists downtime in Maint.History but not how it is measured. |
+| M7 | Several open jobs on one vehicle | Completing or cancelling a job releases the vehicle to Available only if no other Scheduled or In Progress job holds it. If an Unsafe clearance is approved while another job is open, the vehicle goes Available and then straight back to Under Maintenance. |
+| M8 | Cancelling a job | Releases a vehicle that the job had put Under Maintenance (rule M7 applies). An Unsafe flag stays until an Administrator clears it. |
+| M9 | Which jobs count as a service | Every completed job updates the last service date and distance, as Maint.Complete says literally, whatever its type. A record with a service date older than the vehicle's last service does not overwrite it. The team may prefer that only Preventive jobs reset BR-15. |
+| M10 | Who works a job | Only the assigned technician starts it, records work and completes it; an Administrator may also complete it (BR-16). Maint.Create also lets a technician report a job; the API does not expose that yet (Branch Staff, Branch Managers and Administrators report). |
+| M11 | Branch Manager | Reports, schedules and cancels jobs on their own branch's vehicles, like Branch Staff. |
+| M12 | Work record rules | The service date cannot be in the future; the odometer at service cannot be below the vehicle's reading (Appendix A); each record replaces the previous one in full; the total cost is labour plus parts, computed by the server; the record is locked once clearance is requested. |
+| M13 | Starting a job | Refused while the vehicle is On Rent or Retired. |
+| M14 | Maint.History for technicians | A technician can read the history of any vehicle, not only those of their own jobs. |
+
+**Not built yet (SRS requirements outside Module 2):** Maint.Auto.Km and
+Maint.Auto.Time (automatic Preventive jobs); the Maint.Conflict offer to
+notify affected customers and propose an alternative vehicle (the warning,
+the list and the explicit confirmation are built); attaching the workshop
+invoice (Maint.Record "permit"); an Administrator declining a clearance.
 
 ---
 

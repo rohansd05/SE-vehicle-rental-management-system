@@ -8,6 +8,7 @@ from django.test import override_settings
 from apps.accounts.models import OneTimePassword
 from apps.accounts.services import issue_otp
 from apps.accounts.tests.factories import UserFactory
+from apps.maintenance.notification_templates import SAMPLE_CONTEXT
 from apps.notifications.models import Notification
 from apps.notifications.services import queue_email
 from apps.notifications.templates import TEMPLATES, render
@@ -38,6 +39,7 @@ def test_every_template_renders():
         "attempts": 5,
         "licence_number": "MH01 1",
         "reason": "Blurred",
+        **SAMPLE_CONTEXT,
     }
     for name, version in TEMPLATES:
         subject, body = render(name, version, context)
