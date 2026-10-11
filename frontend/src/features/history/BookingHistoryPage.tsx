@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/page'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDateTime } from '@/lib/dates'
+import { stagger } from '@/lib/motion'
 
 import { BOOKING_STATUSES, type BookingStatus, listBookings } from '@/features/booking/api'
 import { bookingsKey } from '@/features/booking/keys'
@@ -37,8 +37,8 @@ export function BookingHistoryPage() {
           </Button>
         }
       />
-      <div className="mb-4 flex items-center gap-2">
-        <label htmlFor="booking-status-filter" className="text-sm font-medium">
+      <div className="mb-5 flex items-center gap-3">
+        <label htmlFor="booking-status-filter" className="text-small font-medium">
           Status
         </label>
         <NativeSelect
@@ -68,33 +68,34 @@ export function BookingHistoryPage() {
           description="Find a vehicle that is free for your dates and book it."
         />
       ) : (
-        <div className="grid gap-4">
-          <ul aria-label="Bookings" className="grid gap-3">
-            {bookings.data.results.map((booking) => (
-              <li key={booking.id}>
-                <Card>
-                  <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <Link to={`/app/bookings/${booking.id}`} className="font-semibold underline-offset-4 hover:underline">
-                        {booking.vehicle.brand} {booking.vehicle.model}
-                        {booking.booking_reference ? ` · ${booking.booking_reference}` : ''}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDateTime(booking.pickup_datetime)} to {formatDateTime(booking.return_datetime)} ·{' '}
-                        {booking.pickup_branch}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm tabular-nums">{formatCurrency(booking.total_amount, currency)}</span>
-                      <BookingStatusBadge status={booking.status} />
-                    </div>
-                  </CardContent>
-                </Card>
+        <div className="grid gap-6">
+          {/* Rows, not boxes (docs/design/ui-brief.md, 6.4): vehicle, period, branch, amount, status. */}
+          <ul aria-label="Bookings" className="border-t">
+            {bookings.data.results.map((booking, index) => (
+              <li
+                key={booking.id}
+                className="enter grid gap-x-8 gap-y-2 border-b py-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_8rem_9rem] lg:items-center"
+                style={stagger(index, 45)}
+              >
+                <div className="min-w-0">
+                  <Link to={`/app/bookings/${booking.id}`} className="font-medium underline-offset-4 hover:text-primary hover:underline">
+                    {booking.vehicle.brand} {booking.vehicle.model}
+                    {booking.booking_reference ? ` · ${booking.booking_reference}` : ''}
+                  </Link>
+                </div>
+                <p className="num text-small text-muted-foreground">
+                  {formatDateTime(booking.pickup_datetime)} to {formatDateTime(booking.return_datetime)}
+                </p>
+                <p className="text-sm text-muted-foreground">{booking.pickup_branch}</p>
+                <p className="num text-sm lg:text-right">{formatCurrency(booking.total_amount, currency)}</p>
+                <div className="lg:justify-self-end">
+                  <BookingStatusBadge status={booking.status} />
+                </div>
               </li>
             ))}
           </ul>
           {bookings.data.next || bookings.data.previous ? (
-            <nav aria-label="Booking pages" className="flex gap-2">
+            <nav aria-label="Booking pages" className="flex justify-end gap-2">
               <Button variant="outline" disabled={!bookings.data.previous} onClick={() => setPage(page - 1)}>
                 Previous page
               </Button>

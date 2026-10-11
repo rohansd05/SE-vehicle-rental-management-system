@@ -112,7 +112,7 @@ export function SubmitButton({
       size="lg"
       disabled={busy || disabled}
       aria-busy={busy}
-      className={cn('w-full sm:w-auto', className)}
+      className={cn('w-full sm:w-auto sm:justify-self-start', className)}
     >
       {busy ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
       {busy ? (busyLabel ?? 'Please wait…') : children}

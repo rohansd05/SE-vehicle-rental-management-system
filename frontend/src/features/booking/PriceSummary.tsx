@@ -3,6 +3,8 @@
 // Book.Quote.Terms: the figures the customer accepts before paying.
 // Amounts arrive as decimal strings and are only formatted here (CO-6).
 
+import { useEffect, useRef, useState } from 'react'
+
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 
@@ -12,15 +14,35 @@ function plural(count: number, unit: string) {
   return `${count} ${unit}${count === 1 ? '' : 's'}`
 }
 
+/**
+ * Counts how many times the total has changed since mount, so the total can
+ * be highlighted briefly when a quote is recalculated. The figure itself is
+ * always the exact formatted value; only a tint behind it fades.
+ */
+function useChangeCount(value: string): number {
+  const previous = useRef(value)
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    if (previous.current !== value) {
+      previous.current = value
+      setCount((current) => current + 1)
+    }
+  }, [value])
+  return count
+}
+
 export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quote; caption?: string }) {
   const { currency } = useAgency()
   const money = (amount: string) => formatCurrency(amount, currency)
   const hasDiscount = Number(quote.discount_amount) > 0
+  const changes = useChangeCount(quote.total_payable)
   return (
     <div className="grid gap-3">
       <table className="w-full text-sm">
-        <caption className="mb-2 text-left font-semibold">{caption}</caption>
-        <tbody className="[&_td]:py-1 [&_td:last-child]:text-right [&_td:last-child]:tabular-nums">
+        <caption className="mb-2 text-left font-heading text-section font-semibold text-foreground">
+          {caption}
+        </caption>
+        <tbody className="[&_td]:py-2 [&_td:last-child]:num [&_td:last-child]:pl-4 [&_td:last-child]:text-right [&_td:last-child]:whitespace-nowrap [&_tr]:border-b [&_tr]:border-hairline">
           <tr>
             <td>
               Rental, {plural(quote.billing_count, quote.billing_unit)} at {money(quote.unit_rate)}
@@ -45,14 +67,18 @@ export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quot
             <td>Tax at {Number(quote.tax_rate_percent)}%</td>
             <td>{money(quote.tax_amount)}</td>
           </tr>
-          <tr className="border-t font-semibold">
+          <tr className="border-b-0! font-semibold [&_td]:pt-3 [&_td]:pb-1">
             <td>Total payable</td>
-            <td>{money(quote.total_payable)}</td>
+            <td className="text-base">
+              <span key={changes} className={changes > 0 ? 'flash' : undefined}>
+                {money(quote.total_payable)}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
-      <p className="rounded-md bg-muted/60 px-3 py-2 text-sm">
-        Refundable security deposit <strong>{money(quote.security_deposit)}</strong>, held separately
+      <p className="border-t pt-3 text-sm text-muted-foreground">
+        Refundable security deposit <strong className="num text-foreground">{money(quote.security_deposit)}</strong>, held separately
         and not part of the total.
       </p>
       {quote.free_helmets_per_rider > 0 ? (
@@ -69,7 +95,7 @@ export function TermsList({ terms }: { terms: QuoteTerms }) {
   const money = (amount: string) => formatCurrency(amount, currency)
   const [full, partial, late] = terms.cancellation_refunds
   return (
-    <ul className="grid list-disc gap-1 pl-5 text-sm">
+    <ul className="grid list-disc gap-1.5 pl-5 text-sm marker:text-ink-subtle">
       <li>
         {terms.free_km_allowance_per_day} km free per rental day; beyond that{' '}
         {money(terms.excess_km_rate)} per km.

@@ -15,7 +15,7 @@ export function PageHeader({
   // Title, one line of context, actions on the right, then a hairline
   // (docs/design/ui-brief.md, 6.3).
   return (
-    <div className="mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="enter mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         <h1 className="text-title font-semibold break-words text-foreground [font-stretch:104%]">
           {title}

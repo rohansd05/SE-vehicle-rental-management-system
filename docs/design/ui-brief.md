@@ -360,6 +360,11 @@ prices, ratings, hours, guarantees or "24/7".
 | Pay by card, online, or in cash at the branch. | "pay by card, online or in cash at the branch." (home page intro, `/`) |
 | Your driving licence is verified by our staff before you book. | "Our staff verify it before you can book." (Help, "Driving licence", `/help`) |
 
+Also approved (11 Oct 2026) as a proposed addition: the heading "Where to go"
+on the help, 403 and 404 pages (section 6.9). It is the only new visible
+string outside the panel facts; the links under it reuse the menu labels
+and descriptions, or "Sign in" and "Create an account" from the home page.
+
 The agency name heads the panel (from `AGENCY_NAME`).
 
 ### 6.2 Public home

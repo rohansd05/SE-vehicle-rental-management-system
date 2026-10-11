@@ -102,6 +102,25 @@
 
     /* Elevation: overlays only (dialogs, sheets, menus, popovers). */
     --shadow-overlay: 0 8px 24px rgb(27 28 29 / 0.12), 0 1px 2px rgb(27 28 29 / 0.08);
+
+    /* Motion tokens (brief 5): transform and opacity only, ease-out in, ease-in out. */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+    --animate-rise: rise 400ms var(--ease-out) both;
+    --animate-fade: fade 200ms var(--ease-out) both;
+
+    @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes flash-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
 }
 
 :root {
@@ -188,6 +207,39 @@
     letter-spacing: 0;
 }
 
+/*
+ * Entry motion. `enter` rises an element into place once, when it mounts;
+ * `--enter-delay` staggers siblings (lib/motion.ts). `reveal` waits until the
+ * element scrolls into view (components/reveal.tsx). Under reduced motion both
+ * become a short opacity fade, so pages still look finished (brief 5).
+ */
+@utility enter {
+    animation: rise 400ms var(--ease-out) both;
+    animation-delay: var(--enter-delay, 0ms);
+}
+@utility reveal {
+    opacity: 0;
+    &[data-in] {
+        opacity: 1;
+        animation: rise 400ms var(--ease-out) both;
+        animation-delay: var(--enter-delay, 0ms);
+    }
+}
+/* A brief highlight behind a value that has just changed (opacity only). */
+@utility flash {
+    position: relative;
+    isolation: isolate;
+    &::after {
+        content: '';
+        position: absolute;
+        inset: -2px -6px;
+        z-index: -1;
+        border-radius: var(--radius-md);
+        background: var(--primary-tint);
+        animation: flash-out 900ms var(--ease-out) 150ms both;
+    }
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -246,7 +298,12 @@
         color: var(--ink);
     }
 
-    /* Respect reduced motion: no animation, no transition (brief 5). */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Respect reduced motion (brief 5): no movement or transitions, and the
+       entry animations become short opacity fades instead of being dropped. */
     @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -255,6 +312,10 @@
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
             scroll-behavior: auto !important;
+        }
+        .enter,
+        .reveal[data-in] {
+            animation: fade 150ms var(--ease-out) both !important;
         }
     }
 }

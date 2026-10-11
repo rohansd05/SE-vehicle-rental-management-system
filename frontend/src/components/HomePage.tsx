@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom'
 import { TONE_PILL } from '@/components/status-tone'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
+import { Reveal } from '@/components/reveal'
 import { PRODUCT_NAME, useAgency } from '@/hooks/page'
+import { stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { HELP_TOPICS } from '@/pages/help-topics'
 
@@ -62,15 +64,15 @@ export function HomePage() {
   return (
     <div className="grid gap-16">
       <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-24">
-        <section className="animate-in fade-in duration-300 lg:py-8">
-          <h1 className="max-w-[16ch] text-display font-semibold break-words [font-stretch:108%] sm:text-[2.75rem] sm:leading-[3.25rem]">
+        <section className="lg:py-8">
+          <h1 className="enter max-w-[16ch] text-display font-semibold break-words [font-stretch:108%] sm:text-[2.75rem] sm:leading-[3.25rem]">
             {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
           </h1>
-          <p className="mt-5 max-w-[52ch] text-lead text-muted-foreground">
+          <p className="enter mt-5 max-w-[52ch] text-lead text-muted-foreground" style={stagger(1)}>
             Book a car or two-wheeler online for the dates you need, collect it from a branch or
             have it delivered, and pay by card, online or in cash at the branch.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="enter mt-8 flex flex-col gap-3 sm:flex-row" style={stagger(2)}>
             {status === 'signed-in' ? (
               <Button asChild>
                 <Link to="/app">Go to my account</Link>
@@ -88,7 +90,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section aria-labelledby="system-status" className="lg:py-8">
+        <section aria-labelledby="system-status" className="enter lg:py-8" style={stagger(3)}>
           <h2 id="system-status" className="text-section font-semibold">
             System status
           </h2>
@@ -124,8 +126,9 @@ export function HomePage() {
 
       <section aria-label="Help topics" className="border-t pt-10">
         <ul className="grid gap-x-12 gap-y-8 md:grid-cols-3">
-          {HELP_TOPICS.map((topic) => (
+          {HELP_TOPICS.map((topic, index) => (
             <li key={topic.id}>
+              <Reveal style={stagger(index, 90)}>
               <Link
                 to={`/help#${topic.id}`}
                 className="group block rounded-sm"
@@ -136,6 +139,7 @@ export function HomePage() {
                 </span>
                 <span className="mt-2 block text-sm text-muted-foreground">{topic.body}</span>
               </Link>
+              </Reveal>
             </li>
           ))}
         </ul>

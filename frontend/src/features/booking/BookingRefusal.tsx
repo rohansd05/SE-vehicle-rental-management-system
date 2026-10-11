@@ -112,16 +112,16 @@ export function BookingRefusal({
       tabIndex={-1}
       role="alert"
       data-code={code}
-      className="grid gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 outline-none"
+      className="enter grid gap-4 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-4 outline-none"
     >
-      <div className="flex items-start gap-2">
-        <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+      <div className="flex items-start gap-2.5">
+        <CircleAlert className="mt-[3px] size-4 shrink-0 text-status-unsafe" aria-hidden="true" />
         <div>
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-muted-foreground">{message}</p>
+          <p className="font-heading text-section font-semibold text-foreground">{title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{message}</p>
         </div>
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2 pl-[26px]">{actions}</div> : null}
     </div>
   )
 }

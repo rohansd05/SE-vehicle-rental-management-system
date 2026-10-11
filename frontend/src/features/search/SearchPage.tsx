@@ -7,7 +7,6 @@ import { ApiError } from '@/api/client'
 import { Field, FormAlert, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { formatDateTime } from '@/lib/dates'
@@ -137,61 +136,59 @@ export function SearchPage() {
       ) : branches.data.length === 0 ? (
         <EmptyState title="No branches yet" description="There are no pickup branches to search." />
       ) : (
-        <Card className="mb-6">
-          <CardContent>
-            <form onSubmit={onSubmit} noValidate className="grid gap-5" aria-label="Search vehicles">
-              <FormAlert message={formError} />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field id="search-branch" label="Pickup branch" error={errorFor('branch')}>
-                  <NativeSelect id="search-branch" {...fieldProps('branch')} {...register('branch')}>
-                    <option value="">Choose a branch</option>
-                    {branches.data.map((branch) => (
-                      <option key={branch.branch_id} value={branch.branch_id}>
-                        {branch.branch_name}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Field id="search-category" label="Vehicle category" error={errorFor('category')}>
-                  <NativeSelect id="search-category" {...fieldProps('category')} {...register('category')}>
-                    <option value="">Any category</option>
-                    {categories.data.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name} ({category.vehicle_type})
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Field id="search-pickup_datetime" label="Pickup" error={errorFor('pickup_datetime')}>
-                  <Input
-                    id="search-pickup_datetime"
-                    type="datetime-local"
-                    {...fieldProps('pickup_datetime')}
-                    {...register('pickup_datetime')}
-                  />
-                </Field>
-                <Field
+        <div className="-mx-4 mb-8 border-y bg-canvas-sunken px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <form onSubmit={onSubmit} noValidate className="grid gap-5" aria-label="Search vehicles">
+            <FormAlert message={formError} />
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1fr_auto] lg:items-start">
+              <Field id="search-branch" label="Pickup branch" error={errorFor('branch')}>
+                <NativeSelect id="search-branch" {...fieldProps('branch')} {...register('branch')}>
+                  <option value="">Choose a branch</option>
+                  {branches.data.map((branch) => (
+                    <option key={branch.branch_id} value={branch.branch_id}>
+                      {branch.branch_name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field id="search-category" label="Vehicle category" error={errorFor('category')}>
+                <NativeSelect id="search-category" {...fieldProps('category')} {...register('category')}>
+                  <option value="">Any category</option>
+                  {categories.data.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name} ({category.vehicle_type})
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field id="search-pickup_datetime" label="Pickup" error={errorFor('pickup_datetime')}>
+                <Input
+                  id="search-pickup_datetime"
+                  type="datetime-local"
+                  {...fieldProps('pickup_datetime')}
+                  {...register('pickup_datetime')}
+                />
+              </Field>
+              <Field
+                id="search-return_datetime"
+                label="Return"
+                hint="A rental lasts from 4 hours to 30 days."
+                error={errorFor('return_datetime')}
+              >
+                <Input
                   id="search-return_datetime"
-                  label="Return"
-                  hint="A rental lasts from 4 hours to 30 days."
-                  error={errorFor('return_datetime')}
-                >
-                  <Input
-                    id="search-return_datetime"
-                    type="datetime-local"
-                    {...fieldProps('return_datetime', true)}
-                    {...register('return_datetime')}
-                  />
-                </Field>
-              </div>
-              <div>
+                  type="datetime-local"
+                  {...fieldProps('return_datetime', true)}
+                  {...register('return_datetime')}
+                />
+              </Field>
+              <div className="lg:pt-[26px]">
                 <SubmitButton busy={results.isFetching} busyLabel="Searching…">
                   Search
                 </SubmitButton>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </form>
+        </div>
       )}
 
       {!query || rejected ? null : results.isPending ? (
@@ -204,8 +201,8 @@ export function SearchPage() {
         />
       ) : (
         <section aria-labelledby="results-heading" className="grid gap-4">
-          <div>
-            <h2 id="results-heading" className="text-lg font-semibold">
+          <div className="enter">
+            <h2 id="results-heading" className="text-section font-semibold">
               Available vehicles
             </h2>
             <p role="status" className="text-sm text-muted-foreground">
