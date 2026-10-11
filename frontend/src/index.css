@@ -3,33 +3,44 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Design tokens (docs/design/ui-brief.md, sections 3 to 5). Every colour in
- * the app comes from here; components never use a hex value or a Tailwind
- * palette colour. The app is light only (the brief, section 0).
+ * Design tokens (docs/design/ui-brief.md, binding decisions B1 to B8 and
+ * sections 3 to 5). Every colour, size and motion value in the app comes
+ * from here; components never use a hex value, a Tailwind palette colour or
+ * a one-off size. The app is light only (the brief, section 0).
  */
 
 @theme inline {
-    /* Fonts (D22): self-hosted Fontsource packages, imported in main.tsx.
+    /* Fonts (D22, B2): self-hosted Fontsource packages, imported in main.tsx.
        The system stack follows each one so text renders before they load. */
+    --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
     --font-heading: 'Archivo Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
     --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
 
-    /* Type scale (brief 4.1). text-sm is the 14 px body size. */
-    --text-display: 2rem;
-    --text-display--line-height: 2.5rem;
-    --text-title: 1.5rem;
-    --text-title--line-height: 2rem;
-    --text-section: 1.0625rem;
-    --text-section--line-height: 1.5rem;
-    --text-lead: 1rem;
-    --text-lead--line-height: 1.625rem;
-    --text-sm: 0.875rem;
-    --text-sm--line-height: 1.375rem;
-    --text-small: 0.8125rem;
-    --text-small--line-height: 1.25rem;
-    --text-xs: 0.75rem;
-    --text-xs--line-height: 1rem;
+    /* Type scale (B3). `text-sm` is the 16 px body token: the codebase uses it
+       as its default text class. `text-small` is the 14 px step below it. */
+    --text-display: clamp(2.25rem, 1.7rem + 2.3vw, 3.75rem);
+    --text-display--line-height: 1.05;
+    --text-title: 2.125rem;
+    --text-title--line-height: 2.625rem;
+    --text-section: 1.375rem;
+    --text-section--line-height: 1.875rem;
+    --text-subsection: 1.125rem;
+    --text-subsection--line-height: 1.625rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.625rem;
+    --text-lead: 1.1875rem;
+    --text-lead--line-height: 1.875rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.625rem;
+    --text-sm: 1rem;
+    --text-sm--line-height: 1.625rem;
+    --text-num: 0.9375rem;
+    --text-num--line-height: 1.375rem;
+    --text-small: 0.875rem;
+    --text-small--line-height: 1.375rem;
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: 1.125rem;
 
     /* Palette (brief 3.1 to 3.3). */
     --color-canvas: var(--canvas);
@@ -103,10 +114,10 @@
     /* Elevation: overlays only (dialogs, sheets, menus, popovers). */
     --shadow-overlay: 0 8px 24px rgb(27 28 29 / 0.12), 0 1px 2px rgb(27 28 29 / 0.08);
 
-    /* Motion tokens (brief 5): transform and opacity only, ease-out in, ease-in out. */
+    /* Motion tokens (B5): transform and opacity only, ease-out in, ease-in out. */
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-    --animate-rise: rise 400ms var(--ease-out) both;
+    --animate-rise: rise 350ms var(--ease-out) both;
     --animate-fade: fade 200ms var(--ease-out) both;
 
     @keyframes rise {
@@ -120,6 +131,13 @@
     @keyframes flash-out {
         from { opacity: 1; }
         to { opacity: 0; }
+    }
+    @keyframes draw {
+        to { stroke-dashoffset: 0; }
+    }
+    @keyframes focus-in {
+        from { outline-offset: 0px; }
+        to { outline-offset: 2px; }
     }
 }
 
@@ -200,32 +218,93 @@
     --sidebar-ring: var(--primary);
 }
 
+/* ---- Type utilities (B2, B3) ---- */
+
+/* Public display face: the home hero, the auth-panel heading, main public section titles. */
+@utility display {
+    font-family: var(--font-display);
+    font-weight: 560;
+    font-optical-sizing: auto;
+    font-variation-settings: 'SOFT' 30;
+    letter-spacing: -0.01em;
+    font-stretch: 100%;
+}
+
 /* Money, dates, IDs and number plates: the mono face with tabular figures. */
 @utility num {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
+    font-size: var(--text-num);
+    line-height: var(--text-num--line-height);
+}
+@utility num-strong {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-weight: 500;
+}
+@utility num-lg {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 500;
 }
 
+/* ---- Motion utilities (B5 to B7) ---- */
+
 /*
- * Entry motion. `enter` rises an element into place once, when it mounts;
- * `--enter-delay` staggers siblings (lib/motion.ts). `reveal` waits until the
- * element scrolls into view (components/reveal.tsx). Under reduced motion both
- * become a short opacity fade, so pages still look finished (brief 5).
+ * `stage`: orchestrated page entry. Each direct child rises into place, the
+ * header first, then the sections, in at most four steps 50 ms apart. It
+ * runs when the children mount (once per navigation), never on a refetch.
  */
+@utility stage {
+    & > * {
+        animation: rise 350ms var(--ease-out) both;
+    }
+    & > *:nth-child(2) {
+        animation-delay: 50ms;
+    }
+    & > *:nth-child(3) {
+        animation-delay: 100ms;
+    }
+    & > *:nth-child(n + 4) {
+        animation-delay: 150ms;
+    }
+}
+
+/* `enter`: one element rises on mount; `--enter-delay` staggers siblings (lib/motion.ts). */
 @utility enter {
     animation: rise 400ms var(--ease-out) both;
     animation-delay: var(--enter-delay, 0ms);
 }
+
+/*
+ * `reveal`: rises once as it scrolls into view. Scroll-driven where the
+ * browser supports it; otherwise components/reveal.tsx sets data-in from an
+ * IntersectionObserver. Without either, the content is simply shown.
+ */
 @utility reveal {
-    opacity: 0;
     &[data-in] {
-        opacity: 1;
         animation: rise 400ms var(--ease-out) both;
         animation-delay: var(--enter-delay, 0ms);
     }
+    @supports (animation-timeline: view()) {
+        &,
+        &[data-in] {
+            animation: rise linear both;
+            animation-timeline: view();
+            animation-range: entry 0% entry 35%;
+            animation-delay: 0s;
+        }
+    }
 }
-/* A brief highlight behind a value that has just changed (opacity only). */
+
+/* A brief primary-tint highlight behind a value that has just changed (opacity only, gone within 1.2 s). */
 @utility flash {
     position: relative;
     isolation: isolate;
@@ -240,6 +319,15 @@
     }
 }
 
+/* The confirmation check icon draws itself once. */
+@utility draw {
+    & svg * {
+        stroke-dasharray: 80;
+        stroke-dashoffset: 80;
+        animation: draw 700ms var(--ease-out) 120ms forwards;
+    }
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -247,19 +335,26 @@
     html {
         @apply bg-background font-sans text-foreground antialiased;
         text-rendering: optimizeLegibility;
+        scroll-behavior: smooth;
     }
     body {
         @apply bg-background text-sm text-foreground;
     }
+
+    /* App headings (B2): Archivo wide, heavy, slightly tight. */
     h1, h2, h3, h4 {
         @apply font-heading;
-        letter-spacing: -0.005em;
+        font-weight: 650;
+        font-stretch: 118%;
+        letter-spacing: -0.015em;
+        text-wrap: balance;
     }
 
-    /* One focus style everywhere (brief 7): 2 px primary outline, 2 px offset. */
+    /* One focus style everywhere (brief 7): 2 px primary outline that settles 2 px out. */
     :focus-visible {
         outline: 2px solid var(--ring);
         outline-offset: 2px;
+        animation: focus-in 150ms var(--ease-out);
     }
 
     /* One icon stroke width everywhere (brief 7). CSS overrides lucide's attribute. */
@@ -278,7 +373,7 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* Native radios and checkboxes take the primary colour. */
+    /* Native radios and checkboxes take the primary colour, at a size that matches 16 px text. */
     input[type='radio'],
     input[type='checkbox'] {
         accent-color: var(--primary);
@@ -298,12 +393,8 @@
         color: var(--ink);
     }
 
-    html {
-        scroll-behavior: smooth;
-    }
-
-    /* Respect reduced motion (brief 5): no movement or transitions, and the
-       entry animations become short opacity fades instead of being dropped. */
+    /* Reduced motion (B7): no movement, scale, slide or scroll reveal; the
+       entry animations become short opacity fades so pages still look finished. */
     @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -314,8 +405,15 @@
             scroll-behavior: auto !important;
         }
         .enter,
-        .reveal[data-in] {
+        .reveal,
+        .reveal[data-in],
+        .stage > * {
             animation: fade 150ms var(--ease-out) both !important;
+            animation-timeline: auto !important;
+        }
+        .draw svg * {
+            animation: none !important;
+            stroke-dashoffset: 0 !important;
         }
     }
 }

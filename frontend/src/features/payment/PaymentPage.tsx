@@ -54,7 +54,7 @@ function HoldTimer({ booking }: { booking: BookingDetail }) {
       <Clock className="mt-[3px] size-4 shrink-0 text-signal-ink" aria-hidden="true" />
       {seconds > 0 ? (
         <span>
-          The vehicle is held for you for <strong className="num">{label}</strong> more.
+          The vehicle is held for you for <strong className="num-strong">{label}</strong> more.
         </span>
       ) : (
         <span>Your hold has run out. Paying now may ask you to hold the vehicle again.</span>
@@ -108,13 +108,13 @@ function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (con
     <form onSubmit={onSubmit} noValidate className="grid gap-6" aria-label="Pay for this booking">
       <BookingRefusal error={refusal ?? rehold.error} onHoldAgain={() => rehold.mutate()} holding={rehold.isPending} />
       <fieldset className="grid gap-1">
-        <legend className="font-heading text-section font-semibold">Payment method (sandbox)</legend>
+        <legend className="font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em]">Payment method (sandbox)</legend>
         <p className="mb-2 text-small text-muted-foreground">
           This is the test mode: no real money moves and no card details are entered here.
         </p>
         <div className="divide-y border-y">
           {TEST_TOKENS.map((option) => (
-            <label key={option.value} className="flex min-h-12 items-center gap-3 text-sm">
+            <label key={option.value} className="flex min-h-14 items-center gap-3 text-sm">
               <input
                 type="radio"
                 name="payment_token"
@@ -176,14 +176,14 @@ export function PaymentPage() {
   }
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader title="Pay for your booking" />
       {booking.isPending ? (
         <LoadingState label="Loading your booking…" />
       ) : booking.isError ? (
         <ErrorState title="We couldn’t load this booking" error={booking.error} onRetry={() => void booking.refetch()} />
       ) : (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-20">
           <div className="max-w-2xl">
             {booking.data.status === 'Draft' ? (
               <BookingRefusal
@@ -210,7 +210,7 @@ export function PaymentPage() {
           <StickyRail>
             <div className="grid gap-5 lg:pt-1">
               <div>
-                <h2 className="text-section font-semibold">
+                <h2 className="text-section">
                   {booking.data.vehicle.brand} {booking.data.vehicle.model}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">

@@ -348,11 +348,12 @@ below.
 
 **Decision.** CO-7 is amended further: fonts under the SIL Open Font
 Licence 1.1 are permitted when used unmodified and self-hosted through
-Fontsource npm packages. The frontend uses three:
+Fontsource npm packages. The frontend uses four:
 
 | Package | Font | Licence | Role |
 |---|---|---|---|
-| `@fontsource-variable/archivo` | Archivo | OFL-1.1 | Headings |
+| `@fontsource-variable/fraunces` | Fraunces | OFL-1.1 | Public display headlines only (home hero, auth panel heading, main public section titles); added 11 Oct 2026 under binding decision B2 |
+| `@fontsource-variable/archivo` | Archivo | OFL-1.1 | App headings (page and section titles) |
 | `@fontsource-variable/ibm-plex-sans` | IBM Plex Sans | OFL-1.1 | Body and UI |
 | `@fontsource/ibm-plex-mono` | IBM Plex Mono | OFL-1.1 | Numbers, prices, dates, IDs, plates |
 
@@ -364,8 +365,9 @@ Extended subset; every subset is declared with a `unicode-range`, so the
 browser downloads only the subsets a page actually uses (Latin and Latin
 Extended in practice).
 
-**Rationale.** The UI redesign (`docs/design/ui-brief.md`) needs a heading
-face, a legible body face and a tabular face for money and IDs; the system
+**Rationale.** The UI redesign (`docs/design/ui-brief.md`) needs a public
+display face, a heading face, a legible body face and a tabular face for
+money and IDs; the system
 font stack gives none of these consistently across Windows, Android and iOS.
 The OFL lets a font be used, bundled and redistributed with software
 freely; its conditions (keep the licence and copyright notice, do not sell
@@ -515,6 +517,7 @@ React is pinned to 18 because current Vite templates default to React 19
 | cn | 0.4.0 | MIT | OK (shadcn/ui; shadcn's replacement for clsx + tailwind-merge) |
 | tw-animate-css | 1.4.0 | MIT | OK (shadcn/ui; CSS only) |
 | lucide-react | 1.52.0 | ISC | OK under D10 (shadcn/ui's icon set) |
+| @fontsource-variable/fraunces | 5.3.0 | OFL-1.1 | OK under D22 (public display font, self-hosted) |
 | @fontsource-variable/archivo | 5.3.0 | OFL-1.1 | OK under D22 (heading font, self-hosted) |
 | @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | OK under D22 (body and UI font, self-hosted) |
 | @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | OK under D22 (numbers, prices, dates and IDs, self-hosted) |
@@ -538,7 +541,8 @@ React is pinned to 18 because current Vite templates default to React 19
 
 Removed: `@fontsource-variable/geist` (added by `shadcn init`). Geist stays
 removed. SIL OFL 1.1 fonts are now permitted under D22, and the UI uses
-Archivo, IBM Plex Sans and IBM Plex Mono (see "Frontend runtime" above).
+Fraunces, Archivo, IBM Plex Sans and IBM Plex Mono (see "Frontend runtime"
+above).
 
 ### Frontend transitive dependencies outside MIT / Apache / BSD
 

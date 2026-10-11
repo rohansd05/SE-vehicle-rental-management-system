@@ -35,7 +35,7 @@ export function ProfilePage() {
   const profile = useQuery({ queryKey: PROFILE_KEY, queryFn: getProfile })
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader title="My profile" description="Your details, mobile number and password." />
       {profile.isPending ? (
         <LoadingState label="Loading your profile…" />
@@ -44,8 +44,12 @@ export function ProfilePage() {
       ) : (
         <div className="grid gap-8">
           <DetailsCard profile={profile.data} />
-          <MobileCard profile={profile.data} />
-          <PasswordCard />
+          <div className="reveal">
+            <MobileCard profile={profile.data} />
+          </div>
+          <div className="reveal">
+            <PasswordCard />
+          </div>
         </div>
       )}
     </section>
@@ -85,7 +89,7 @@ function DetailsCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
       <CardHeader className="content-start">
         <CardTitle>
           <h2>Your details</h2>
@@ -213,7 +217,7 @@ function MobileCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
       <CardHeader className="content-start">
         <CardTitle>
           <h2>Mobile number</h2>
@@ -337,7 +341,7 @@ function PasswordCard() {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
       <CardHeader className="content-start">
         <CardTitle>
           <h2>Password</h2>

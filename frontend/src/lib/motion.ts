@@ -5,10 +5,10 @@
 
 import type { CSSProperties } from 'react'
 
-const STEP_MS = 60
-const MAX_STEPS = 8
+const STEP_MS = 40
+const MAX_STEPS = 10
 
-/** Inline style that staggers the `enter`/`reveal` utilities by `index` steps. */
+/** Inline style that staggers the `enter`/`reveal` utilities by `index` steps (first 10 rows only, B5). */
 export function stagger(index: number, stepMs = STEP_MS): CSSProperties {
   const steps = Math.min(index, MAX_STEPS)
   return { ['--enter-delay' as string]: `${steps * stepMs}ms` } as CSSProperties

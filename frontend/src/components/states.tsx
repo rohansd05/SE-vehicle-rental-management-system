@@ -29,7 +29,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex flex-col items-start gap-3 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-3"
+      className="enter flex flex-col items-start gap-3 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-3"
     >
       <div className="flex items-start gap-2">
         <CircleAlert className="mt-[3px] size-4 shrink-0 text-status-unsafe" aria-hidden="true" />
@@ -57,8 +57,8 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="flex items-start gap-3 border-y py-8">
-      <Inbox className="mt-0.5 size-5 shrink-0 text-ink-subtle" aria-hidden="true" />
+    <div className="enter flex items-start gap-3 border-y py-8">
+      <Inbox className="mt-1 size-5 shrink-0 text-ink-subtle" aria-hidden="true" />
       <div className="flex min-w-0 flex-col items-start gap-1">
         <p className="font-medium text-foreground">{title}</p>
         {description ? <p className="max-w-prose text-sm text-muted-foreground">{description}</p> : null}

@@ -27,7 +27,7 @@ export function BookingHistoryPage() {
   })
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader
         title="My bookings"
         description="Every booking you have made, the most recent pickup first."
@@ -74,8 +74,8 @@ export function BookingHistoryPage() {
             {bookings.data.results.map((booking, index) => (
               <li
                 key={booking.id}
-                className="enter grid gap-x-8 gap-y-2 border-b py-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_8rem_9rem] lg:items-center"
-                style={stagger(index, 45)}
+                className="enter grid gap-x-8 gap-y-2 border-b py-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,0.7fr)_9rem_10rem] lg:items-center xl:gap-x-12"
+                style={stagger(index)}
               >
                 <div className="min-w-0">
                   <Link to={`/app/bookings/${booking.id}`} className="font-medium underline-offset-4 hover:text-primary hover:underline">
@@ -83,11 +83,11 @@ export function BookingHistoryPage() {
                     {booking.booking_reference ? ` · ${booking.booking_reference}` : ''}
                   </Link>
                 </div>
-                <p className="num text-small text-muted-foreground">
+                <p className="num text-muted-foreground">
                   {formatDateTime(booking.pickup_datetime)} to {formatDateTime(booking.return_datetime)}
                 </p>
                 <p className="text-sm text-muted-foreground">{booking.pickup_branch}</p>
-                <p className="num text-sm lg:text-right">{formatCurrency(booking.total_amount, currency)}</p>
+                <p className="num-strong lg:text-right">{formatCurrency(booking.total_amount, currency)}</p>
                 <div className="lg:justify-self-end">
                   <BookingStatusBadge status={booking.status} />
                 </div>

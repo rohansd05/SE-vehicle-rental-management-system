@@ -63,9 +63,9 @@ export function HomePage() {
 
   return (
     <div className="grid gap-16">
-      <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-24">
+      <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-24 xl:gap-32">
         <section className="lg:py-8">
-          <h1 className="enter max-w-[16ch] text-display font-semibold break-words [font-stretch:108%] sm:text-[2.75rem] sm:leading-[3.25rem]">
+          <h1 className="enter display max-w-[16ch] text-display break-words">
             {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
           </h1>
           <p className="enter mt-5 max-w-[52ch] text-lead text-muted-foreground" style={stagger(1)}>
@@ -91,7 +91,7 @@ export function HomePage() {
         </section>
 
         <section aria-labelledby="system-status" className="enter lg:py-8" style={stagger(3)}>
-          <h2 id="system-status" className="text-section font-semibold">
+          <h2 id="system-status" className="display text-section">
             System status
           </h2>
           <p className="text-small text-muted-foreground">{PRODUCT_NAME}</p>
@@ -113,7 +113,7 @@ export function HomePage() {
             </Row>
           </dl>
           <Button
-            className="mt-4"
+            className="mt-5"
             variant="outline"
             size="sm"
             onClick={() => health.refetch()}
@@ -133,7 +133,7 @@ export function HomePage() {
                 to={`/help#${topic.id}`}
                 className="group block rounded-sm"
               >
-                <span className="flex items-center gap-1.5 text-section font-semibold group-hover:text-primary">
+                <span className="display flex items-center gap-1.5 text-section group-hover:text-primary">
                   {topic.title}
                   <ChevronRight className="size-4 text-ink-subtle group-hover:text-primary" aria-hidden="true" />
                 </span>

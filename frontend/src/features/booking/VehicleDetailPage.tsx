@@ -31,7 +31,7 @@ import { PriceSummary, TermsList } from './PriceSummary'
 const BOOKING_FIELDS = ['terms_accepted', 'safety_notice_acknowledged', 'add_ons', 'discount_code']
 
 /** Main column and right rail (docs/design/ui-brief.md, 6.6). */
-const DETAIL_GRID = 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 xl:grid-cols-[minmax(0,1fr)_22rem]'
+const DETAIL_GRID = 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-20'
 
 function readPeriod(params: URLSearchParams): Period | null {
   const pickup = params.get('pickup_datetime')
@@ -73,7 +73,7 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
         {' · '}
         <span>{vehicle.vehicle_type}</span>
       </p>
-      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[10rem_minmax(0,1fr)]">
+      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
         <dt className="text-muted-foreground">Specification</dt>
         <dd>{spec.join(' · ')}</dd>
         <dt className="text-muted-foreground">Pickup branch</dt>
@@ -110,8 +110,8 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
 function Policies({ vehicle }: { vehicle: VehicleDetail }) {
   if (!vehicle.terms) return null
   return (
-    <section aria-labelledby="policies-heading" className="grid gap-3 border-t pt-6">
-      <h2 id="policies-heading" className="text-section font-semibold">
+    <section aria-labelledby="policies-heading" className="reveal grid gap-3 border-t pt-6">
+      <h2 id="policies-heading" className="text-section">
         Policies
       </h2>
       <TermsList terms={vehicle.terms} />
@@ -132,7 +132,7 @@ function AddOnPicker({
   if (!addOns.length) return null
   return (
     <fieldset className="grid gap-1">
-      <legend className="mb-2 font-heading text-section font-semibold">Add-ons, charged per day</legend>
+      <legend className="mb-2 font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em]">Add-ons, charged per day</legend>
       <div className="divide-y border-y">
         {addOns.map((addOn) => {
           const id = `addon-${addOn.id}`
@@ -254,7 +254,7 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
         <FormAlert message={formError} />
         {children}
 
-        <div className="grid gap-2 border-t pt-6">
+        <div className="reveal grid gap-2 border-t pt-6">
           {addOns.isError ? (
             <p className="text-sm text-muted-foreground">Add-ons could not be loaded; you can book without them.</p>
           ) : (
@@ -301,8 +301,8 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
         </div>
 
         {quote.data ? (
-          <section aria-labelledby="terms-heading" className="grid gap-3 border-t pt-6">
-            <h3 id="terms-heading" className="text-section font-semibold">
+          <section aria-labelledby="terms-heading" className="reveal grid gap-3 border-t pt-6">
+            <h3 id="terms-heading" className="text-subsection">
               Rental terms
             </h3>
             <TermsList terms={quote.data.terms} />
@@ -360,7 +360,7 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
       <StickyRail>
         <div className="grid gap-5 lg:pt-1">
           <div>
-            <h2 className="text-section font-semibold">Book this vehicle</h2>
+            <h2 className="text-section">Book this vehicle</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               <span className="num">{formatDateTime(period.pickup_datetime)}</span> to{' '}
               <span className="num">{formatDateTime(period.return_datetime)}</span>, collected at{' '}
@@ -411,8 +411,8 @@ export function VehicleDetailPage() {
   const title = vehicle.data ? `${vehicle.data.brand} ${vehicle.data.model} (${vehicle.data.year})` : 'Vehicle'
 
   return (
-    <section>
-      <Button asChild variant="ghost" size="sm" className="mb-2 -ml-3">
+    <section className="stage">
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-3">
         <Link to={period ? `/app/search?${new URLSearchParams({ ...period, branch: String(vehicle.data?.home_branch_id ?? '') })}` : '/app/search'}>
           <ArrowLeft aria-hidden="true" />
           Back to search

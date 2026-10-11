@@ -116,7 +116,7 @@ export function SearchPage() {
   })
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader
         title="Find a vehicle"
         description="Choose a pickup branch and your rental period. Only vehicles free for the whole period are shown."
@@ -139,7 +139,7 @@ export function SearchPage() {
         <div className="-mx-4 mb-8 border-y bg-canvas-sunken px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <form onSubmit={onSubmit} noValidate className="grid gap-5" aria-label="Search vehicles">
             <FormAlert message={formError} />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1fr_auto] lg:items-start">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_1fr_auto] xl:items-start">
               <Field id="search-branch" label="Pickup branch" error={errorFor('branch')}>
                 <NativeSelect id="search-branch" {...fieldProps('branch')} {...register('branch')}>
                   <option value="">Choose a branch</option>
@@ -181,7 +181,7 @@ export function SearchPage() {
                   {...register('return_datetime')}
                 />
               </Field>
-              <div className="lg:pt-[26px]">
+              <div className="xl:pt-7">
                 <SubmitButton busy={results.isFetching} busyLabel="Searching…">
                   Search
                 </SubmitButton>
@@ -202,7 +202,7 @@ export function SearchPage() {
       ) : (
         <section aria-labelledby="results-heading" className="grid gap-4">
           <div className="enter">
-            <h2 id="results-heading" className="text-section font-semibold">
+            <h2 id="results-heading" className="text-section">
               Available vehicles
             </h2>
             <p role="status" className="text-sm text-muted-foreground">

@@ -1,5 +1,5 @@
 import { CircleHelp, LogOut, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 
 import { ROLE_LABELS } from '@/api/types'
@@ -45,12 +45,20 @@ export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const mainRef = useRouteFocus<HTMLElement>()
   const roleLabel = ROLE_LABELS[user.role]
+  // The top bar shows its hairline edge once content has scrolled under it (B5).
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const brandLink = (className: string) => (
     <Link
       to="/app"
       className={cn(
-        'min-w-0 truncate rounded-sm font-heading font-semibold text-foreground [font-stretch:108%]',
+        'min-w-0 truncate rounded-sm font-heading font-semibold text-foreground [font-stretch:118%] [letter-spacing:-0.01em]',
         className,
       )}
     >
@@ -61,18 +69,21 @@ export function AppShell() {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <SkipLink />
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-6">
-          {brandLink('text-[15px]')}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17rem] flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-6">
+          {brandLink('text-subsection')}
         </div>
         <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto">
           <NavList items={items} />
         </nav>
       </aside>
 
-      <div className="md:pl-64">
-        <header className="sticky top-0 z-20 border-b bg-background">
-          <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
+      <div className="md:pl-[17rem]">
+        <header
+          data-scrolled={scrolled ? '' : undefined}
+          className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
+        >
+          <div className="flex h-16 items-center gap-2 px-3 sm:px-6 lg:px-8">
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon-lg" className="-ml-1 md:hidden" aria-label="Open menu">
@@ -92,7 +103,7 @@ export function AppShell() {
               </SheetContent>
             </Sheet>
 
-            {brandLink('text-[15px] md:hidden')}
+            {brandLink('text-subsection md:hidden')}
 
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
               <div className="flex items-center gap-2.5 pr-1 sm:pr-2">
@@ -101,13 +112,13 @@ export function AppShell() {
                 </span>
                 <span
                   aria-hidden="true"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-semibold text-primary"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-semibold text-primary"
                 >
                   {initials(user.name)}
                 </span>
                 <span aria-hidden="true" className="hidden text-right sm:block">
-                  <span className="block max-w-48 truncate text-sm leading-5 font-medium">{user.name}</span>
-                  <span className="block text-xs text-muted-foreground">{roleLabel}</span>
+                  <span className="block max-w-56 truncate text-sm leading-5 font-medium">{user.name}</span>
+                  <span className="block text-small leading-4 text-muted-foreground">{roleLabel}</span>
                 </span>
               </div>
               <Button asChild variant="ghost" className="px-2.5 sm:px-3">
@@ -130,9 +141,7 @@ export function AppShell() {
           tabIndex={-1}
           className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
         >
-          <div className="mx-auto w-full max-w-[80rem]">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>

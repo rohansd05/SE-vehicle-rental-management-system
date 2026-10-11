@@ -16,10 +16,10 @@ export function PublicLayout() {
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <SkipLink />
       <header className="border-b">
-        <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center gap-2 px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 w-full items-center gap-2 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
-            className="min-w-0 truncate rounded-sm font-heading text-[15px] font-semibold text-foreground [font-stretch:108%]"
+            className="min-w-0 truncate rounded-sm font-heading text-subsection font-semibold text-foreground [font-stretch:118%] [letter-spacing:-0.01em]"
           >
             {agency.name}
           </Link>
@@ -53,9 +53,7 @@ export function PublicLayout() {
         tabIndex={-1}
         className="flex-1 px-4 py-8 outline-none sm:px-6 lg:px-8 lg:py-10"
       >
-        <div className="mx-auto w-full max-w-[80rem]">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
     </div>
   )

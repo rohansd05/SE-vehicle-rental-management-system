@@ -7,7 +7,7 @@ import { WhereToGo } from '@/components/where-to-go'
 /** 403: signed in, but this page belongs to another role (SE-4). */
 export function ForbiddenPage() {
   return (
-    <section className="grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(16rem,1fr)] lg:gap-16">
+    <section className="stage grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(16rem,1fr)] lg:gap-16 xl:gap-24">
       <div>
         <p className="num mb-2 text-small text-muted-foreground">Error 403</p>
         <PageHeader

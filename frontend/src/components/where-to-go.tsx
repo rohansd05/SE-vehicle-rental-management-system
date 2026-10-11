@@ -23,7 +23,7 @@ export function WhereToGo() {
 
   return (
     <aside aria-labelledby="where-to-go" className="lg:border-l lg:pl-10">
-      <h2 id="where-to-go" className="text-section font-semibold">
+      <h2 id="where-to-go" className="text-section">
         Where to go
       </h2>
       <ul className="mt-2 divide-y">
@@ -31,7 +31,7 @@ export function WhereToGo() {
           <li key={item.to}>
             <Link
               to={item.to}
-              className="group flex items-center gap-3 py-3 text-sm hover:text-primary"
+              className="group flex items-center gap-3 py-3.5 text-sm transition-colors hover:text-primary"
             >
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">{item.label}</span>

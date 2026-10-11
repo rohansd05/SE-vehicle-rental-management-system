@@ -79,7 +79,7 @@ function Explanation({ licence }: { licence: Licence }) {
 /** The customer's licence at a glance (Appendix A licence status). */
 export function LicenceStatusCard({ licence }: { licence: Licence }) {
   return (
-    <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
       <CardHeader className="content-start gap-3">
         <CardTitle>
           <h2>Licence status</h2>

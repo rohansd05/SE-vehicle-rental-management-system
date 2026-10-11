@@ -39,7 +39,7 @@ export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quot
   return (
     <div className="grid gap-3">
       <table className="w-full text-sm">
-        <caption className="mb-2 text-left font-heading text-section font-semibold text-foreground">
+        <caption className="mb-2 text-left font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em] text-foreground">
           {caption}
         </caption>
         <tbody className="[&_td]:py-2 [&_td:last-child]:num [&_td:last-child]:pl-4 [&_td:last-child]:text-right [&_td:last-child]:whitespace-nowrap [&_tr]:border-b [&_tr]:border-hairline">
@@ -67,9 +67,9 @@ export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quot
             <td>Tax at {Number(quote.tax_rate_percent)}%</td>
             <td>{money(quote.tax_amount)}</td>
           </tr>
-          <tr className="border-b-0! font-semibold [&_td]:pt-3 [&_td]:pb-1">
-            <td>Total payable</td>
-            <td className="text-base">
+          <tr className="border-b-0! font-semibold [&_td]:pt-3 [&_td]:pb-1 [&_td:last-child]:num-lg!">
+            <td className="align-baseline">Total payable</td>
+            <td>
               <span key={changes} className={changes > 0 ? 'flash' : undefined}>
                 {money(quote.total_payable)}
               </span>
@@ -78,7 +78,7 @@ export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quot
         </tbody>
       </table>
       <p className="border-t pt-3 text-sm text-muted-foreground">
-        Refundable security deposit <strong className="num text-foreground">{money(quote.security_deposit)}</strong>, held separately
+        Refundable security deposit <strong className="num-strong text-foreground">{money(quote.security_deposit)}</strong>, held separately
         and not part of the total.
       </p>
       {quote.free_helmets_per_rider > 0 ? (

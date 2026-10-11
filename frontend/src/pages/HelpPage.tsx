@@ -14,7 +14,7 @@ export function HelpPage() {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
   }, [hash])
   return (
-    <section className="grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(16rem,1fr)] lg:gap-16">
+    <section className="stage grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(16rem,1fr)] lg:gap-16 xl:gap-24">
       <div>
         <PageHeader
           title="Help"
@@ -22,8 +22,8 @@ export function HelpPage() {
         />
         <div className="divide-y">
           {HELP_TOPICS.map((topic) => (
-            <div key={topic.id} id={topic.id} className="scroll-mt-20 py-5 first:pt-0">
-              <h2 className="text-section font-semibold">{topic.title}</h2>
+            <div key={topic.id} id={topic.id} className="reveal scroll-mt-24 py-6 first:pt-0">
+              <h2 className="display text-section">{topic.title}</h2>
               <p className="mt-1.5 max-w-[68ch] text-sm text-muted-foreground">{topic.body}</p>
             </div>
           ))}

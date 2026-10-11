@@ -117,7 +117,7 @@ export function BookingRefusal({
       <div className="flex items-start gap-2.5">
         <CircleAlert className="mt-[3px] size-4 shrink-0 text-status-unsafe" aria-hidden="true" />
         <div>
-          <p className="font-heading text-section font-semibold text-foreground">{title}</p>
+          <p className="font-heading text-subsection font-[650] [font-stretch:118%] [letter-spacing:-0.015em] text-foreground">{title}</p>
           <p className="mt-1 text-sm text-muted-foreground">{message}</p>
         </div>
       </div>

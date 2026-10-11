@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 import { PageHeader } from '@/components/page'
 import { useAgency } from '@/hooks/page'
-import { enter, stagger } from '@/lib/motion'
+import { stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 // The sign-in, registration and verification screens share one split
@@ -32,23 +32,23 @@ export function AuthLayout({
 }) {
   const agency = useAgency()
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,2fr)] lg:gap-16 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <div className={cn('w-full lg:py-4', wide ? 'max-w-[36rem]' : 'max-w-[26rem]')}>
+    <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,1fr)] lg:gap-16 xl:gap-24">
+      <div className={cn('stage w-full lg:py-4', wide ? 'max-w-[40rem]' : 'max-w-[28rem]')}>
         <PageHeader title={title} description={description} />
-        <div {...enter(1)}>{children}</div>
+        <div>{children}</div>
       </div>
       <aside
         aria-hidden="true"
-        className="enter hidden min-h-[36rem] flex-col justify-between rounded-xl bg-primary px-10 py-10 text-primary-foreground lg:flex lg:sticky lg:top-24 xl:px-14 xl:py-14"
+        className="enter hidden min-h-[36rem] flex-col justify-between rounded-xl border bg-canvas-sunken px-10 py-10 text-foreground lg:flex lg:sticky lg:top-24 xl:px-14 xl:py-14"
         style={stagger(2)}
       >
-        <p className="enter font-heading text-title font-semibold [font-stretch:108%]" style={stagger(4)}>
+        <p className="enter display text-display" style={stagger(4)}>
           {agency.name}
         </p>
-        <ul className="mt-16 grid gap-0 divide-y divide-primary-foreground/20">
+        <ul className="mt-16 grid gap-0 divide-y">
           {FACTS.map(({ icon: Icon, text }, index) => (
             <li key={text} className="enter flex items-start gap-4 py-5" style={stagger(5 + index)}>
-              <Icon className="mt-0.5 size-5 shrink-0 text-primary-foreground/80" />
+              <Icon className="mt-1 size-5 shrink-0 text-primary" />
               <span className="text-lead">{text}</span>
             </li>
           ))}

@@ -141,8 +141,8 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   clears the cookie. The frontend keeps the access token in memory only,
   never in localStorage or sessionStorage.
 - **D22 Fonts:** CO-7 amended: SIL OFL 1.1 fonts are permitted, unmodified and
-  self-hosted through Fontsource (Archivo, IBM Plex Sans, IBM Plex Mono); no CDN
-  or Google Fonts link. Geist stays removed.
+  self-hosted through Fontsource (Fraunces, Archivo, IBM Plex Sans, IBM Plex
+  Mono); no CDN or Google Fonts link. Geist stays removed.
 
 ## Team workflow (from 10 Oct 2026)
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.
@@ -163,3 +163,6 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   field name that's already used elsewhere in the codebase or docs —
   these are cross-referenced in the traceability matrix.
 - Never commit `.env`, credentials, or real payment gateway keys.
+
+## Frontend design
+- All frontend work follows docs/design/ui-brief.md, including the binding design decisions B1-B8.

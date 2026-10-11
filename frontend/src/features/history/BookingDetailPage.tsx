@@ -24,7 +24,7 @@ function Confirmation({ booking }: { booking: BookingDetail }) {
         <>
           <dt className="text-muted-foreground sm:pt-1">Pickup code</dt>
           <dd>
-            <span className="num block text-[1.75rem] leading-9 font-medium tracking-[0.25em] text-foreground">
+            <span className="num-lg block tracking-[0.25em] text-foreground">
               {booking.pickup_code}
             </span>
             <span className="block text-small text-muted-foreground">Show this code at the branch to collect the vehicle.</span>
@@ -63,8 +63,8 @@ export function BookingDetailPage() {
   })
 
   return (
-    <section>
-      <Button asChild variant="ghost" size="sm" className="mb-2 -ml-3">
+    <section className="stage">
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-3">
         <Link to="/app/bookings">
           <ArrowLeft aria-hidden="true" />
           My bookings
@@ -76,7 +76,7 @@ export function BookingDetailPage() {
       ) : booking.isError ? (
         <ErrorState title="We couldn’t load this booking" error={booking.error} onRetry={() => void booking.refetch()} />
       ) : (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-20">
           <div className="grid gap-8">
             {justConfirmed && booking.data.status === 'Confirmed' ? (
               <StatusMessage
@@ -86,7 +86,7 @@ export function BookingDetailPage() {
             ) : null}
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-section font-semibold">
+                <h2 className="text-section">
                   {booking.data.vehicle.brand} {booking.data.vehicle.model}
                 </h2>
                 <BookingStatusBadge status={booking.data.status} />
@@ -98,7 +98,7 @@ export function BookingDetailPage() {
               </p>
             </div>
             {booking.data.booking_reference ? (
-              <div className="border-t pt-6">
+              <div className="reveal border-t pt-6">
                 <Confirmation booking={booking.data} />
               </div>
             ) : null}
@@ -112,7 +112,7 @@ export function BookingDetailPage() {
               </div>
             ) : null}
             {booking.data.invoice_number ? (
-              <div className="grid gap-3 border-t pt-6">
+              <div className="reveal grid gap-3 border-t pt-6">
                 <FormAlert message={download.error instanceof Error ? download.error.message : null} />
                 <div>
                   <Button

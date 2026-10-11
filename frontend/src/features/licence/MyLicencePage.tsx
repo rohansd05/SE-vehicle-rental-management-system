@@ -29,7 +29,7 @@ export function MyLicencePage() {
   }
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader
         title="Driving licence"
         description="A verified licence that covers the vehicle’s category is needed before you can book."
@@ -47,7 +47,7 @@ export function MyLicencePage() {
           <StatusMessage message={notice} tone="success" />
           <LicenceStatusCard licence={licence.data} />
           {NEEDS_SUBMISSION.includes(licence.data.status) || updating ? (
-            <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+            <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
               <CardHeader className="content-start">
                 <CardTitle>
                   <h2>
@@ -67,7 +67,7 @@ export function MyLicencePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12 border-t pt-6">
+            <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12 border-t pt-6">
               <div className="hidden lg:block" aria-hidden="true" />
               <div className="flex flex-col items-start gap-2">
                 <Button

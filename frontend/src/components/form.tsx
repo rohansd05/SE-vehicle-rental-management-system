@@ -35,7 +35,7 @@ export function Field({
         </div>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} className="flex items-start gap-1.5 text-small font-medium text-destructive">
+        <p id={`${id}-error`} className="enter flex items-start gap-1.5 text-small font-medium text-destructive">
           <CircleAlert className="mt-[3px] size-3.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
@@ -55,9 +55,9 @@ export function FormAlert({ message }: { message: string | null | undefined }) {
       {message ? (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-3 py-2.5 text-sm text-foreground"
+          className="enter flex items-start gap-2.5 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-3 text-sm text-foreground"
         >
-          <CircleAlert className="mt-[3px] size-4 shrink-0 text-status-unsafe" aria-hidden="true" />
+          <CircleAlert className="mt-1 size-4.5 shrink-0 text-status-unsafe" aria-hidden="true" />
           <span>{message}</span>
         </div>
       ) : null}
@@ -79,13 +79,14 @@ export function StatusMessage({
       {message ? (
         <div
           className={cn(
-            'flex items-start gap-2 rounded-md border-l-2 px-3 py-2.5 text-sm text-foreground',
+            'enter flex items-start gap-2.5 rounded-md border-l-2 px-4 py-3 text-sm text-foreground',
+            tone === 'success' && 'draw',
             tone === 'success'
               ? 'border-l-status-available bg-status-available-tint [&>svg]:text-status-available'
               : 'border-l-primary bg-primary-tint [&>svg]:text-primary',
           )}
         >
-          <Icon className="mt-[3px] size-4 shrink-0" aria-hidden="true" />
+          <Icon className="mt-1 size-4.5 shrink-0" aria-hidden="true" />
           <span>{message}</span>
         </div>
       ) : null}

@@ -3,6 +3,80 @@
 Stage 1 of the frontend redesign (11 Oct 2026). This brief is the reference
 for Stages 2 to 6. It changes how the app looks, never what it does.
 
+## Binding design decisions (11 Oct 2026)
+
+These are final. They apply to every page restyled in Stages 2 to 4, to the
+pages of Stages 5 and 6, and to any page built later. Where an older section
+of this brief differs, these win.
+
+- **B1. Copy is frozen, presentation is free.** Never change a string; size,
+  weight, family, width, tracking, line height, colour, alignment, grouping
+  and placement may change freely.
+- **B2. Fonts with character, never cursive or script.** Public display face:
+  Fraunces (variable, `@fontsource-variable/fraunces` 5.3.0, SIL OFL 1.1),
+  only for the large public headlines: the home-page hero, the auth-panel
+  heading and the main public section titles; weight 500 to 650, moderate
+  optical size. App headings (page titles and section titles in the
+  signed-in app): Archivo on its width axis at 115 to 125 % and weight 650
+  to 700 with slightly tight tracking, for a wide automotive-signage feel.
+  Body and UI: IBM Plex Sans. Numbers, prices, dates, IDs and plates: IBM
+  Plex Mono with tabular figures.
+- **B3. Bigger type everywhere, as one token change in `index.css`** (no
+  per-page overrides): body 16/26, small 14/22, label 13/18; lead 19/30 on
+  public pages; page title 34/42, section 22/30, subsection 18/26; home
+  display about 60 px at 1440, fluid with `clamp()` down to about 36 px at
+  390; num 15, num-strong 16, num-lg ("Total payable") 28. Inputs, selects
+  and buttons use 16 px text; controls are 44 px high for page actions and
+  36 px in rows. After the change every table, description list, row grid
+  and the sidebar is re-checked at 1440, 1024, 768 and 390: no wrapping of
+  nav labels, no truncated values that were fully visible before, no
+  overflow.
+- **B4. No dead space.** At 1440 every page uses the full main area (no
+  content cap; the page gutter stays). List and table pages fill the width
+  with aligned columns. Detail and form pages use main column + right rail,
+  or the settings layout. Reading pages (help, 403, 404, placeholders) use
+  two columns. No page may leave a large empty right half or an empty lower
+  half at 1440 or 1024; it is filled with existing content arranged better
+  (rails, columns, the "Where to go" list, summaries), never with filler
+  text or new claims.
+- **B5. Rich, intentional motion in the default case** (no reduced-motion
+  preference), with CSS, `@keyframes` and tw-animate-css only. Orchestrated
+  page entry on every page: header, then first section, then the rest, in at
+  most 4 steps, 40 to 60 ms apart, 250 to 400 ms each, ease-out, a 6 to
+  12 px rise plus fade, once per navigation and never on refetch. Home and
+  auth pages: a richer one-time hero sequence (display headline, lead,
+  actions, then the status list or panel facts), up to about 700 ms in
+  total. Scroll-triggered reveals (fade and rise once as a section enters
+  the viewport) on public pages and on long signed-in pages: help, profile,
+  licence, vehicle detail sections, booking detail, job detail sections,
+  with CSS scroll-driven animations and an IntersectionObserver fallback,
+  and content visible if neither runs; not on tables or on form fields while
+  the user is typing. Lists and tables: staggered first-load entry, 30 to
+  50 ms per row, first 10 rows only. The sticky price rail docks with its
+  hairline; the top bar shows its edge once content scrolls under it;
+  anchor scrolling is smooth. Overlays: dialogs and popovers scale from 0.97
+  with a fade, the drawer slides, menus fade with a 4 to 6 px offset, exits
+  faster than entrances. Feedback: hover and press colour transitions, a
+  focus-ring transition, field errors fading and rising in, status pills
+  transitioning colour, a new or changed row or value getting a primary-tint
+  highlight that fades within about 1.2 s, and the confirmation check icon
+  drawing once. Only transform and opacity (plus colour); no bounce, no
+  loops on static elements, no parallax, no gradients, no blur.
+- **B6. Never animate the value of money, totals, timers or IDs:** no
+  count-up, no rolling digits. "Total payable" may get a brief highlight
+  when it changes, but the exact formatted value is always shown.
+- **B7. Reduced motion is kept.** Under `prefers-reduced-motion: reduce`
+  movement is replaced by short opacity fades (about 150 ms) so pages still
+  look finished; no rises, slides, scale or scroll reveals. Vitest runs in
+  jsdom, which runs no CSS animations, so tests never wait on one.
+- **B8.** Installed frontend, UI/UX, motion or accessibility skills may be
+  used, but these rules win; any skill advice that would change copy,
+  behaviour or tests is ignored.
+
+Implementation notes for B1 to B8 are in sections 4 (type), 5 (space and
+motion) and 6.0 (shell and content width) below, which were updated to
+match.
+
 ## 0. Ground rules
 
 - **Behaviour is frozen.** Every route, guard, form field, validation, API
@@ -264,7 +338,8 @@ Three roles, three families, all SIL OFL 1.1, self-hosted with Fontsource
 
 | Role | Family | Package | Why |
 |---|---|---|---|
-| Headings, brand, page titles | Archivo (variable, weight 500 to 700; width axis if the package ships it) | `@fontsource-variable/archivo` | A grotesque drawn for both print and screen, with a squared, engineered feel close to automotive signage. Slightly expanded width on page titles gives the "industrial" tone without a display face. |
+| Public display: home hero, auth-panel heading, main public section titles | Fraunces (variable: weight, optical size, softness) at weight 500 to 650 and a moderate optical size | `@fontsource-variable/fraunces` | A soft, slightly old-style serif with real character, never cursive. It carries the public pages' voice and is used nowhere in the signed-in app (B2). |
+| App headings: page titles, section and subsection titles, brand | Archivo (variable, weight 650 to 700, width axis at 118 %) with tracking −0.015 em | `@fontsource-variable/archivo` | A grotesque drawn for both print and screen, with a squared, engineered feel close to automotive signage; set wide it reads like signage (B2). |
 | Body and UI | IBM Plex Sans (variable) | `@fontsource-variable/ibm-plex-sans` | Very legible at 13 to 15 px, open apertures, distinct `Il1`, good for forms and dense tables. Pairs with Plex Mono by design. |
 | Numbers, prices, dates, IDs, plates | IBM Plex Mono 400 and 500 | `@fontsource/ibm-plex-mono` | Every figure is the same width, so columns of money and dates line up; plates like `MH02DM1006` and IDs read unambiguously. `font-variant-numeric: tabular-nums` is set as well. |
 
@@ -277,77 +352,96 @@ practice. Formatting logic (`formatCurrency`,
 
 ### 4.1 Type scale
 
-Base size 14 px in the app (dense operations UI), 16 px for lead text on
-public pages. Line heights on a 4 px grid.
+Base size 16 px everywhere (B3). Line heights on a 2 px grid. Every size is
+a token in `index.css`; pages use the token classes and never set a size of
+their own.
 
-| Token | Size / line | Family, weight | Use |
+| Token (class) | Size / line | Family, weight | Use |
 |---|---|---|---|
-| `display` | 32 / 40 | Archivo 650, width 108 % | Public home title only |
-| `title` | 24 / 32 | Archivo 600, width 104 % | Page title (`h1`) |
-| `section` | 17 / 24 | Archivo 600 | Section title (`h2`), dialog title |
-| `subsection` | 14 / 20 | Archivo 600 | `h3`, table caption, form group |
-| `lead` | 16 / 26 | Plex Sans 400 | Public intro, auth panel |
-| `body` | 14 / 22 | Plex Sans 400 | Default text |
-| `body-strong` | 14 / 22 | Plex Sans 500 | `dd` values, row titles |
-| `small` | 13 / 20 | Plex Sans 400 | Descriptions, hints, meta |
-| `small` (label) | 13 / 20 | Plex Sans 500 | Form labels |
-| `label` | 12 / 16 | Plex Sans 500 | Table headers, pill text, "Soon" |
-| `num` | 13 / 20 | Plex Mono 400 | IDs, dates, plates, amounts in rows |
-| `num-strong` | 14 / 22 | Plex Mono 500 | Totals |
-| `num-lg` | 20 / 28 | Plex Mono 500 | "Total payable" in the booking summary |
+| `display` (`.display`) | clamp(36, fluid, 60) / 1.05 | Fraunces 560 | Public home hero |
+| `title` (`text-title`) | 34 / 42 | Archivo 650, width 118 %, −0.015 em | Page title (`h1`) |
+| `section` (`text-section`) | 22 / 30 | Archivo 650, width 118 % | Section title (`h2`), dialog title, table caption |
+| `subsection` (`text-subsection`) | 18 / 26 | Archivo 650, width 118 % | `h3`, form group legends |
+| `lead` (`text-lead`) | 19 / 30 | Plex Sans 400 | Public intro, auth-panel facts |
+| `body` (`text-sm`, `text-base`) | 16 / 26 | Plex Sans 400 | Default text, inputs, buttons |
+| `body-strong` | 16 / 26 | Plex Sans 500 | `dd` values, row titles |
+| `small` (`text-small`) | 14 / 22 | Plex Sans 400 | Descriptions, hints, meta; form labels at 500 |
+| `label` (`text-xs`) | 13 / 18 | Plex Sans 500 | Table headers, pill text, "Soon", error codes |
+| `num` (`.num`) | 15 / 22 | Plex Mono 400, tabular | IDs, dates, plates, amounts in rows |
+| `num-strong` (`.num-strong`) | 16 / 26 | Plex Mono 500, tabular | Totals in rows |
+| `num-lg` (`.num-lg`) | 28 / 36 | Plex Mono 500, tabular | "Total payable", pickup code |
 
-Weights are limited to 400, 500 and 600 (Archivo up to 650). No italics, no
-all-caps.
+`text-sm` is the body token (16 px) because the codebase uses it as the
+default text class; `text-small` is the 14 px step below it. Weights are
+limited to 400, 500 and 560/650. No italics, no all-caps. Controls: 44 px
+page actions and inputs, 36 px in-row buttons, 16 px text.
 
 ## 5. Space, shape, elevation, motion
 
 - **Spacing:** 4 px base. Steps used: 4, 8, 12, 16, 24, 32, 48. Inside a
   section 16; between sections 32 with a hairline; page header to content 24.
 - **Page gutter:** 32 px at ≥1024, 24 at 768, 16 at 390.
-- **Content width:** list and table pages use the full content area up to
-  1280 px. Detail and form pages use a main column plus a 320 px right rail.
-  Reading pages (help, 403, 404, placeholders) cap text at 680 px but sit in
-  a two-column page so the right side is used (see 6).
+- **Content width (B4):** no cap. List and table pages fill the whole main
+  area with aligned columns. Detail and form pages use a main column plus a
+  320 to 352 px right rail, or the settings layout. Reading pages (help,
+  403, 404, placeholders) are two columns: content up to 42 rem on the left,
+  "Where to go" on the right.
 - **Radius:** 4 px on controls, pills and alerts; 6 px on dialogs, sheets,
   menus and popovers. Nothing larger; avatars stay round.
 - **Elevation:** no shadows on page content. Overlays only:
   `0 8px 24px rgba(27,28,29,.12), 0 1px 2px rgba(27,28,29,.08)`. The dialog
   and sheet overlay is `ink` at 40 % opacity, no blur.
-- **Motion:** 120 ms colour and background transitions only. Dialog and
-  sheet keep a short fade/slide, all of it removed under
-  `prefers-reduced-motion: reduce`, as are spinners' rotation speed-ups and
-  skeleton pulses. No `translate-y` press effect.
+- **Motion (B5 to B7):** tokens `--ease-out`, `--ease-in` and the keyframes
+  `rise`, `fade`, `flash-out`, `draw` in `index.css`. Utilities: `stage`
+  (orchestrated page entry: each direct child rises 350 ms, 50 ms apart, up
+  to four steps), `enter` (one element rises on mount, `--enter-delay` for
+  stagger from `lib/motion.ts`, first 10 rows only), `reveal` (scroll-driven
+  `animation-timeline: view()` where supported, IntersectionObserver
+  fallback in `components/reveal.tsx`), `flash` (primary-tint highlight
+  fading within 1.2 s), `draw` (the confirmation check draws once).
+  Dialogs scale from 0.97 and fade (300 ms in, 150 ms out); the drawer
+  slides (300 in, 200 out); the sticky rail docks with its hairline; the top
+  bar shows its edge once content scrolls under it; anchor scrolling is
+  smooth. Colour transitions 150 ms; pills 300 ms. Only transform, opacity
+  and colour: no bounce, loops, parallax, gradients or blur. Under
+  `prefers-reduced-motion: reduce` every rise, slide, scale and scroll
+  reveal becomes a 150 ms opacity fade, so pages still look finished.
+  Money, totals, timers and IDs are never animated (B6).
 
 ## 6. Layout patterns
 
 ### 6.0 App shell (signed in)
 
-- **Sidebar, ≥768 px:** fixed, full height, 256 px, `canvas-sunken`, hairline
+- **Sidebar, ≥768 px:** fixed, full height, 272 px, `canvas-sunken`, hairline
   right edge. Top: agency name (Archivo 600, from `useAgency`, never
   hard-coded, D7). Then the role's navigation from `navItemsFor` (unchanged).
   Active item: `primary-tint` background, `primary` text, a 2 px `signal` bar
   on the left edge. Available items in `ink`. Planned items in `ink-subtle`
   with "Soon" right-aligned in `label` size, no pill, no hover tint, so they
-  read as quiet and intentional. Labels never wrap: 256 px (not 240) is what
-  "Handover and return" plus "Soon" needs at 14 px. No name block at the
+  read as quiet and intentional. Labels never wrap: 272 px is what
+  "Handover and return" plus "Soon" needs at 16 px. No name block at the
   bottom: the top bar already shows it, and a second copy would duplicate
   visible text.
-- **Top bar:** 56 px, `canvas`, hairline bottom edge, no blur. Left: the
+- **Top bar:** 64 px, `canvas`, no blur; its hairline edge appears once
+  content scrolls under it (B5). Left: the
   phone menu button (below 768 px) and the agency name (phones only, since
   the sidebar is hidden). Right: avatar initials, name and role (≥640 px),
   Help (ghost) and Sign out (outline). Same labels and `aria-label`s as now.
 - **Phone drawer:** the existing Sheet, restyled to match the sidebar.
-- **Main:** `canvas`, gutter per section 5, no inner box, content up to
-  1280 px.
+- **Main:** `canvas`, gutter per section 5, no inner box, no width cap
+  (B4).
 - **Footer:** none exists and none is added (it would be new copy).
 
 ### 6.1 Auth: sign in, register, verify OTP
 
-Split layout from 1024 px: form on the left (form column max 400 px for
-sign-in and verify, 560 px with two-column field pairs for register),
-product panel on the right (40 % width, solid `primary`, `on-primary` text,
-no image, no gradient). Below 1024 the panel is hidden and the form takes the
-page. The public top bar stays.
+Split layout from 1024 px: form on the left (form column max 26 rem for
+sign-in and verify, 36 rem with two-column field pairs for register),
+product panel on the right (about half the width). The panel is
+`canvas-sunken` with a hairline, ink text, the agency name in Fraunces and
+the facts in `lead`; it is the same material as the sidebar, not a second
+colour block (decided 11 Oct 2026 after the solid petrol panel read as two
+unrelated halves). No image, no gradient. Below 1024 the panel is hidden and
+the form takes the page. The public top bar stays.
 
 Product panel content (approved 11 Oct 2026). Short facts taken only from
 copy the app already shows, reworded so no test finds a duplicate. No
@@ -476,9 +570,9 @@ icon, not a box.
 
 | Component | Rules |
 |---|---|
-| Button | Heights: 40 px (`default` and `lg`, all page actions), 32 px (`sm`, in-row actions), 24 px (`xs`). Radius 4. Variants: primary (petrol), outline (`surface`, `line-strong` border), ghost, destructive (solid `status-unsafe` ink, white text, for irreversible actions only), link. Hover darkens or tints; pressed is `primary-hover`; disabled is 50 % opacity and `not-allowed`. No press translate. Icons 16 px. The per-page `className="h-10"` overrides become no-ops. |
+| Button | Heights: 44 px (`default` and `lg`, all page actions), 36 px (`sm`, in-row actions), 28 px (`xs`). Text 16 px. Radius 4. Variants: primary (petrol), outline (`surface`, `line-strong` border), ghost, destructive (solid `status-unsafe` ink, white text, for irreversible actions only), link. Hover darkens or tints; pressed is `primary-hover`; disabled is 50 % opacity and `not-allowed`. No press translate. Icons 16 px. The per-page `className="h-10"` overrides become no-ops. |
 | Focus | One style everywhere: 2 px `primary` outline, 2 px offset (`outline-offset`), on every focusable element including links, rows and nav. |
-| Input, textarea, native select, date/time | 40 px, `surface`, 1 px `line-strong`, radius 4, 14 px Plex Sans; numbers and dates typed in mono where the field is numeric (mobile, odometer, date). `color-scheme: light` so native pickers match. Invalid: `status-unsafe` border plus the existing error text. Autofill background forced to `surface`. |
+| Input, textarea, native select, date/time | 44 px, `surface`, 1 px `line-strong`, radius 4, 16 px Plex Sans; numbers and dates typed in mono where the field is numeric (mobile, odometer, date). `color-scheme: light` so native pickers match. Invalid: `status-unsafe` border plus the existing error text. Autofill background forced to `surface`. |
 | Label | `label` size, `ink`; hints `small` `ink-muted`; errors `small` `status-unsafe` with the existing icon. |
 | Checkbox | 16 px, radius 3, `line-strong` border, checked fill `primary`. |
 | Table | Full width, no outer border. Header row `label` size `ink-muted` on `canvas-sunken`, hairline below. Rows 44 px, hairline between. Money and quantity columns right-aligned, mono. Total row: `num-strong`, rule above. Caption as `subsection`. |
