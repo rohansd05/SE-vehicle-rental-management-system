@@ -58,7 +58,7 @@ export function RejectDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="destructive" size="lg" className="h-10">
+        <Button variant="destructive">
           Reject
         </Button>
       </DialogTrigger>
@@ -82,7 +82,7 @@ export function RejectDialog({
             />
           </Field>
           <DialogFooter>
-            <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Keep it pending
             </Button>
             <SubmitButton busy={isSubmitting} busyLabel="Rejecting…">

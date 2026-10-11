@@ -71,7 +71,7 @@ export function LicenceReviewPage() {
   }
 
   const back = (
-    <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
       <Link to="/app/licences">
         <ArrowLeft aria-hidden="true" />
         Back to the queue
@@ -153,8 +153,8 @@ export function LicenceReviewPage() {
         </Card>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
-            size="lg"
-            className="h-10"
+           
+           
             onClick={() => approve.mutate()}
             disabled={approve.isPending}
             aria-busy={approve.isPending}

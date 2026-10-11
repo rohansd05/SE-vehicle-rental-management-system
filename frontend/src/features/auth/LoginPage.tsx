@@ -5,8 +5,7 @@ import { Link, type Location, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '@/api/client'
 import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
-import { PageHeader } from '@/components/page'
-import { Card, CardContent } from '@/components/ui/card'
+import { AuthLayout } from './AuthLayout'
 import { Input } from '@/components/ui/input'
 import { describedBy } from '@/lib/form'
 
@@ -59,47 +58,40 @@ export function LoginPage() {
       : null
 
   return (
-    <div className="mx-auto max-w-md">
-      <PageHeader title="Sign in" />
-      <Card>
-        <CardContent>
-          <form onSubmit={onSubmit} noValidate className="grid gap-4">
-            <StatusMessage message={notice} tone={state.verifiedEmail ? 'success' : 'info'} />
-            <FormAlert message={formError} />
-            <Field id="email" label="E-mail" error={errors.email?.message}>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="username"
-                aria-invalid={errors.email ? true : undefined}
-                aria-describedby={describedBy('email', { error: Boolean(errors.email) })}
-                {...register('email')}
-              />
-            </Field>
-            <Field id="password" label="Password" error={errors.password?.message}>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={errors.password ? true : undefined}
-                aria-describedby={describedBy('password', { error: Boolean(errors.password) })}
-                {...register('password')}
-              />
-            </Field>
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">
-                New here?{' '}
-                <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
-                  Create an account
-                </Link>
-              </p>
-              <SubmitButton busy={isSubmitting} busyLabel="Signing in…">
-                Sign in
-              </SubmitButton>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthLayout title="Sign in">
+      <form onSubmit={onSubmit} noValidate className="grid gap-5">
+        <StatusMessage message={notice} tone={state.verifiedEmail ? 'success' : 'info'} />
+        <FormAlert message={formError} />
+        <Field id="email" label="E-mail" error={errors.email?.message}>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="username"
+            aria-invalid={errors.email ? true : undefined}
+            aria-describedby={describedBy('email', { error: Boolean(errors.email) })}
+            {...register('email')}
+          />
+        </Field>
+        <Field id="password" label="Password" error={errors.password?.message}>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={errors.password ? true : undefined}
+            aria-describedby={describedBy('password', { error: Boolean(errors.password) })}
+            {...register('password')}
+          />
+        </Field>
+        <SubmitButton busy={isSubmitting} busyLabel="Signing in…" className="mt-1 sm:w-full">
+          Sign in
+        </SubmitButton>
+        <p className="border-t pt-5 text-sm text-muted-foreground">
+          New here?{' '}
+          <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
+            Create an account
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }

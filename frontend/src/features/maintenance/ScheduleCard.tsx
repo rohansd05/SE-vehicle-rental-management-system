@@ -137,14 +137,14 @@ export function ScheduleCard({
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     type="button"
-                    size="lg"
-                    className="h-10"
+                   
+                   
                     disabled={schedule.isPending}
                     onClick={() => schedule.mutate({ values: getValues(), confirm: true })}
                   >
                     Schedule anyway
                   </Button>
-                  <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setConflict(null)}>
+                  <Button type="button" variant="outline" onClick={() => setConflict(null)}>
                     Choose another period
                   </Button>
                 </div>

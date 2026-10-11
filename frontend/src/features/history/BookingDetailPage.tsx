@@ -62,7 +62,7 @@ export function BookingDetailPage() {
 
   return (
     <section className="max-w-2xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+      <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
         <Link to="/app/bookings">
           <ArrowLeft aria-hidden="true" />
           My bookings
@@ -98,7 +98,7 @@ export function BookingDetailPage() {
               {booking.data.booking_reference ? <Confirmation booking={booking.data} /> : null}
               {booking.data.status === 'Pending Payment' || booking.data.status === 'Draft' ? (
                 <div>
-                  <Button asChild className="h-10">
+                  <Button asChild>
                     <Link to={`/app/bookings/${booking.data.id}/pay`}>
                       {booking.data.status === 'Draft' ? 'Hold again and pay' : 'Continue to payment'}
                     </Link>
@@ -112,7 +112,7 @@ export function BookingDetailPage() {
                   <div>
                     <Button
                       variant="outline"
-                      className="h-10"
+                     
                       disabled={download.isPending}
                       onClick={() => download.mutate(booking.data)}
                     >

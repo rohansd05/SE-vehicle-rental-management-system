@@ -43,12 +43,12 @@ export function MyLicencePage() {
           onRetry={() => void licence.refetch()}
         />
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-8">
           <StatusMessage message={notice} tone="success" />
           <LicenceStatusCard licence={licence.data} />
           {NEEDS_SUBMISSION.includes(licence.data.status) || updating ? (
-            <Card>
-              <CardHeader>
+            <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+              <CardHeader className="content-start">
                 <CardTitle>
                   <h2>
                     {licence.data.status === 'Not Submitted' ? 'Submit your licence' : 'Submit your licence again'}
@@ -58,7 +58,7 @@ export function MyLicencePage() {
                   Enter the details exactly as printed and add clear photos of both sides.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-w-2xl">
                 <LicenceForm
                   current={licence.data}
                   onSubmitted={onSubmitted}
@@ -67,21 +67,22 @@ export function MyLicencePage() {
               </CardContent>
             </Card>
           ) : (
-            <div>
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-10"
-                onClick={() => {
-                  setNotice(null)
-                  setUpdating(true)
-                }}
-              >
-                Update licence details
-              </Button>
-              <p className="mt-2 text-sm text-muted-foreground">
-                For example after renewing it. Your licence will need to be verified again.
-              </p>
+            <div className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12 border-t pt-6">
+              <div className="hidden lg:block" aria-hidden="true" />
+              <div className="flex flex-col items-start gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNotice(null)
+                    setUpdating(true)
+                  }}
+                >
+                  Update licence details
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  For example after renewing it. Your licence will need to be verified again.
+                </p>
+              </div>
             </div>
           )}
         </div>

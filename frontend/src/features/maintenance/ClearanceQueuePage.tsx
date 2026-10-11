@@ -24,8 +24,8 @@ export function ClearanceQueuePage() {
         actions={
           <Button
             variant="outline"
-            size="lg"
-            className="h-10"
+           
+           
             onClick={() => void queue.refetch()}
             disabled={queue.isFetching}
           >

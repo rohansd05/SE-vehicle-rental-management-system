@@ -40,7 +40,7 @@ function JobsView({
         description={description}
         actions={
           canReport ? (
-            <Button asChild size="lg" className="h-10">
+            <Button asChild>
               <Link to="/app/maintenance/report">
                 <Plus aria-hidden="true" />
                 Report a fault

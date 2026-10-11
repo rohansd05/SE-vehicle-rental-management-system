@@ -183,7 +183,7 @@ function CancelDialog({ job, onCancelled }: { job: MaintenanceJob; onCancelled: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg" className="h-10">
+        <Button variant="outline">
           Cancel job
         </Button>
       </DialogTrigger>
@@ -206,7 +206,7 @@ function CancelDialog({ job, onCancelled }: { job: MaintenanceJob; onCancelled: 
             />
           </Field>
           <DialogFooter>
-            <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Keep the job
             </Button>
             <SubmitButton busy={isSubmitting} busyLabel="Cancelling…">
@@ -224,7 +224,7 @@ function ApproveDialog({ job, onApprove, busy }: { job: MaintenanceJob; onApprov
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="h-10">
+        <Button>
           Clear Unsafe flag and complete
         </Button>
       </DialogTrigger>
@@ -237,12 +237,12 @@ function ApproveDialog({ job, onApprove, busy }: { job: MaintenanceJob; onApprov
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setOpen(false)}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Not yet
           </Button>
           <Button
-            size="lg"
-            className="h-10"
+           
+           
             disabled={busy}
             aria-busy={busy}
             onClick={() => {
@@ -320,7 +320,7 @@ export function JobDetailPage() {
 
   const backTo = isTechnician ? '/app/jobs' : '/app/maintenance'
   const back = (
-    <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
       <Link to={backTo}>
         <ArrowLeft aria-hidden="true" />
         {isTechnician ? 'Back to my jobs' : 'Back to maintenance'}
@@ -377,7 +377,7 @@ export function JobDetailPage() {
 
         {isTechnician && data.status === 'Scheduled' ? (
           <div>
-            <Button size="lg" className="h-10" onClick={() => start.mutate()} disabled={start.isPending} aria-busy={start.isPending}>
+            <Button onClick={() => start.mutate()} disabled={start.isPending} aria-busy={start.isPending}>
               {start.isPending ? 'Starting…' : 'Start job'}
             </Button>
           </div>
@@ -418,7 +418,7 @@ export function JobDetailPage() {
                 </p>
               )}
               <div>
-                <Button size="lg" className="h-10" onClick={() => complete.mutate()} disabled={complete.isPending} aria-busy={complete.isPending}>
+                <Button onClick={() => complete.mutate()} disabled={complete.isPending} aria-busy={complete.isPending}>
                   {complete.isPending ? 'Completing…' : 'Complete job'}
                 </Button>
               </div>

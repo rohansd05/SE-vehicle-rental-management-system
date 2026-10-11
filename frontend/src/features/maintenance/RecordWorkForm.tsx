@@ -136,7 +136,7 @@ export function RecordWorkForm({
                   <Field id={`part-${index}-cost`} label="Unit cost (₹)" error={partErrors?.unit_cost?.message}>
                     <Input id={`part-${index}-cost`} inputMode="decimal" aria-invalid={partErrors?.unit_cost ? true : undefined} {...register(`parts.${index}.unit_cost`)} />
                   </Field>
-                  <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => parts.remove(index)}>
+                  <Button type="button" variant="outline" onClick={() => parts.remove(index)}>
                     <Trash2 aria-hidden="true" />
                     <span className="sr-only sm:not-sr-only">Remove</span>
                     <span className="sr-only"> part {index + 1}</span>
@@ -148,8 +148,8 @@ export function RecordWorkForm({
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className="h-10"
+               
+               
                 onClick={() => parts.append({ part_name: '', quantity: '1', unit_cost: '' })}
               >
                 <Plus aria-hidden="true" />

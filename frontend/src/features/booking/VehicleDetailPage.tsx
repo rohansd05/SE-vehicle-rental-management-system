@@ -263,14 +263,14 @@ function BookingForm({ vehicle, period }: { vehicle: VehicleDetail; period: Peri
                 aria-describedby={codeError ? 'discount-code-error' : undefined}
                 onChange={(event) => setCodeInput(event.target.value)}
               />
-              <Button type="button" variant="outline" className="h-10" onClick={() => setAppliedCode(codeInput.trim())}>
+              <Button type="button" variant="outline" onClick={() => setAppliedCode(codeInput.trim())}>
                 Apply
               </Button>
               {appliedCode ? (
                 <Button
                   type="button"
                   variant="ghost"
-                  className="h-10"
+                 
                   onClick={() => {
                     setAppliedCode('')
                     setCodeInput('')
@@ -382,7 +382,7 @@ export function VehicleDetailPage() {
 
   return (
     <section className="max-w-3xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+      <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
         <Link to={period ? `/app/search?${new URLSearchParams({ ...period, branch: String(vehicle.data?.home_branch_id ?? '') })}` : '/app/search'}>
           <ArrowLeft aria-hidden="true" />
           Back to search
@@ -413,7 +413,7 @@ export function VehicleDetailPage() {
               title="Choose your dates first"
               description="Search with a pickup branch and a period to book this vehicle."
               action={
-                <Button asChild className="h-10">
+                <Button asChild>
                   <Link to="/app/search">Search vehicles</Link>
                 </Button>
               }

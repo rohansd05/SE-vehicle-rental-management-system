@@ -62,7 +62,7 @@ export function ReportFaultPage() {
 
   return (
     <section className="max-w-2xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+      <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
         <Link to="/app/maintenance">
           <ArrowLeft aria-hidden="true" />
           Back to maintenance

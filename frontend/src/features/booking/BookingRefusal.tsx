@@ -29,13 +29,13 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
       title: 'Your driving licence doesn’t allow this booking yet',
       actions: (
         <>
-          <Button asChild size="lg" className="h-10">
+          <Button asChild>
             <Link to="/app/licence">Submit your licence</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="h-10">
+          <Button asChild variant="outline">
             <Link to="/app/search">Keep browsing</Link>
           </Button>
-          <Button asChild variant="ghost" size="lg" className="h-10">
+          <Button asChild variant="ghost">
             <Link to="/app">Exit</Link>
           </Button>
         </>
@@ -47,7 +47,7 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
       return {
         title: 'This vehicle has just been taken',
         actions: (
-          <Button asChild size="lg" className="h-10">
+          <Button asChild>
             <Link to="/app/search">Choose another vehicle</Link>
           </Button>
         ),
@@ -64,10 +64,10 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
         title: 'You can’t make this booking',
         actions: (
           <>
-            <Button asChild variant="outline" size="lg" className="h-10">
+            <Button asChild variant="outline">
               <Link to="/app/search">Keep browsing</Link>
             </Button>
-            <Button asChild variant="ghost" size="lg" className="h-10">
+            <Button asChild variant="ghost">
               <Link to="/app">Exit</Link>
             </Button>
           </>
@@ -78,7 +78,7 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
         return {
           title: code === 'hold_expired' ? 'Your hold on this vehicle has expired' : 'The price needs checking again',
           actions: onHoldAgain ? (
-            <Button size="lg" className="h-10" onClick={onHoldAgain} disabled={holding}>
+            <Button onClick={onHoldAgain} disabled={holding}>
               {holding ? 'Holding…' : 'Hold the vehicle again'}
             </Button>
           ) : null,

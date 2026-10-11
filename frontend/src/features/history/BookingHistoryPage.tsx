@@ -32,7 +32,7 @@ export function BookingHistoryPage() {
         title="My bookings"
         description="Every booking you have made, the most recent pickup first."
         actions={
-          <Button asChild className="h-10">
+          <Button asChild>
             <Link to="/app/search">Book a vehicle</Link>
           </Button>
         }

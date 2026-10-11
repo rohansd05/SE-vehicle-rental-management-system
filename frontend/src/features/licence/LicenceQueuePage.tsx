@@ -23,7 +23,7 @@ export function LicenceQueuePage() {
         title="Licence checks"
         description="Licences customers have submitted, oldest first. Check each one against its photos."
         actions={
-          <Button variant="outline" size="lg" className="h-10" onClick={() => void queue.refetch()} disabled={queue.isFetching}>
+          <Button variant="outline" onClick={() => void queue.refetch()} disabled={queue.isFetching}>
             {queue.isFetching ? 'Refreshing…' : 'Refresh'}
           </Button>
         }

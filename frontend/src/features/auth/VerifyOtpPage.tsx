@@ -6,14 +6,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { resendOtp, verifyOtp } from '@/api/auth'
 import { ApiError } from '@/api/client'
 import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
-import { PageHeader } from '@/components/page'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useCountdown } from '@/hooks/countdown'
 import { now } from '@/lib/dates'
 import { describedBy } from '@/lib/form'
 
+import { AuthLayout } from './AuthLayout'
 import { OTP_MESSAGES } from './messages'
 import {
   OTP_LENGTH,
@@ -117,66 +116,62 @@ export function VerifyOtpPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <PageHeader
-        title="Verify your mobile number"
-        description={
-          state.mobile
-            ? `Enter the ${OTP_LENGTH}-digit code we sent by SMS to ${state.mobile}.`
-            : `Enter the ${OTP_LENGTH}-digit code we sent to your mobile by SMS.`
-        }
-      />
-      <Card>
-        <CardContent className="grid gap-4">
-          <FormAlert message={formError} />
-          <StatusMessage message={status} />
-          <form onSubmit={onSubmit} noValidate className="grid gap-4">
-            {state.email ? null : (
-              <Field id="verify-email" label="E-mail you registered with">
-                <Input
-                  id="verify-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </Field>
-            )}
-            <Field
-              id="code"
-              label="Verification code"
-              hint="The code is valid for 10 minutes."
-              error={errors.code?.message}
-            >
+    <AuthLayout
+      title="Verify your mobile number"
+      description={
+        state.mobile
+          ? `Enter the ${OTP_LENGTH}-digit code we sent by SMS to ${state.mobile}.`
+          : `Enter the ${OTP_LENGTH}-digit code we sent to your mobile by SMS.`
+      }
+    >
+      <div className="grid gap-5">
+        <FormAlert message={formError} />
+        <StatusMessage message={status} />
+        <form onSubmit={onSubmit} noValidate className="grid gap-5">
+          {state.email ? null : (
+            <Field id="verify-email" label="E-mail you registered with">
               <Input
-                id="code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={OTP_LENGTH}
-                className="h-11 max-w-48 text-center font-mono text-lg tracking-[0.4em]"
-                aria-invalid={errors.code ? true : undefined}
-                aria-describedby={describedBy('code', { hint: true, error: Boolean(errors.code) })}
-                {...register('code')}
+                id="verify-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
-            <SubmitButton busy={isSubmitting} busyLabel="Checking…" disabled={codeIsDead}>
-              Verify
-            </SubmitButton>
-          </form>
-          <div className="flex flex-wrap items-center gap-2 border-t pt-4 text-sm">
-            <span className="text-muted-foreground">Didn’t get it?</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => void onResend()}
-              disabled={remaining > 0 || resending}
-            >
-              {remaining > 0 ? `Send a new code in ${remaining} s` : 'Send a new code'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          )}
+          <Field
+            id="code"
+            label="Verification code"
+            hint="The code is valid for 10 minutes."
+            error={errors.code?.message}
+          >
+            <Input
+              id="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={OTP_LENGTH}
+              className="num h-12 max-w-48 text-center text-lead tracking-[0.4em]"
+              aria-invalid={errors.code ? true : undefined}
+              aria-describedby={describedBy('code', { hint: true, error: Boolean(errors.code) })}
+              {...register('code')}
+            />
+          </Field>
+          <SubmitButton busy={isSubmitting} busyLabel="Checking…" disabled={codeIsDead} className="mt-1">
+            Verify
+          </SubmitButton>
+        </form>
+        <div className="flex flex-wrap items-center gap-3 border-t pt-5 text-sm">
+          <span className="text-muted-foreground">Didn’t get it?</span>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void onResend()}
+            disabled={remaining > 0 || resending}
+          >
+            {remaining > 0 ? `Send a new code in ${remaining} s` : 'Send a new code'}
+          </Button>
+        </div>
+      </div>
+    </AuthLayout>
   )
 }

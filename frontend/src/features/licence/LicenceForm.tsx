@@ -121,17 +121,17 @@ export function LicenceForm({
       </div>
 
       <fieldset
-        className="grid gap-2"
+        className="grid gap-1"
         aria-describedby={errors.categories ? 'categories-error' : undefined}
       >
-        <legend className="mb-1 text-sm font-medium">Categories the licence covers</legend>
-        <div className="flex flex-wrap gap-4">
+        <legend className="mb-1 text-small font-medium">Categories the licence covers</legend>
+        <div className="flex flex-wrap gap-6">
           {LICENCE_CATEGORIES.map((category) => (
             <label key={category} className="flex min-h-10 items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 value={category}
-                className="size-4 accent-[var(--brand)]"
+                className="size-4"
                 {...register('categories')}
               />
               {category}
@@ -139,13 +139,13 @@ export function LicenceForm({
           ))}
         </div>
         {errors.categories ? (
-          <p id="categories-error" className="text-sm text-destructive">
+          <p id="categories-error" className="text-small font-medium text-destructive">
             {errors.categories.message}
           </p>
         ) : null}
       </fieldset>
 
-      <div className="grid gap-5">
+      <div className="grid gap-5 border-t pt-5 sm:grid-cols-2">
         <ImagePicker
           id="front_image"
           label="Front of the licence"
@@ -162,12 +162,12 @@ export function LicenceForm({
         />
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row">
         <SubmitButton busy={isSubmitting} busyLabel="Uploading…">
           Submit for verification
         </SubmitButton>
         {onCancel ? (
-          <Button type="button" variant="outline" size="lg" className="h-10" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
         ) : null}

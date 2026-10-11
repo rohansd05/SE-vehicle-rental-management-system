@@ -88,7 +88,7 @@ export function VehicleCard({ vehicle, href }: { vehicle: AvailableVehicle; href
           <dd>{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
         </dl>
         <Estimate vehicle={vehicle} />
-        <Button asChild className="h-10">
+        <Button asChild>
           <Link to={href} aria-label={`View and book the ${vehicle.brand} ${vehicle.model}`}>
             View and book
           </Link>

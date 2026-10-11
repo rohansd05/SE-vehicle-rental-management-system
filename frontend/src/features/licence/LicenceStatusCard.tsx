@@ -79,8 +79,8 @@ function Explanation({ licence }: { licence: Licence }) {
 /** The customer's licence at a glance (Appendix A licence status). */
 export function LicenceStatusCard({ licence }: { licence: Licence }) {
   return (
-    <Card>
-      <CardHeader className="gap-3">
+    <Card className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-12">
+      <CardHeader className="content-start gap-3">
         <CardTitle>
           <h2>Licence status</h2>
         </CardTitle>
@@ -88,16 +88,16 @@ export function LicenceStatusCard({ licence }: { licence: Licence }) {
           <LicenceStatusBadge status={licence.status} />
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 text-sm">
+      <CardContent className="grid max-w-2xl gap-5 text-sm">
         <Explanation licence={licence} />
         {licence.licence_number ? (
-          <dl className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+          <dl className="grid gap-x-6 gap-y-2 border-t pt-5 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <dt className="text-muted-foreground">Licence number</dt>
-            <dd className="font-medium">{licence.licence_number}</dd>
+            <dd className="num font-medium">{licence.licence_number}</dd>
             <dt className="text-muted-foreground">Issued by</dt>
             <dd className="font-medium">{licence.issuing_authority || '—'}</dd>
             <dt className="text-muted-foreground">Valid</dt>
-            <dd className="font-medium">
+            <dd className="num font-medium">
               {formatDate(licence.issue_date)} to {formatDate(licence.expiry_date)}
             </dd>
             <dt className="text-muted-foreground">Categories</dt>

@@ -1,19 +1,13 @@
+import { ChevronRight } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { TONE_PILL } from '@/components/status-tone'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { PRODUCT_NAME, useAgency } from '@/hooks/page'
 import { cn } from '@/lib/utils'
+import { HELP_TOPICS } from '@/pages/help-topics'
 
 type Tone = 'ok' | 'warn' | 'error' | 'muted'
 
@@ -35,14 +29,17 @@ function StatusPill({ tone, children }: { tone: Tone; children: string }) {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
+    <div className="flex items-center justify-between gap-4 py-3">
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="text-sm font-medium">{children}</dd>
     </div>
   )
 }
 
-/** The public home page: what the service is, how to start, and the system status. */
+/**
+ * The public home page (docs/design/ui-brief.md, 6.2): what the service is,
+ * how to start, the system status, and the help topics.
+ */
 export function HomePage() {
   const { status } = useAuth()
   const { health } = useAgency()
@@ -63,40 +60,40 @@ export function HomePage() {
   }
 
   return (
-    <div className="grid items-start gap-8 md:grid-cols-[1fr_minmax(0,22rem)]">
-      <section>
-        <h1 className="text-3xl font-semibold tracking-tight break-words sm:text-4xl">
-          {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
-        </h1>
-        <p className="mt-3 max-w-prose text-muted-foreground">
-          Book a car or two-wheeler online for the dates you need, collect it from a branch or
-          have it delivered, and pay by card, online or in cash at the branch.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          {status === 'signed-in' ? (
-            <Button asChild size="lg" className="h-10">
-              <Link to="/app">Go to my account</Link>
-            </Button>
-          ) : (
-            <>
-              <Button asChild size="lg" className="h-10">
-                <Link to="/register">Create an account</Link>
+    <div className="grid gap-16">
+      <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-24">
+        <section className="animate-in fade-in duration-300 lg:py-8">
+          <h1 className="max-w-[16ch] text-display font-semibold break-words [font-stretch:108%] sm:text-[2.75rem] sm:leading-[3.25rem]">
+            {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
+          </h1>
+          <p className="mt-5 max-w-[52ch] text-lead text-muted-foreground">
+            Book a car or two-wheeler online for the dates you need, collect it from a branch or
+            have it delivered, and pay by card, online or in cash at the branch.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            {status === 'signed-in' ? (
+              <Button asChild>
+                <Link to="/app">Go to my account</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-10">
-                <Link to="/login">Sign in</Link>
-              </Button>
-            </>
-          )}
-        </div>
-      </section>
+            ) : (
+              <>
+                <Button asChild>
+                  <Link to="/register">Create an account</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/login">Sign in</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>System status</CardTitle>
-          <CardDescription>{PRODUCT_NAME}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="divide-y">
+        <section aria-labelledby="system-status" className="lg:py-8">
+          <h2 id="system-status" className="text-section font-semibold">
+            System status
+          </h2>
+          <p className="text-small text-muted-foreground">{PRODUCT_NAME}</p>
+          <dl className="mt-3 divide-y border-y">
             <Row label="Backend">
               <StatusPill tone={apiTone}>{apiLabel}</StatusPill>
             </Row>
@@ -109,20 +106,40 @@ export function HomePage() {
                 <StatusPill tone="muted">—</StatusPill>
               )}
             </Row>
-            <Row label="Currency">{health.data?.currency ?? '—'}</Row>
+            <Row label="Currency">
+              <span className="num">{health.data?.currency ?? '—'}</span>
+            </Row>
           </dl>
-        </CardContent>
-        <CardFooter>
           <Button
-            className="w-full sm:w-auto"
+            className="mt-4"
             variant="outline"
+            size="sm"
             onClick={() => health.refetch()}
             disabled={health.isFetching}
           >
             {health.isFetching ? 'Checking…' : 'Check again'}
           </Button>
-        </CardFooter>
-      </Card>
+        </section>
+      </div>
+
+      <section aria-label="Help topics" className="border-t pt-10">
+        <ul className="grid gap-x-12 gap-y-8 md:grid-cols-3">
+          {HELP_TOPICS.map((topic) => (
+            <li key={topic.id}>
+              <Link
+                to={`/help#${topic.id}`}
+                className="group block rounded-sm"
+              >
+                <span className="flex items-center gap-1.5 text-section font-semibold group-hover:text-primary">
+                  {topic.title}
+                  <ChevronRight className="size-4 text-ink-subtle group-hover:text-primary" aria-hidden="true" />
+                </span>
+                <span className="mt-2 block text-sm text-muted-foreground">{topic.body}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
