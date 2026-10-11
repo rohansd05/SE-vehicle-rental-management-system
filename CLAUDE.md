@@ -141,7 +141,7 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   clears the cookie. The frontend keeps the access token in memory only,
   never in localStorage or sessionStorage.
 - **D22 Fonts:** CO-7 amended: SIL OFL 1.1 fonts are permitted, unmodified and
-  self-hosted through Fontsource (Fraunces, Archivo, IBM Plex Sans, IBM Plex
+  self-hosted through Fontsource (Schibsted Grotesk, IBM Plex Sans, IBM Plex
   Mono); no CDN or Google Fonts link. Geist stays removed.
 
 ## Team workflow (from 10 Oct 2026)

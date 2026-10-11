@@ -1,25 +1,37 @@
 import { CircleHelp } from 'lucide-react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { SkipLink } from '@/components/page'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { useAgency, useRouteFocus } from '@/hooks/page'
+import { useScrolled } from '@/hooks/scroll'
+import { cn } from '@/lib/utils'
 
-/** Layout for pages anyone can open: home, sign-in, registration, help (docs/design/ui-brief.md, 6.1 and 6.2). */
+/**
+ * Layout for pages anyone can open: home, sign-in, registration, help
+ * (docs/design/ui-brief.md, 6.1 and 6.2). The top bar stays at the top and
+ * shows its hairline edge once content scrolls under it (B5). The landing
+ * page sets its own gutters, because its hero and bands run edge to edge.
+ */
 export function PublicLayout() {
   const { status } = useAuth()
   const agency = useAgency()
   const mainRef = useRouteFocus<HTMLElement>()
+  const scrolled = useScrolled()
+  const isLanding = useLocation().pathname === '/'
 
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <SkipLink />
-      <header className="border-b">
+      <header
+        data-scrolled={scrolled ? '' : undefined}
+        className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
+      >
         <div className="flex h-16 w-full items-center gap-2 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
-            className="min-w-0 truncate rounded-sm font-heading text-subsection font-semibold text-foreground [font-stretch:118%] [letter-spacing:-0.01em]"
+            className="heading min-w-0 truncate rounded-sm text-subsection text-foreground"
           >
             {agency.name}
           </Link>
@@ -51,7 +63,7 @@ export function PublicLayout() {
         id="main-content"
         ref={mainRef}
         tabIndex={-1}
-        className="flex-1 px-4 py-8 outline-none sm:px-6 lg:px-8 lg:py-10"
+        className={cn('flex-1 outline-none', isLanding ? null : 'px-4 py-8 sm:px-6 lg:px-8 lg:py-10')}
       >
         <Outlet />
       </main>

@@ -1,5 +1,5 @@
 import { CircleHelp, LogOut, Menu } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 
 import { ROLE_LABELS } from '@/api/types'
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sheet'
 import { useSignedInUser, useAuth } from '@/features/auth/auth-context'
 import { useAgency, useRouteFocus } from '@/hooks/page'
+import { useScrolled } from '@/hooks/scroll'
 import { cn } from '@/lib/utils'
 
 import { NavList } from './NavList'
@@ -46,19 +47,13 @@ export function AppShell() {
   const mainRef = useRouteFocus<HTMLElement>()
   const roleLabel = ROLE_LABELS[user.role]
   // The top bar shows its hairline edge once content has scrolled under it (B5).
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const scrolled = useScrolled()
 
   const brandLink = (className: string) => (
     <Link
       to="/app"
       className={cn(
-        'min-w-0 truncate rounded-sm font-heading font-semibold text-foreground [font-stretch:118%] [letter-spacing:-0.01em]',
+        'heading min-w-0 truncate rounded-sm text-foreground',
         className,
       )}
     >
@@ -92,7 +87,7 @@ export function AppShell() {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0">
                 <SheetHeader className="border-b border-sidebar-border px-6 py-4">
-                  <SheetTitle className="pr-8 [font-stretch:108%]">{agency.name}</SheetTitle>
+                  <SheetTitle className="pr-8">{agency.name}</SheetTitle>
                   <SheetDescription>
                     {user.name} · {roleLabel}
                   </SheetDescription>

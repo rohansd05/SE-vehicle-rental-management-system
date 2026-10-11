@@ -3,8 +3,7 @@ import { createRoot } from 'react-dom/client'
 // Self-hosted fonts (D22): no CDN, so the app works on an offline lab
 // network. Each file declares its subsets with unicode-range, so the browser
 // fetches only Latin and Latin Extended (which holds the rupee sign).
-import '@fontsource-variable/fraunces/full.css'
-import '@fontsource-variable/archivo/wdth.css'
+import '@fontsource-variable/schibsted-grotesk/wght.css'
 import '@fontsource-variable/ibm-plex-sans/wght.css'
 import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'

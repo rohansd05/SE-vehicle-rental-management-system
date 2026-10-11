@@ -42,7 +42,7 @@ export function AuthLayout({
         className="enter hidden min-h-[36rem] flex-col justify-between rounded-xl border bg-canvas-sunken px-10 py-10 text-foreground lg:flex lg:sticky lg:top-24 xl:px-14 xl:py-14"
         style={stagger(2)}
       >
-        <p className="enter display text-display" style={stagger(4)}>
+        <p className="enter display text-[clamp(2.25rem,1.4rem+2.4vw,3.5rem)] leading-none" style={stagger(4)}>
           {agency.name}
         </p>
         <ul className="mt-16 grid gap-0 divide-y">

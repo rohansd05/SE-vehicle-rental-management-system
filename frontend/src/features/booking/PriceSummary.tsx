@@ -39,7 +39,7 @@ export function PriceSummary({ quote, caption = 'Price summary' }: { quote: Quot
   return (
     <div className="grid gap-3">
       <table className="w-full text-sm">
-        <caption className="mb-2 text-left font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em] text-foreground">
+        <caption className="heading mb-2 text-left text-section text-foreground">
           {caption}
         </caption>
         <tbody className="[&_td]:py-2 [&_td:last-child]:num [&_td:last-child]:pl-4 [&_td:last-child]:text-right [&_td:last-child]:whitespace-nowrap [&_tr]:border-b [&_tr]:border-hairline">

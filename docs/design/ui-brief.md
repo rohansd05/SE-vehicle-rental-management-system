@@ -12,20 +12,21 @@ of this brief differs, these win.
 - **B1. Copy is frozen, presentation is free.** Never change a string; size,
   weight, family, width, tracking, line height, colour, alignment, grouping
   and placement may change freely.
-- **B2. Fonts with character, never cursive or script.** Public display face:
-  Fraunces (variable, `@fontsource-variable/fraunces` 5.3.0, SIL OFL 1.1),
-  only for the large public headlines: the home-page hero, the auth-panel
-  heading and the main public section titles; weight 500 to 650, moderate
-  optical size. App headings (page titles and section titles in the
-  signed-in app): Archivo on its width axis at 115 to 125 % and weight 650
-  to 700 with slightly tight tracking, for a wide automotive-signage feel.
-  Body and UI: IBM Plex Sans. Numbers, prices, dates, IDs and plates: IBM
-  Plex Mono with tabular figures.
+- **B2. Fonts: type system C, "Grotesk and Plex"** (chosen 12 Oct 2026 from
+  the three systems in `docs/design/type-options.md`; it replaces the
+  earlier Fraunces and wide-Archivo pairing). Hero and every heading:
+  Schibsted Grotesk (variable, `@fontsource-variable/schibsted-grotesk`
+  5.3.0, SIL OFL 1.1); the hero at weight 800 with −0.03 em tracking, page
+  and section titles at 700 with −0.02 em, subsections at 650 with
+  −0.01 em. Body and UI: IBM Plex Sans. Numbers, prices, dates, IDs and
+  plates: IBM Plex Mono with tabular figures. Never a cursive, script or
+  handwritten face, and none of the avoided template faces listed in
+  `type-options.md`.
 - **B3. Bigger type everywhere, as one token change in `index.css`** (no
   per-page overrides): body 16/26, small 14/22, label 13/18; lead 19/30 on
-  public pages; page title 34/42, section 22/30, subsection 18/26; home
-  display about 60 px at 1440, fluid with `clamp()` down to about 36 px at
-  390; num 15, num-strong 16, num-lg ("Total payable") 28. Inputs, selects
+  public pages; page title 36/42 (32 at 390), section 24/30 (22 at 390),
+  subsection 19/26; home display 76 px at 1440, fluid with `clamp()` down
+  to 40 px at 390; num 15, num-strong 16, num-lg ("Total payable") 28. Inputs, selects
   and buttons use 16 px text; controls are 44 px high for page actions and
   36 px in rows. After the change every table, description list, row grid
   and the sidebar is re-checked at 1440, 1024, 768 and 390: no wrapping of
@@ -334,12 +335,13 @@ report uses the same palette.
 ## 4. Typography
 
 Three roles, three families, all SIL OFL 1.1, self-hosted with Fontsource
-(D22). No CDN and no Google Fonts link: the lab may be offline.
+(D22). No CDN and no Google Fonts link: the lab may be offline. This is
+type system C from `docs/design/type-options.md`, chosen 12 Oct 2026; the
+research behind it is recorded there.
 
 | Role | Family | Package | Why |
 |---|---|---|---|
-| Public display: home hero, auth-panel heading, main public section titles | Fraunces (variable: weight, optical size, softness) at weight 500 to 650 and a moderate optical size | `@fontsource-variable/fraunces` | A soft, slightly old-style serif with real character, never cursive. It carries the public pages' voice and is used nowhere in the signed-in app (B2). |
-| App headings: page titles, section and subsection titles, brand | Archivo (variable, weight 650 to 700, width axis at 118 %) with tracking −0.015 em | `@fontsource-variable/archivo` | A grotesque drawn for both print and screen, with a squared, engineered feel close to automotive signage; set wide it reads like signage (B2). |
+| Hero and all headings: home hero, auth-panel heading, page, section and subsection titles, brand | Schibsted Grotesk (variable, weight 650 to 800) with tracking −0.01 to −0.03 em | `@fontsource-variable/schibsted-grotesk` | A grotesk drawn for a news publisher: plain and confident like the custom grotesks rental and fintech brands use (Turo Sans, Lausanne at Ramp, GT Eesti at BlaBlaCar), large and tightly tracked in the hero, compact in app titles (B2). |
 | Body and UI | IBM Plex Sans (variable) | `@fontsource-variable/ibm-plex-sans` | Very legible at 13 to 15 px, open apertures, distinct `Il1`, good for forms and dense tables. Pairs with Plex Mono by design. |
 | Numbers, prices, dates, IDs, plates | IBM Plex Mono 400 and 500 | `@fontsource/ibm-plex-mono` | Every figure is the same width, so columns of money and dates line up; plates like `MH02DM1006` and IDs read unambiguously. `font-variant-numeric: tabular-nums` is set as well. |
 
@@ -358,10 +360,10 @@ their own.
 
 | Token (class) | Size / line | Family, weight | Use |
 |---|---|---|---|
-| `display` (`.display`) | clamp(36, fluid, 60) / 1.05 | Fraunces 560 | Public home hero |
-| `title` (`text-title`) | 34 / 42 | Archivo 650, width 118 %, −0.015 em | Page title (`h1`) |
-| `section` (`text-section`) | 22 / 30 | Archivo 650, width 118 % | Section title (`h2`), dialog title, table caption |
-| `subsection` (`text-subsection`) | 18 / 26 | Archivo 650, width 118 % | `h3`, form group legends |
+| `display` (`.display`) | clamp(40 at 390, fluid, 76 at 1440) / 1.0 | Schibsted Grotesk 800, −0.03 em | Home hero (the agency name) |
+| `title` (`text-title`) | clamp(32, fluid, 36) / 1.17 | Schibsted Grotesk 700, −0.02 em | Page title (`h1`) |
+| `section` (`text-section`) | clamp(22, fluid, 24) / 1.27 | Schibsted Grotesk 700, −0.02 em | Section title (`h2`), dialog title, table caption (`.heading`) |
+| `subsection` (`text-subsection`) | 19 / 26 | Schibsted Grotesk 650, −0.01 em | `h3`, form group legends (`.heading`) |
 | `lead` (`text-lead`) | 19 / 30 | Plex Sans 400 | Public intro, auth-panel facts |
 | `body` (`text-sm`, `text-base`) | 16 / 26 | Plex Sans 400 | Default text, inputs, buttons |
 | `body-strong` | 16 / 26 | Plex Sans 500 | `dd` values, row titles |
@@ -373,7 +375,9 @@ their own.
 
 `text-sm` is the body token (16 px) because the codebase uses it as the
 default text class; `text-small` is the 14 px step below it. Weights are
-limited to 400, 500 and 560/650. No italics, no all-caps. Controls: 44 px
+limited to 400 and 500 for Plex, 650, 700 and 800 for Schibsted Grotesk.
+Elements that are not `h1` to `h4` but need the heading style (legends,
+captions, refusal titles, the brand) use the `.heading` utility. No italics, no all-caps. Controls: 44 px
 page actions and inputs, 36 px in-row buttons, 16 px text.
 
 ## 5. Space, shape, elevation, motion
@@ -413,7 +417,7 @@ page actions and inputs, 36 px in-row buttons, 16 px text.
 ### 6.0 App shell (signed in)
 
 - **Sidebar, ≥768 px:** fixed, full height, 272 px, `canvas-sunken`, hairline
-  right edge. Top: agency name (Archivo 600, from `useAgency`, never
+  right edge. Top: agency name (Schibsted Grotesk 700, from `useAgency`, never
   hard-coded, D7). Then the role's navigation from `navItemsFor` (unchanged).
   Active item: `primary-tint` background, `primary` text, a 2 px `signal` bar
   on the left edge. Available items in `ink`. Planned items in `ink-subtle`
@@ -437,7 +441,7 @@ page actions and inputs, 36 px in-row buttons, 16 px text.
 Split layout from 1024 px: form on the left (form column max 26 rem for
 sign-in and verify, 36 rem with two-column field pairs for register),
 product panel on the right (about half the width). The panel is
-`canvas-sunken` with a hairline, ink text, the agency name in Fraunces and
+`canvas-sunken` with a hairline, ink text, the agency name in the display style and
 the facts in `lead`; it is the same material as the sidebar, not a second
 colour block (decided 11 Oct 2026 after the solid petrol panel read as two
 unrelated halves). No image, no gradient. Below 1024 the panel is hidden and
@@ -470,6 +474,38 @@ button. Below, a hairline and a three-column row of the help topics already
 on `/help` ("Signing in", "Verification codes", "Driving licence") as
 links-with-summary, so 1440 has no empty lower half. (Approved 11 Oct 2026:
 re-uses existing help headings and links; no new claims.)
+
+### 6.2.1 Landing page (Stage 4.6, 12 Oct 2026)
+
+The public home page is a landing page: a centred hero that fills the first
+viewport under the top bar (the agency name as the headline, the existing
+intro paragraph at about 60 characters, the existing actions, a scroll cue),
+then bands revealed on scroll: what the system does, how it works, the
+staff side, system status with the help topics, a final call to action and
+a slim footer. No numbers, prices, ratings, testimonials, images or claims.
+Icons are lucide. Motion: hero entry sequence, section reveals, staggered
+lists, smooth anchor scrolling, the top bar's edge on scroll (B5, B7).
+
+Every sentence on it is either an existing string or one of the approved
+additions below, each true of the current app or SRS behaviour.
+
+| New text | Source |
+|---|---|
+| Book online, collect at the branch | Band title; from the home intro ("Book a car ... online ... collect it from a branch"). |
+| Search, book and pay online. Our staff verify your driving licence before you can book. | Home intro; Help "Driving licence" ("Our staff verify it before you can book."). |
+| Find a vehicle | Existing menu label. Body is the search page description, unchanged. |
+| Licence checked by staff | Help "Driving licence"; body reuses its two sentences. |
+| Card, online or cash | Home intro ("pay by card, online or in cash at the branch"); second sentence from the price summary ("Refundable security deposit ..., held separately and not part of the total."). |
+| Invoices to download / Once you have paid, your booking shows its invoice, ready to download. | History.Download; the booking detail's "Download invoice ..." button. |
+| Unsafe vehicles are never offered / Vehicles under maintenance or flagged Unsafe leave search and booking until they are cleared. | Search.Available (only Available vehicles are offered); BR-16; the report-fault hint "It leaves search, booking and handover at once. Only an Administrator can clear the flag". |
+| Your booking history | Menu description "Your bookings, invoices and rental history."; body is the bookings page description, unchanged. |
+| How it works / Four steps from your account to the keys. | The four customer steps that follow (SE-7, Book.Eligible, Book.Hold, Pay.Authorize). |
+| Create your account | Existing page title; body is the register page description, unchanged. |
+| Submit your licence | Existing heading on the licence page; body reuses its description and the help sentence. |
+| Search and hold | Search page description plus the booking form note "We hold the vehicle for you for 15 minutes while you pay." |
+| Pay and collect | Home intro plus the confirmation note "Show this code at the branch to collect the vehicle." and "have it delivered" from the intro. |
+| For branch teams / Branch staff, technicians and administrators sign in to the same system. | The roles in `ROLE_LABELS`; UI-1 (one application, menus by role). Items reuse the menu labels and descriptions. |
+| Help (section heading) | Existing page title. Topics are the help page's, unchanged. |
 
 ### 6.3 Page header (every signed-in page)
 

@@ -132,7 +132,7 @@ function AddOnPicker({
   if (!addOns.length) return null
   return (
     <fieldset className="grid gap-1">
-      <legend className="mb-2 font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em]">Add-ons, charged per day</legend>
+      <legend className="heading mb-2 text-section">Add-ons, charged per day</legend>
       <div className="divide-y border-y">
         {addOns.map((addOn) => {
           const id = `addon-${addOn.id}`

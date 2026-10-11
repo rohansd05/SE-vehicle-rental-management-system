@@ -92,7 +92,7 @@ export function RegisterPage() {
         </Field>
 
         <fieldset className="grid gap-5 border-t pt-5">
-          <legend className="float-left mb-4 font-heading text-subsection font-[650] [font-stretch:118%] [letter-spacing:-0.015em]">
+          <legend className="heading float-left mb-4 text-subsection">
             Emergency contact
           </legend>
           <div className="grid gap-5 sm:grid-cols-2">

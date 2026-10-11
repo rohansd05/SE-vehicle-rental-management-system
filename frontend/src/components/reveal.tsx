@@ -1,15 +1,23 @@
-import { type ComponentProps, useEffect, useRef, useState } from 'react'
+import { type HTMLAttributes, type Ref, useEffect, useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
 /**
  * Rises its content into view once, the first time it scrolls into the
- * viewport (docs/design/ui-brief.md, section 5). Where IntersectionObserver
- * is missing (jsdom), or before it has reported, nothing is hidden for long:
- * the content is shown at once.
+ * viewport (docs/design/ui-brief.md, B5). By default the browser drives it
+ * with a CSS scroll timeline where supported (`reveal`); `staggered` uses the
+ * IntersectionObserver path only (`reveal-io`), so siblings can rise one
+ * after another with `--enter-delay`. Where IntersectionObserver is missing
+ * (jsdom), or before it has reported, nothing is hidden: the content shows.
  */
-export function Reveal({ className, children, ...props }: ComponentProps<'div'>) {
-  const ref = useRef<HTMLDivElement>(null)
+export function Reveal({
+  className,
+  children,
+  staggered = false,
+  as: Tag = 'div',
+  ...props
+}: HTMLAttributes<HTMLElement> & { staggered?: boolean; as?: 'div' | 'li' }) {
+  const ref = useRef<HTMLElement>(null)
   const [shown, setShown] = useState(() => typeof IntersectionObserver === 'undefined')
 
   useEffect(() => {
@@ -28,8 +36,21 @@ export function Reveal({ className, children, ...props }: ComponentProps<'div'>)
     return () => observer.disconnect()
   }, [shown])
 
+  const shared = {
+    'data-in': shown ? '' : undefined,
+    className: cn(staggered ? 'reveal-io' : 'reveal', className),
+    ...props,
+  }
+  // Two explicit elements rather than a dynamic tag, so each gets a correctly typed ref.
+  if (Tag === 'li') {
+    return (
+      <li ref={ref as Ref<HTMLLIElement>} {...shared}>
+        {children}
+      </li>
+    )
+  }
   return (
-    <div ref={ref} data-in={shown ? '' : undefined} className={cn('reveal', className)} {...props}>
+    <div ref={ref as Ref<HTMLDivElement>} {...shared}>
       {children}
     </div>
   )

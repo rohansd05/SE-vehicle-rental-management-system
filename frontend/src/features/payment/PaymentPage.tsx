@@ -108,7 +108,7 @@ function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (con
     <form onSubmit={onSubmit} noValidate className="grid gap-6" aria-label="Pay for this booking">
       <BookingRefusal error={refusal ?? rehold.error} onHoldAgain={() => rehold.mutate()} holding={rehold.isPending} />
       <fieldset className="grid gap-1">
-        <legend className="font-heading text-section font-[650] [font-stretch:118%] [letter-spacing:-0.015em]">Payment method (sandbox)</legend>
+        <legend className="heading text-section">Payment method (sandbox)</legend>
         <p className="mb-2 text-small text-muted-foreground">
           This is the test mode: no real money moves and no card details are entered here.
         </p>

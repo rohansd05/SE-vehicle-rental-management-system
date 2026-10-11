@@ -23,7 +23,7 @@ export function HelpPage() {
         <div className="divide-y">
           {HELP_TOPICS.map((topic) => (
             <div key={topic.id} id={topic.id} className="reveal scroll-mt-24 py-6 first:pt-0">
-              <h2 className="display text-section">{topic.title}</h2>
+              <h2 className="text-section">{topic.title}</h2>
               <p className="mt-1.5 max-w-[68ch] text-sm text-muted-foreground">{topic.body}</p>
             </div>
           ))}

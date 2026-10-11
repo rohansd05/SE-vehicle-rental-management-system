@@ -10,22 +10,24 @@
  */
 
 @theme inline {
-    /* Fonts (D22, B2): self-hosted Fontsource packages, imported in main.tsx.
-       The system stack follows each one so text renders before they load. */
-    --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-    --font-heading: 'Archivo Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+    /* Fonts (D22, B2: type system C, chosen 12 Oct 2026): self-hosted Fontsource
+       packages, imported in main.tsx. Schibsted Grotesk for the hero and
+       headings, IBM Plex Sans for body and UI, IBM Plex Mono for numbers. The
+       system stack follows each one so text renders before they load. */
+    --font-display: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-heading: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
     --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
 
     /* Type scale (B3). `text-sm` is the 16 px body token: the codebase uses it
        as its default text class. `text-small` is the 14 px step below it. */
-    --text-display: clamp(2.25rem, 1.7rem + 2.3vw, 3.75rem);
-    --text-display--line-height: 1.05;
-    --text-title: 2.125rem;
-    --text-title--line-height: 2.625rem;
-    --text-section: 1.375rem;
-    --text-section--line-height: 1.875rem;
-    --text-subsection: 1.125rem;
+    --text-display: clamp(2.5rem, 1.6rem + 3.8vw, 4.75rem);
+    --text-display--line-height: 1;
+    --text-title: clamp(2rem, 1.8rem + 0.6vw, 2.25rem);
+    --text-title--line-height: 1.17;
+    --text-section: clamp(1.375rem, 1.3rem + 0.3vw, 1.5rem);
+    --text-section--line-height: 1.27;
+    --text-subsection: 1.1875rem;
     --text-subsection--line-height: 1.625rem;
     --text-lg: 1.125rem;
     --text-lg--line-height: 1.625rem;
@@ -220,14 +222,18 @@
 
 /* ---- Type utilities (B2, B3) ---- */
 
-/* Public display face: the home hero, the auth-panel heading, main public section titles. */
+/* The hero headline (B2, system C): Schibsted Grotesk 800, tight. */
 @utility display {
     font-family: var(--font-display);
-    font-weight: 560;
-    font-optical-sizing: auto;
-    font-variation-settings: 'SOFT' 30;
-    letter-spacing: -0.01em;
-    font-stretch: 100%;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+/* Heading style for elements that are not h1 to h4 (legends, captions, alert titles). */
+@utility heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 /* Money, dates, IDs and number plates: the mono face with tabular figures. */
@@ -304,6 +310,14 @@
     }
 }
 
+/* `reveal-io`: the IntersectionObserver path only, so `--enter-delay` can stagger siblings. */
+@utility reveal-io {
+    &[data-in] {
+        animation: rise 450ms var(--ease-out) both;
+        animation-delay: var(--enter-delay, 0ms);
+    }
+}
+
 /* A brief primary-tint highlight behind a value that has just changed (opacity only, gone within 1.2 s). */
 @utility flash {
     position: relative;
@@ -341,13 +355,16 @@
         @apply bg-background text-sm text-foreground;
     }
 
-    /* App headings (B2): Archivo wide, heavy, slightly tight. */
+    /* Headings (B2, system C): Schibsted Grotesk 700, tight; subsections 650. */
     h1, h2, h3, h4 {
         @apply font-heading;
-        font-weight: 650;
-        font-stretch: 118%;
-        letter-spacing: -0.015em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
         text-wrap: balance;
+    }
+    h3, h4 {
+        font-weight: 650;
+        letter-spacing: -0.01em;
     }
 
     /* One focus style everywhere (brief 7): 2 px primary outline that settles 2 px out. */
@@ -407,6 +424,7 @@
         .enter,
         .reveal,
         .reveal[data-in],
+        .reveal-io[data-in],
         .stage > * {
             animation: fade 150ms var(--ease-out) both !important;
             animation-timeline: auto !important;
