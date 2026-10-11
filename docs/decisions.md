@@ -344,6 +344,36 @@ rotation: the second presents a just-blacklisted token and is signed out.
 Coordinating tabs (for example with a BroadcastChannel) is proposed as F1
 below.
 
+## D22 — Self-hosted Fontsource fonts (SIL OFL 1.1), no CDN
+
+**Decision.** CO-7 is amended further: fonts under the SIL Open Font
+Licence 1.1 are permitted when used unmodified and self-hosted through
+Fontsource npm packages. The frontend uses three:
+
+| Package | Font | Licence | Role |
+|---|---|---|---|
+| `@fontsource-variable/archivo` | Archivo | OFL-1.1 | Headings |
+| `@fontsource-variable/ibm-plex-sans` | IBM Plex Sans | OFL-1.1 | Body and UI |
+| `@fontsource/ibm-plex-mono` | IBM Plex Mono | OFL-1.1 | Numbers, prices, dates, IDs, plates |
+
+The font files are bundled by Vite and served by Caddy with the React build
+(D1). No CDN, no Google Fonts link and no other third-party font request:
+the lab network may have no internet access. Only the Latin subset is
+imported.
+
+**Rationale.** The UI redesign (`docs/design/ui-brief.md`) needs a heading
+face, a legible body face and a tabular face for money and IDs; the system
+font stack gives none of these consistently across Windows, Android and iOS.
+The OFL lets a font be used, bundled and redistributed with software
+freely; its conditions (keep the licence and copyright notice, do not sell
+the font on its own, rename modified versions) are met by shipping the
+unmodified Fontsource files, which include the licence. Self-hosting keeps
+the app working offline and sends no visitor data to a font host.
+
+This reverses the reasoning in D10 that kept Geist out because OFL 1.1 was
+not on the CO-7 list. Geist itself stays removed: it is not one of the three
+fonts chosen.
+
 ## Phase 1C frontend: proposed items (awaiting team approval)
 
 The SRS does not settle these; the frontend implements them as listed.

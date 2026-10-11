@@ -149,6 +149,7 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
 - Rohan, Book Vehicle module: apps/bookings, apps/payments, apps/pricing, apps/fleet (except fleet/services/status.py), frontend features search, booking, payment, history.
 - Nidhi, Close Maintenance Job module: apps/maintenance, apps/fleet/services/status.py (the shared vehicle status service), frontend technician and maintenance features.
 - Shared files (frontend router, navigation, seed_demo, generated API types): one-line additions only. After merging, regenerate API types with `npm run api:types` instead of merging that file by hand.
+- From 11 Oct 2026 Nidhi Dhyani does all remaining work across the repo.
 
 
 ## Things to never do
