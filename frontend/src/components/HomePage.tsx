@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { TONE_PILL } from '@/components/status-tone'
 import { useAuth } from '@/features/auth/auth-context'
 import { PRODUCT_NAME, useAgency } from '@/hooks/page'
 import { cn } from '@/lib/utils'
@@ -20,11 +21,11 @@ function StatusPill({ tone, children }: { tone: Tone; children: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        tone === 'ok' && 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-        tone === 'warn' && 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
-        tone === 'error' && 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
-        tone === 'muted' && 'bg-muted text-muted-foreground',
+        'inline-flex h-5 items-center rounded-md px-1.5 text-xs font-medium',
+        tone === 'ok' && TONE_PILL.available,
+        tone === 'warn' && TONE_PILL.maintenance,
+        tone === 'error' && TONE_PILL.unsafe,
+        tone === 'muted' && TONE_PILL.inactive,
       )}
     >
       {children}

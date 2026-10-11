@@ -124,7 +124,7 @@ export function ScheduleCard({
               </Field>
             </div>
             {conflict ? (
-              <div role="alert" className="grid gap-3 rounded-md border border-amber-600/40 bg-amber-500/10 p-3 text-sm">
+              <div role="alert" className="grid gap-3 rounded-md border-l-2 border-l-status-maintenance bg-status-maintenance-tint p-3 text-sm">
                 <p className="font-medium">{conflict.detail}</p>
                 <ul className="grid gap-1">
                   {conflict.bookings.map((booking) => (

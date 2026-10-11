@@ -150,8 +150,8 @@ data to be created.
 - `/app/licence` reads "Your licence was verified on —." for the demo
   customer: the verification date is missing in the seed data or the API
   response.
-- The "Completed" booking status uses the `PartyPopper` icon. Proposed swap
-  to `CircleCheckBig` (icon only, the text stays).
+- The "Completed" booking status uses the `PartyPopper` icon. Swap to
+  `CircleCheckBig` approved 11 Oct 2026 (icon only, the text stays); done in Stage 2.
 
 ## 2. References (patterns only)
 
@@ -206,10 +206,13 @@ a component.
 | `--primary-hover` | `#0B4753` | Hover and pressed state of primary. |
 | `--primary-tint` | `#E2ECED` | Active nav background, selected row, info alert background. |
 | `--on-primary` | `#FFFFFF` | Text on primary. |
-| `--accent` | `#E5A21A` | Signal amber. **Markers only, never text on the canvas:** the active-nav bar, the queue-count marker ("1 licence is waiting"), the payment hold timer marker, the rule under "Total payable". At most one use per screen. |
-| `--accent-ink` | `#8A5800` | Amber when it has to be text. |
-| `--accent-tint` | `#F7ECD4` | Background behind amber text. |
-| `--on-accent` | `#1B1C1D` | Text on a solid amber marker. |
+| `--signal` | `#E5A21A` | Signal amber. **Markers only, never text on the canvas:** the active-nav bar, the queue-count marker ("1 licence is waiting"), the payment hold timer marker, the rule under "Total payable". At most one use per screen. |
+| `--signal-ink` | `#8A5800` | Amber when it has to be text. |
+| `--signal-tint` | `#F7ECD4` | Background behind amber text. |
+| `--on-signal` | `#1B1C1D` | Text on a solid amber marker. |
+
+The amber tokens are named `signal`, not `accent`: shadcn/ui already uses
+`--accent` for neutral hover fills, and it maps to `canvas-sunken`.
 
 ### 3.3 Status colours
 
@@ -230,7 +233,7 @@ outlined pill (fixes G9); the text is unchanged ("Critical severity").
 ### 3.4 Charts
 
 `--chart-1` primary, `--chart-2` status-booked, `--chart-3`
-status-available, `--chart-4` accent-ink, `--chart-5` ink-subtle. Recharts
+status-available, `--chart-4` signal-ink, `--chart-5` ink-subtle. Recharts
 is installed but no screen draws a chart yet; the tokens exist so a future
 report uses the same palette.
 
@@ -245,9 +248,9 @@ report uses the same palette.
 | on-primary | primary / primary-hover | 8.05 / 10.29 | 4.5 |
 | primary (link, focus ring) | canvas | 7.39 | 4.5 / 3.0 |
 | primary | primary-tint | 6.69 | 4.5 |
-| on-accent | accent | 7.73 | 4.5 |
-| accent-ink | canvas / accent-tint | 5.54 / 5.15 | 4.5 |
-| accent (marker) | canvas | 2.03 | decorative only, never text, never the only cue |
+| on-signal | signal | 7.73 | 4.5 |
+| signal-ink | canvas / signal-tint | 5.54 / 5.15 | 4.5 |
+| signal (marker) | canvas | 2.03 | decorative only, never text, never the only cue |
 | status-available ink | tint / canvas | 5.42 / 5.94 | 4.5 |
 | status-booked ink | tint / canvas | 5.95 / 6.57 | 4.5 |
 | status-maintenance ink | tint | 5.15 | 4.5 |
@@ -265,7 +268,10 @@ Three roles, three families, all SIL OFL 1.1, self-hosted with Fontsource
 | Body and UI | IBM Plex Sans (variable) | `@fontsource-variable/ibm-plex-sans` | Very legible at 13 to 15 px, open apertures, distinct `Il1`, good for forms and dense tables. Pairs with Plex Mono by design. |
 | Numbers, prices, dates, IDs, plates | IBM Plex Mono 400 and 500 | `@fontsource/ibm-plex-mono` | Every figure is the same width, so columns of money and dates line up; plates like `MH02DM1006` and IDs read unambiguously. `font-variant-numeric: tabular-nums` is set as well. |
 
-Only the Latin subset is imported. Formatting logic (`formatCurrency`,
+Each package's full axis or weight file is imported: the rupee sign
+(U+20B9) is in the Latin Extended subset, and every subset is declared with
+a `unicode-range`, so the browser downloads only Latin and Latin Extended in
+practice. Formatting logic (`formatCurrency`,
 `formatDateTime`, ...) is untouched; only the face changes. A `.num` utility
 (Tailwind `font-mono tabular-nums`) is applied where those values render.
 
@@ -284,7 +290,8 @@ public pages. Line heights on a 4 px grid.
 | `body` | 14 / 22 | Plex Sans 400 | Default text |
 | `body-strong` | 14 / 22 | Plex Sans 500 | `dd` values, row titles |
 | `small` | 13 / 20 | Plex Sans 400 | Descriptions, hints, meta |
-| `label` | 12 / 16 | Plex Sans 500, +0.01em | Form labels, table headers, pill text |
+| `small` (label) | 13 / 20 | Plex Sans 500 | Form labels |
+| `label` | 12 / 16 | Plex Sans 500 | Table headers, pill text, "Soon" |
 | `num` | 13 / 20 | Plex Mono 400 | IDs, dates, plates, amounts in rows |
 | `num-strong` | 14 / 22 | Plex Mono 500 | Totals |
 | `num-lg` | 20 / 28 | Plex Mono 500 | "Total payable" in the booking summary |
@@ -315,20 +322,24 @@ all-caps.
 
 ### 6.0 App shell (signed in)
 
-- **Sidebar, ≥768 px:** fixed, full height, 240 px, `canvas-sunken`, hairline
+- **Sidebar, ≥768 px:** fixed, full height, 256 px, `canvas-sunken`, hairline
   right edge. Top: agency name (Archivo 600, from `useAgency`, never
   hard-coded, D7). Then the role's navigation from `navItemsFor` (unchanged).
-  Active item: `primary-tint` background, `primary` text, a 2 px `accent` bar
+  Active item: `primary-tint` background, `primary` text, a 2 px `signal` bar
   on the left edge. Available items in `ink`. Planned items in `ink-subtle`
   with "Soon" right-aligned in `label` size, no pill, no hover tint, so they
-  read as quiet and intentional. Labels never wrap: "Handover and return"
-  fits in 240 px at 14 px. Bottom: signed-in name and role.
-- **Top bar:** 48 px, `canvas`, hairline bottom edge, no blur. Left: the
+  read as quiet and intentional. Labels never wrap: 256 px (not 240) is what
+  "Handover and return" plus "Soon" needs at 14 px. No name block at the
+  bottom: the top bar already shows it, and a second copy would duplicate
+  visible text.
+- **Top bar:** 56 px, `canvas`, hairline bottom edge, no blur. Left: the
   phone menu button (below 768 px) and the agency name (phones only, since
   the sidebar is hidden). Right: avatar initials, name and role (≥640 px),
   Help (ghost) and Sign out (outline). Same labels and `aria-label`s as now.
 - **Phone drawer:** the existing Sheet, restyled to match the sidebar.
-- **Main:** `canvas`, gutter per section 5, no inner box.
+- **Main:** `canvas`, gutter per section 5, no inner box, content up to
+  1280 px.
+- **Footer:** none exists and none is added (it would be new copy).
 
 ### 6.1 Auth: sign in, register, verify OTP
 
@@ -338,13 +349,16 @@ product panel on the right (40 % width, solid `primary`, `on-primary` text,
 no image, no gradient). Below 1024 the panel is hidden and the form takes the
 page. The public top bar stays.
 
-Product panel content (proposed, for approval). Short facts taken only from
-copy the app already shows, reworded so no test finds a duplicate:
+Product panel content (approved 11 Oct 2026). Short facts taken only from
+copy the app already shows, reworded so no test finds a duplicate. No
+prices, ratings, hours, guarantees or "24/7".
 
-1. Cars and two-wheelers, free for the dates you choose.
-2. Collect at a branch or have it delivered.
-3. Pay by card, online, or in cash at the branch.
-4. Your driving licence is verified by our staff before you book.
+| Fact | Reworded from |
+|---|---|
+| Cars and two-wheelers, free for the dates you choose. | "Search cars and two-wheelers that are free for your dates." (the "Find a vehicle" menu description, `app/navigation.ts`, shown on `/app`) |
+| Collect at a branch or have it delivered. | "collect it from a branch or have it delivered" (home page intro, `/`) |
+| Pay by card, online, or in cash at the branch. | "pay by card, online or in cash at the branch." (home page intro, `/`) |
+| Your driving licence is verified by our staff before you book. | "Our staff verify it before you can book." (Help, "Driving licence", `/help`) |
 
 The agency name heads the panel (from `AGENCY_NAME`).
 
@@ -355,7 +369,7 @@ paragraph and actions on the left; "System status" as a description list on
 the right with hairline rows and status pills, "Check again" as a text
 button. Below, a hairline and a three-column row of the help topics already
 on `/help` ("Signing in", "Verification codes", "Driving licence") as
-links-with-summary, so 1440 has no empty lower half. (Proposed addition:
+links-with-summary, so 1440 has no empty lower half. (Approved 11 Oct 2026:
 re-uses existing help headings and links; no new claims.)
 
 ### 6.3 Page header (every signed-in page)
@@ -483,7 +497,7 @@ icon, not a box.
   utilities (`.num`, `.rule`, `.dl`) is defined there.
 - `lib/theme.ts` stops following the OS: the app is always light. The `.dark`
   block and every `dark:` class are removed.
-- Fonts are imported once in `main.tsx` (Latin subset), with
+- Fonts are imported once in `main.tsx` (full files, `unicode-range` subsets), with
   `font-display: swap`; fallbacks are the current system stack so text
   renders before the fonts load.
 - No new runtime dependency other than the three Fontsource packages (D22).
@@ -492,7 +506,7 @@ icon, not a box.
 
 | Stage | Scope |
 |---|---|
-| 2 | Tokens, fonts, global styles, shared components (section 7), app shell and page header, `lib/theme.ts`. |
+| 2 | Tokens, fonts, global styles, shared components (section 7), app shell and page header, `lib/theme.ts` removed (light only). |
 | 3 | Home, register, verify, sign in, profile, licence submission and status, help, 403, 404, placeholders. |
 | 4 | Search and results, vehicle detail and quote, booking form and summary, payment, confirmation, invoice, booking history and detail, every refusal message. |
 | 5 | Maintenance (report, list, conflicts warning, my jobs, record work, complete, awaiting clearance, clearance queue), licence queue and review, Soon placeholders. |

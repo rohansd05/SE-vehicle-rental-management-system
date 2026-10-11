@@ -4,32 +4,33 @@
 import {
   Ban,
   CircleCheck,
+  CircleCheckBig,
   CircleDashed,
   Clock,
   KeyRound,
   type LucideIcon,
-  PartyPopper,
   UserX,
 } from 'lucide-react'
 
+import { TONE_PILL, type StatusTone } from '@/components/status-tone'
 import { Badge } from '@/components/ui/badge'
 import type { BookingStatus } from '@/features/booking/api'
 import { cn } from '@/lib/utils'
 
-const STYLES: Record<BookingStatus, { icon: LucideIcon; className: string }> = {
-  Draft: { icon: CircleDashed, className: 'bg-muted text-muted-foreground' },
-  'Pending Payment': { icon: Clock, className: 'bg-amber-500/15 text-amber-900 dark:text-amber-300' },
-  Confirmed: { icon: CircleCheck, className: 'bg-emerald-600/10 text-emerald-800 dark:text-emerald-300' },
-  Active: { icon: KeyRound, className: 'bg-sky-600/10 text-sky-800 dark:text-sky-300' },
-  Completed: { icon: PartyPopper, className: 'bg-muted text-foreground' },
-  Cancelled: { icon: Ban, className: 'bg-destructive/10 text-destructive' },
-  'No-show': { icon: UserX, className: 'bg-destructive/10 text-destructive' },
+const STYLES: Record<BookingStatus, { icon: LucideIcon; tone: StatusTone }> = {
+  Draft: { icon: CircleDashed, tone: 'inactive' },
+  'Pending Payment': { icon: Clock, tone: 'maintenance' },
+  Confirmed: { icon: CircleCheck, tone: 'available' },
+  Active: { icon: KeyRound, tone: 'booked' },
+  Completed: { icon: CircleCheckBig, tone: 'inactive' },
+  Cancelled: { icon: Ban, tone: 'unsafe' },
+  'No-show': { icon: UserX, tone: 'unsafe' },
 }
 
 export function BookingStatusBadge({ status }: { status: BookingStatus }) {
-  const { icon: Icon, className } = STYLES[status]
+  const { icon: Icon, tone } = STYLES[status]
   return (
-    <Badge variant="secondary" className={cn('gap-1', className)}>
+    <Badge variant="secondary" className={cn('gap-1', TONE_PILL[tone])}>
       <Icon className="size-3" aria-hidden="true" />
       {status}
     </Badge>

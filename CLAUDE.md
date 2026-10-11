@@ -140,6 +140,9 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   in development); login/refresh bodies hold only `{access, user}`; logout
   clears the cookie. The frontend keeps the access token in memory only,
   never in localStorage or sessionStorage.
+- **D22 Fonts:** CO-7 amended: SIL OFL 1.1 fonts are permitted, unmodified and
+  self-hosted through Fontsource (Archivo, IBM Plex Sans, IBM Plex Mono); no CDN
+  or Google Fonts link. Geist stays removed.
 
 ## Team workflow (from 10 Oct 2026)
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.

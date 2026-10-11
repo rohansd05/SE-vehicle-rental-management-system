@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { NativeSelect } from '@/components/ui/native-select'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDateTime } from '@/lib/dates'
@@ -40,9 +41,9 @@ export function BookingHistoryPage() {
         <label htmlFor="booking-status-filter" className="text-sm font-medium">
           Status
         </label>
-        <select
+        <NativeSelect
           id="booking-status-filter"
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+          className="w-auto"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as BookingStatus | '')
@@ -55,7 +56,7 @@ export function BookingHistoryPage() {
               {value}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       {bookings.isPending ? (
         <LoadingState label="Loading your bookings…" />

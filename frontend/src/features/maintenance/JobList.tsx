@@ -1,30 +1,16 @@
 import { ChevronRight } from 'lucide-react'
-import { forwardRef, type ComponentProps } from 'react'
 import { Link } from 'react-router-dom'
 
 import { JOB_STATUSES, type JobStatus, type MaintenanceJob } from '@/api/maintenance'
 import { Label } from '@/components/ui/label'
+import { NativeSelect } from '@/components/ui/native-select'
 import { VehicleStatusBadge } from '@/components/VehicleStatusBadge'
 import { formatDateTime } from '@/lib/dates'
-import { cn } from '@/lib/utils'
 
 import { JobStatusBadge, SeverityBadge } from './badges'
 
-/** A native select styled like Input: accessible and usable on touch screens. */
-export const NativeSelect = forwardRef<HTMLSelectElement, ComponentProps<'select'>>(
-  function NativeSelect({ className, ...props }, ref) {
-    return (
-      <select
-        ref={ref}
-        className={cn(
-          'h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive md:text-sm',
-          className,
-        )}
-        {...props}
-      />
-    )
-  },
-)
+// The shared native select; re-exported because the maintenance forms import it from here.
+export { NativeSelect }
 
 export function StatusFilter({
   value,

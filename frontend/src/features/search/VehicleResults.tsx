@@ -77,7 +77,7 @@ export function VehicleCard({ vehicle, href }: { vehicle: AvailableVehicle; href
           <dd className="flex items-center gap-1">
             {vehicle.average_rating ? (
               <>
-                <Star className="size-3.5 fill-current text-amber-500" aria-hidden="true" />
+                <Star className="size-3.5 fill-current text-signal" aria-hidden="true" />
                 {Number(vehicle.average_rating).toFixed(1)} out of 5
               </>
             ) : (

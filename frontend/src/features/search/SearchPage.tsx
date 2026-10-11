@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
-import { forwardRef, type ComponentProps } from 'react'
 import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router-dom'
 
@@ -10,9 +9,9 @@ import { PageHeader } from '@/components/page'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
 import { formatDateTime } from '@/lib/dates'
 import { describedBy } from '@/lib/form'
-import { cn } from '@/lib/utils'
 
 import { listBranches, listCategories, type SearchQuery, searchVehicles } from './api'
 import { BRANCHES_KEY, CATEGORIES_KEY, searchKey } from './keys'
@@ -21,21 +20,6 @@ import { VehicleResults } from './VehicleResults'
 
 const FIELDS = ['branch', 'category', 'pickup_datetime', 'return_datetime'] as const
 type FieldName = (typeof FIELDS)[number]
-
-const NativeSelect = forwardRef<HTMLSelectElement, ComponentProps<'select'>>(
-  function NativeSelect({ className, ...props }, ref) {
-    return (
-      <select
-        ref={ref}
-        className={cn(
-          'h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive md:text-sm',
-          className,
-        )}
-        {...props}
-      />
-    )
-  },
-)
 
 /** The search kept in the address, so a reload or the back button shows it again. */
 function readQuery(params: URLSearchParams): SearchQuery | null {

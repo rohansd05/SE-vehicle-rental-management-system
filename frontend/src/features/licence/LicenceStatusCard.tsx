@@ -1,6 +1,7 @@
 import { CircleAlert, CircleCheck, Clock, IdCard } from 'lucide-react'
 
 import type { Licence } from '@/api/types'
+import { TONE_PILL } from '@/components/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/dates'
 import { cn } from '@/lib/utils'
@@ -8,10 +9,10 @@ import { cn } from '@/lib/utils'
 import { STATUS_TONE } from './rules'
 
 const TONE_STYLES = {
-  neutral: 'bg-muted text-foreground',
-  pending: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
-  good: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
-  bad: 'bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200',
+  neutral: TONE_PILL.inactive,
+  pending: TONE_PILL.maintenance,
+  good: TONE_PILL.available,
+  bad: TONE_PILL.unsafe,
 } as const
 
 const TONE_ICONS = { neutral: IdCard, pending: Clock, good: CircleCheck, bad: CircleAlert } as const
@@ -22,11 +23,11 @@ export function LicenceStatusBadge({ status }: { status: Licence['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium',
+        'inline-flex h-6 w-fit items-center gap-1.5 rounded-md px-2 text-small font-medium whitespace-nowrap',
         TONE_STYLES[tone],
       )}
     >
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon className="size-3.5" aria-hidden="true" />
       {status}
     </span>
   )
@@ -59,7 +60,7 @@ function Explanation({ licence }: { licence: Licence }) {
       return (
         <div className="grid gap-2">
           <p>We couldn’t verify your licence. Please fix the problem below and submit it again.</p>
-          <p className="rounded-md border border-red-600/30 bg-red-600/5 px-3 py-2">
+          <p className="rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-3 py-2.5">
             <span className="font-medium">Reason: </span>
             {licence.rejection_reason || 'No reason was recorded.'}
           </p>

@@ -2,12 +2,62 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Design tokens (docs/design/ui-brief.md, sections 3 to 5). Every colour in
+ * the app comes from here; components never use a hex value or a Tailwind
+ * palette colour. The app is light only (the brief, section 0).
+ */
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    /* System font stack: no bundled font, so no extra licence (CO-7). */
-    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* Fonts (D22): self-hosted Fontsource packages, imported in main.tsx.
+       The system stack follows each one so text renders before they load. */
+    --font-heading: 'Archivo Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+
+    /* Type scale (brief 4.1). text-sm is the 14 px body size. */
+    --text-display: 2rem;
+    --text-display--line-height: 2.5rem;
+    --text-title: 1.5rem;
+    --text-title--line-height: 2rem;
+    --text-section: 1.0625rem;
+    --text-section--line-height: 1.5rem;
+    --text-lead: 1rem;
+    --text-lead--line-height: 1.625rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.375rem;
+    --text-small: 0.8125rem;
+    --text-small--line-height: 1.25rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1rem;
+
+    /* Palette (brief 3.1 to 3.3). */
+    --color-canvas: var(--canvas);
+    --color-canvas-sunken: var(--canvas-sunken);
+    --color-surface: var(--surface);
+    --color-ink: var(--ink);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-subtle: var(--ink-subtle);
+    --color-hairline: var(--hairline);
+    --color-line-strong: var(--line-strong);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-tint: var(--primary-tint);
+    --color-signal: var(--signal);
+    --color-signal-ink: var(--signal-ink);
+    --color-signal-tint: var(--signal-tint);
+    --color-on-signal: var(--on-signal);
+    --color-status-available: var(--status-available);
+    --color-status-available-tint: var(--status-available-tint);
+    --color-status-booked: var(--status-booked);
+    --color-status-booked-tint: var(--status-booked-tint);
+    --color-status-maintenance: var(--status-maintenance);
+    --color-status-maintenance-tint: var(--status-maintenance-tint);
+    --color-status-unsafe: var(--status-unsafe);
+    --color-status-unsafe-tint: var(--status-unsafe-tint);
+    --color-status-inactive: var(--status-inactive);
+    --color-status-inactive-tint: var(--status-inactive-tint);
+
+    /* shadcn/ui names, kept so the primitives work; they point at the palette. */
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,96 +89,172 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Shape (brief 5): 4 px on controls, 6 px on overlays, nothing larger. */
+    --radius-xs: 2px;
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 4px;
+    --radius-xl: 6px;
+    --radius-2xl: 6px;
+    --radius-3xl: 6px;
+    --radius-4xl: 6px;
+
+    /* Elevation: overlays only (dialogs, sheets, menus, popovers). */
+    --shadow-overlay: 0 8px 24px rgb(27 28 29 / 0.12), 0 1px 2px rgb(27 28 29 / 0.08);
 }
 
 :root {
-    /* The one accent colour. White text on it is about 6:1 (WCAG AA). */
-    --brand: oklch(0.47 0.12 240);
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: var(--brand);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.48 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: var(--brand);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: var(--brand);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: var(--brand);
+    color-scheme: light;
+
+    /* Neutrals (brief 3.1) */
+    --canvas: #F7F5F0;
+    --canvas-sunken: #F0EDE6;
+    --surface: #FFFFFF;
+    --ink: #1B1C1D;
+    --ink-muted: #55534E;
+    --ink-subtle: #6B6862;
+    --hairline: #E3DFD6;
+    --line-strong: #8D887E;
+
+    /* Primary: deep petrol (brief 3.2). White on it is 8.05:1. */
+    --primary: #0F5866;
+    --primary-hover: #0B4753;
+    --primary-tint: #E2ECED;
+    --on-primary: #FFFFFF;
+
+    /* Signal amber: markers only, never text on the canvas (brief 3.2). */
+    --signal: #E5A21A;
+    --signal-ink: #8A5800;
+    --signal-tint: #F7ECD4;
+    --on-signal: #1B1C1D;
+
+    /* Status (brief 3.3): ink on tint, each at least 5:1. */
+    --status-available: #2E6A3E;
+    --status-available-tint: #E3EEE4;
+    --status-booked: #2B5A8A;
+    --status-booked-tint: #E3EBF4;
+    --status-maintenance: #8A5800;
+    --status-maintenance-tint: #F7ECD4;
+    --status-unsafe: #A3322A;
+    --status-unsafe-tint: #F6E2DF;
+    --status-inactive: #55534E;
+    --status-inactive-tint: #EAE7E1;
+
+    /* Kept for feature code that still reads it; same as the primary. */
+    --brand: var(--primary);
+
+    /* shadcn/ui aliases */
+    --background: var(--canvas);
+    --foreground: var(--ink);
+    --card: transparent;
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary-foreground: var(--on-primary);
+    --secondary: var(--canvas-sunken);
+    --secondary-foreground: var(--ink);
+    --muted: var(--canvas-sunken);
+    --muted-foreground: var(--ink-muted);
+    --accent: var(--canvas-sunken);
+    --accent-foreground: var(--ink);
+    --destructive: var(--status-unsafe);
+    --border: var(--hairline);
+    --input: var(--line-strong);
+    --ring: var(--primary);
+    --radius: 4px;
+
+    /* Charts (brief 3.4) */
+    --chart-1: var(--primary);
+    --chart-2: var(--status-booked);
+    --chart-3: var(--status-available);
+    --chart-4: var(--signal-ink);
+    --chart-5: var(--ink-subtle);
+
+    --sidebar: var(--canvas-sunken);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--on-primary);
+    --sidebar-accent: var(--primary-tint);
+    --sidebar-accent-foreground: var(--primary);
+    --sidebar-border: var(--hairline);
+    --sidebar-ring: var(--primary);
 }
 
-.dark {
-    /* The accent, lighter for dark backgrounds; dark text on it passes AA. */
-    --brand: oklch(0.76 0.11 235);
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: var(--brand);
-    --primary-foreground: oklch(0.16 0.03 235);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.74 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: var(--brand);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: var(--brand);
-    --sidebar-primary-foreground: oklch(0.16 0.03 235);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: var(--brand);
+/* Money, dates, IDs and number plates: the mono face with tabular figures. */
+@utility num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border;
     }
-  body {
-    @apply bg-background text-foreground;
+    html {
+        @apply bg-background font-sans text-foreground antialiased;
+        text-rendering: optimizeLegibility;
     }
-  html {
-    @apply font-sans;
+    body {
+        @apply bg-background text-sm text-foreground;
+    }
+    h1, h2, h3, h4 {
+        @apply font-heading;
+        letter-spacing: -0.005em;
+    }
+
+    /* One focus style everywhere (brief 7): 2 px primary outline, 2 px offset. */
+    :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    /* One icon stroke width everywhere (brief 7). CSS overrides lucide's attribute. */
+    svg.lucide {
+        stroke-width: 1.75;
+    }
+
+    /* Numbers and dates that are typed read in the tabular face. */
+    input[type='date'],
+    input[type='datetime-local'],
+    input[type='time'],
+    input[type='number'],
+    input[type='tel'],
+    input[inputmode='numeric'] {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Native radios and checkboxes take the primary colour. */
+    input[type='radio'],
+    input[type='checkbox'] {
+        accent-color: var(--primary);
+    }
+
+    /* Browser autofill keeps the field's own colours. */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+        -webkit-text-fill-color: var(--ink);
+        caret-color: var(--ink);
+    }
+
+    ::selection {
+        background: var(--primary-tint);
+        color: var(--ink);
+    }
+
+    /* Respect reduced motion: no animation, no transition (brief 5). */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
     }
 }

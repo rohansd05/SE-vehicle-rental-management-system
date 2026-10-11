@@ -358,8 +358,11 @@ Fontsource npm packages. The frontend uses three:
 
 The font files are bundled by Vite and served by Caddy with the React build
 (D1). No CDN, no Google Fonts link and no other third-party font request:
-the lab network may have no internet access. Only the Latin subset is
-imported.
+the lab network may have no internet access. Each package's full axis or
+weight file is imported, because the rupee sign (U+20B9) is in the Latin
+Extended subset; every subset is declared with a `unicode-range`, so the
+browser downloads only the subsets a page actually uses (Latin and Latin
+Extended in practice).
 
 **Rationale.** The UI redesign (`docs/design/ui-brief.md`) needs a heading
 face, a legible body face and a tabular face for money and IDs; the system
@@ -385,7 +388,7 @@ The SRS does not settle these; the frontend implements them as listed.
 | F3 | OTP error wording | The server answers every failure the same way. The verify screen knows when the code was sent and how many tries were made on this screen, so it says "wrong (n tries left)", "expired" or "too many attempts". After a page reload it falls back to the server's generic message. |
 | F4 | Licence review screen | There is no `GET licences/{id}/`; the review screen uses the licence passed from the queue, or finds it in the queue's first page (20 oldest). Proposal: add the detail endpoint. |
 | F5 | Mobile-change resend | A visible 60-second countdown on the client, matching A3; the server applies only the profile throttle (A1) to mobile-change codes. |
-| F6 | Accent colour | `oklch(0.47 0.12 240)` in light mode and `oklch(0.76 0.11 235)` in dark mode, as the `--brand` token; light and dark follow the OS. |
+| F6 | Accent colour | **Superseded by the UI redesign (light only, docs/design/ui-brief.md).** Was: `oklch(0.47 0.12 240)` in light mode and `oklch(0.76 0.11 235)` in dark mode, as the `--brand` token; light and dark follow the OS. |
 | F7 | Help link (UI-2) | Present on every screen; it leads to a short help page until the online help system (UD-1) is built. |
 | F8 | Planned features in the menu | Shown with a "Soon" label and an honest "not available yet" page; no sample data. |
 | F9 | Registration fields | Date of birth (BR-2) and an emergency contact (SA-4) are asked at registration, because the backend requires them. |
@@ -512,6 +515,9 @@ React is pinned to 18 because current Vite templates default to React 19
 | cn | 0.4.0 | MIT | OK (shadcn/ui; shadcn's replacement for clsx + tailwind-merge) |
 | tw-animate-css | 1.4.0 | MIT | OK (shadcn/ui; CSS only) |
 | lucide-react | 1.52.0 | ISC | OK under D10 (shadcn/ui's icon set) |
+| @fontsource-variable/archivo | 5.3.0 | OFL-1.1 | OK under D22 (heading font, self-hosted) |
+| @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | OK under D22 (body and UI font, self-hosted) |
+| @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | OK under D22 (numbers, prices, dates and IDs, self-hosted) |
 
 ### Frontend development (`frontend/package.json` devDependencies)
 
@@ -530,9 +536,9 @@ React is pinned to 18 because current Vite templates default to React 19
 | oxlint | 1.87.0 | MIT | OK (the Vite template's linter; `npm run lint`) |
 | @types/react, @types/react-dom, @types/node | 18.3.31, 18.3.7, 22.20.5 | MIT | OK |
 
-Removed: `@fontsource-variable/geist` (added by `shadcn init`). The Geist font
-is under the SIL Open Font Licence 1.1, which fails CO-7; the UI uses the
-system font stack instead.
+Removed: `@fontsource-variable/geist` (added by `shadcn init`). Geist stays
+removed. SIL OFL 1.1 fonts are now permitted under D22, and the UI uses
+Archivo, IBM Plex Sans and IBM Plex Mono (see "Frontend runtime" above).
 
 ### Frontend transitive dependencies outside MIT / Apache / BSD
 
