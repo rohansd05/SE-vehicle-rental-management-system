@@ -1,36 +1,35 @@
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+
 import { PageHeader } from '@/components/page'
+import { WhereToGo } from '@/components/where-to-go'
+
+import { HELP_TOPICS } from './help-topics'
 
 /** UI-2 asks for a help link on every screen; the help system (UD-1) comes later. */
 export function HelpPage() {
+  // A home-page link opens a topic directly (/help#signing-in).
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
+  }, [hash])
   return (
-    <section className="max-w-2xl">
+    <section className="stage">
       <PageHeader
         title="Help"
         description="The full online help, with guides for every screen, is planned for a later release."
+        photo="band-quiet-2"
       />
-      <div className="space-y-4 text-sm">
-        <div>
-          <h2 className="font-medium">Signing in</h2>
-          <p className="mt-1 text-muted-foreground">
-            After five failed attempts in a row your account is locked for 15 minutes, and we
-            e-mail the registered address. For your security you are signed out after 30 minutes
-            without activity.
-          </p>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:gap-16 xl:gap-24">
+        <div className="divide-y">
+          {HELP_TOPICS.map((topic) => (
+            <div key={topic.id} id={topic.id} className="reveal scroll-mt-24 py-6 first:pt-0">
+              <h2 className="text-section">{topic.title}</h2>
+              <p className="mt-2 max-w-[68ch] text-sm text-muted-foreground">{topic.body}</p>
+            </div>
+          ))}
         </div>
-        <div>
-          <h2 className="font-medium">Verification codes</h2>
-          <p className="mt-1 text-muted-foreground">
-            Codes are sent by SMS and are valid for 10 minutes. You can request a new one after a
-            minute; requesting a new code stops the previous one from working.
-          </p>
-        </div>
-        <div>
-          <h2 className="font-medium">Driving licence</h2>
-          <p className="mt-1 text-muted-foreground">
-            Upload clear photos of the front and back of your licence (JPG or PNG, up to 5 MB
-            each). Our staff verify it before you can book.
-          </p>
-        </div>
+        <WhereToGo />
       </div>
     </section>
   )

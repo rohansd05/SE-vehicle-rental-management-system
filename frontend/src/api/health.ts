@@ -3,7 +3,7 @@ import type { Health } from './types'
 
 export type { Health }
 
-// GET /api/v1/health/ — public. The only source of the agency name and
+// GET /api/v1/health/ — public. The source of the brand name (Veyora, D24) and
 // currency in the frontend (D7); never hardcode either.
 export async function getHealth(): Promise<Health> {
   try {

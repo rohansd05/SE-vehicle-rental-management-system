@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { formatDateTime } from '@/lib/dates'
 import { applyServerErrors, describedBy } from '@/lib/form'
+import { FORM, FORM_INDENT } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import { NativeSelect } from './JobList'
 import { TECHNICIANS_KEY } from './keys'
@@ -86,7 +88,7 @@ export function ScheduleCard({
         ) : technicians.isError ? (
           <ErrorState title="We couldn’t load the technicians" error={technicians.error} onRetry={() => void technicians.refetch()} />
         ) : (
-          <form onSubmit={onSubmit} noValidate className="grid gap-4">
+          <form onSubmit={onSubmit} noValidate className={FORM}>
             <FormAlert message={formError} />
             <Field id="schedule-technician" label="Technician" error={errors.technician?.message}>
               <NativeSelect
@@ -103,7 +105,7 @@ export function ScheduleCard({
                 ))}
               </NativeSelect>
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-5 @lg/form:grid-cols-2 @3xl/form:grid-cols-1">
               <Field id="schedule-from" label="Starts" error={errors.scheduled_from?.message}>
                 <Input
                   id="schedule-from"
@@ -124,7 +126,7 @@ export function ScheduleCard({
               </Field>
             </div>
             {conflict ? (
-              <div role="alert" className="grid gap-3 rounded-md border border-amber-600/40 bg-amber-500/10 p-3 text-sm">
+              <div role="alert" className={cn('grid gap-3 rounded-md border-l-2 border-l-status-maintenance bg-status-maintenance-tint p-4 text-sm', FORM_INDENT)}>
                 <p className="font-medium">{conflict.detail}</p>
                 <ul className="grid gap-1">
                   {conflict.bookings.map((booking) => (
@@ -137,20 +139,20 @@ export function ScheduleCard({
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     type="button"
-                    size="lg"
-                    className="h-10"
+                   
+                   
                     disabled={schedule.isPending}
                     onClick={() => schedule.mutate({ values: getValues(), confirm: true })}
                   >
                     Schedule anyway
                   </Button>
-                  <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setConflict(null)}>
+                  <Button type="button" variant="outline" onClick={() => setConflict(null)}>
                     Choose another period
                   </Button>
                 </div>
               </div>
             ) : null}
-            <div>
+            <div className={FORM_INDENT}>
               <SubmitButton busy={schedule.isPending} busyLabel="Scheduling…">
                 Schedule job
               </SubmitButton>

@@ -14,6 +14,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { VehicleStatusBadge } from '@/components/VehicleStatusBadge'
 import { applyServerErrors, describedBy } from '@/lib/form'
+import { FORM, FORM_INDENT } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import { formatKm } from './format'
 import { NativeSelect } from './JobList'
@@ -61,8 +63,9 @@ export function ReportFaultPage() {
   const selected = choosable.find((vehicle) => String(vehicle.id) === vehicleId)
 
   return (
-    <section className="max-w-2xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    // B14: the header spans the content width; the form keeps a readable measure.
+    <section>
+      <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
         <Link to="/app/maintenance">
           <ArrowLeft aria-hidden="true" />
           Back to maintenance
@@ -70,8 +73,11 @@ export function ReportFaultPage() {
       </Button>
       <PageHeader
         title="Report a fault"
+        photo="band-maintenance-1"
+        variant="compact"
         description="The job starts as Reported. The vehicle goes Under Maintenance when the job is scheduled, or at once if you flag it Unsafe."
       />
+      <div className="max-w-4xl">
       {vehicles.isPending ? (
         <LoadingState label="Loading your branch’s vehicles…" />
       ) : vehicles.isError ? (
@@ -81,7 +87,7 @@ export function ReportFaultPage() {
       ) : (
         <Card>
           <CardContent>
-            <form onSubmit={onSubmit} noValidate className="grid gap-5">
+            <form onSubmit={onSubmit} noValidate className={FORM}>
               <FormAlert message={formError} />
               <Field id="report-vehicle" label="Vehicle" error={errors.vehicle?.message}>
                 <NativeSelect
@@ -105,7 +111,7 @@ export function ReportFaultPage() {
                   <span>Odometer {formatKm(selected.odometer)}</span>
                 </div>
               ) : null}
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 @lg/form:grid-cols-2 @3xl/form:grid-cols-1">
                 <Field id="report-type" label="Job type" error={errors.job_type?.message}>
                   <NativeSelect
                     id="report-type"
@@ -149,11 +155,11 @@ export function ReportFaultPage() {
                   {...register('reported_problem')}
                 />
               </Field>
-              <div className="flex items-start gap-3 rounded-md border p-3">
+              <div className={cn('flex items-start gap-3 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint p-4', FORM_INDENT)}>
                 <input
                   id="report-unsafe"
                   type="checkbox"
-                  className="mt-1 size-4 accent-destructive"
+                  className="mt-1 size-5 accent-destructive"
                   aria-describedby="report-unsafe-hint"
                   {...register('flag_unsafe')}
                 />
@@ -167,7 +173,7 @@ export function ReportFaultPage() {
                   </p>
                 </div>
               </div>
-              <div>
+              <div className={FORM_INDENT}>
                 <SubmitButton busy={report.isPending} busyLabel="Reporting…">
                   Report fault
                 </SubmitButton>
@@ -176,6 +182,7 @@ export function ReportFaultPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </section>
   )
 }

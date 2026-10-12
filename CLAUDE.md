@@ -140,6 +140,15 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   in development); login/refresh bodies hold only `{access, user}`; logout
   clears the cookie. The frontend keeps the access token in memory only,
   never in localStorage or sessionStorage.
+- **D22 Fonts:** CO-7 amended: SIL OFL 1.1 fonts are permitted, unmodified and
+  self-hosted through Fontsource (Schibsted Grotesk, IBM Plex Sans, IBM Plex
+  Mono); no CDN or Google Fonts link. Geist stays removed.
+- **D23 Photos:** only Unsplash, Pexels or Wikimedia Commons (CC0, PD, CC BY,
+  CC BY-SA), self-hosted and optimised, credited in docs/design/image-credits.md
+  and on the public "Photo credits" page; no hotlinking, no CDN, no
+  manufacturer, dealer or rental-company images.
+- **D24 Name:** the product is Veyora, tagline "Your Ride, Your Rules", set via
+  AGENCY_NAME in backend/.env with a frontend fallback to "Veyora".
 
 ## Team workflow (from 10 Oct 2026)
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.
@@ -149,6 +158,7 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
 - Rohan, Book Vehicle module: apps/bookings, apps/payments, apps/pricing, apps/fleet (except fleet/services/status.py), frontend features search, booking, payment, history.
 - Nidhi, Close Maintenance Job module: apps/maintenance, apps/fleet/services/status.py (the shared vehicle status service), frontend technician and maintenance features.
 - Shared files (frontend router, navigation, seed_demo, generated API types): one-line additions only. After merging, regenerate API types with `npm run api:types` instead of merging that file by hand.
+- From 11 Oct 2026 Nidhi Dhyani does all remaining work across the repo.
 
 
 ## Things to never do
@@ -159,3 +169,6 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   field name that's already used elsewhere in the codebase or docs —
   these are cross-referenced in the traceability matrix.
 - Never commit `.env`, credentials, or real payment gateway keys.
+
+## Frontend design
+- All frontend work follows docs/design/ui-brief.md, including the binding design decisions B1-B8.

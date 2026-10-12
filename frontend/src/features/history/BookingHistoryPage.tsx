@@ -5,10 +5,11 @@ import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/page'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { NativeSelect } from '@/components/ui/native-select'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDateTime } from '@/lib/dates'
+import { stagger } from '@/lib/motion'
 
 import { BOOKING_STATUSES, type BookingStatus, listBookings } from '@/features/booking/api'
 import { bookingsKey } from '@/features/booking/keys'
@@ -26,23 +27,24 @@ export function BookingHistoryPage() {
   })
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader
         title="My bookings"
+        photo="band-bookings-1"
         description="Every booking you have made, the most recent pickup first."
         actions={
-          <Button asChild className="h-10">
+          <Button asChild>
             <Link to="/app/search">Book a vehicle</Link>
           </Button>
         }
       />
-      <div className="mb-4 flex items-center gap-2">
-        <label htmlFor="booking-status-filter" className="text-sm font-medium">
+      <div className="mb-5 flex items-center gap-3">
+        <label htmlFor="booking-status-filter" className="text-label font-medium">
           Status
         </label>
-        <select
+        <NativeSelect
           id="booking-status-filter"
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+          className="w-auto"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as BookingStatus | '')
@@ -55,7 +57,7 @@ export function BookingHistoryPage() {
               {value}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       {bookings.isPending ? (
         <LoadingState label="Loading your bookings…" />
@@ -67,33 +69,42 @@ export function BookingHistoryPage() {
           description="Find a vehicle that is free for your dates and book it."
         />
       ) : (
-        <div className="grid gap-4">
-          <ul aria-label="Bookings" className="grid gap-3">
-            {bookings.data.results.map((booking) => (
-              <li key={booking.id}>
-                <Card>
-                  <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <Link to={`/app/bookings/${booking.id}`} className="font-semibold underline-offset-4 hover:underline">
-                        {booking.vehicle.brand} {booking.vehicle.model}
-                        {booking.booking_reference ? ` · ${booking.booking_reference}` : ''}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDateTime(booking.pickup_datetime)} to {formatDateTime(booking.return_datetime)} ·{' '}
-                        {booking.pickup_branch}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm tabular-nums">{formatCurrency(booking.total_amount, currency)}</span>
-                      <BookingStatusBadge status={booking.status} />
-                    </div>
-                  </CardContent>
-                </Card>
+        <div className="grid gap-6">
+          {/* Rows, not boxes (docs/design/ui-brief.md, 6.4): vehicle, period, branch, amount, status. */}
+          <ul aria-label="Bookings" className="border-t">
+            {bookings.data.results.map((booking, index) => (
+              <li
+                key={booking.id}
+                className="enter grid gap-x-10 gap-y-2 border-b py-5 xl:grid-cols-[minmax(0,1fr)_max-content_minmax(6rem,0.5fr)_max-content_minmax(10rem,max-content)] xl:items-center"
+                style={stagger(index)}
+              >
+                <div className="min-w-0">
+                  <Link to={`/app/bookings/${booking.id}`} className="font-medium underline-offset-4 hover:text-primary hover:underline">
+                    {booking.vehicle.brand} {booking.vehicle.model}
+                    {/* B14: the reference never breaks inside itself. */}
+                    {booking.booking_reference ? (
+                      <>
+                        {' · '}
+                        <span className="num whitespace-nowrap">{booking.booking_reference}</span>
+                      </>
+                    ) : null}
+                  </Link>
+                </div>
+                {/* B14: pickup and return on their own lines, each kept whole. */}
+                <p className="num text-muted-foreground">
+                  <span className="block whitespace-nowrap">{formatDateTime(booking.pickup_datetime)}</span>{' '}
+                  <span className="block whitespace-nowrap">to {formatDateTime(booking.return_datetime)}</span>
+                </p>
+                <p className="text-sm text-muted-foreground">{booking.pickup_branch}</p>
+                <p className="num-strong xl:text-right">{formatCurrency(booking.total_amount, currency)}</p>
+                <div className="xl:justify-self-end">
+                  <BookingStatusBadge status={booking.status} />
+                </div>
               </li>
             ))}
           </ul>
           {bookings.data.next || bookings.data.previous ? (
-            <nav aria-label="Booking pages" className="flex gap-2">
+            <nav aria-label="Booking pages" className="flex justify-end gap-2">
               <Button variant="outline" disabled={!bookings.data.previous} onClick={() => setPage(page - 1)}>
                 Previous page
               </Button>

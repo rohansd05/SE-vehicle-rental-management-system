@@ -1,17 +1,19 @@
 import { CircleAlert, CircleCheck, Clock, IdCard } from 'lucide-react'
 
 import type { Licence } from '@/api/types'
+import { TONE_PILL } from '@/components/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/dates'
 import { cn } from '@/lib/utils'
+import { SETTINGS_LABEL, SETTINGS_ROW } from '@/lib/layout'
 
 import { STATUS_TONE } from './rules'
 
 const TONE_STYLES = {
-  neutral: 'bg-muted text-foreground',
-  pending: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
-  good: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
-  bad: 'bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200',
+  neutral: TONE_PILL.inactive,
+  pending: TONE_PILL.maintenance,
+  good: TONE_PILL.available,
+  bad: TONE_PILL.unsafe,
 } as const
 
 const TONE_ICONS = { neutral: IdCard, pending: Clock, good: CircleCheck, bad: CircleAlert } as const
@@ -22,11 +24,11 @@ export function LicenceStatusBadge({ status }: { status: Licence['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium',
+        'inline-flex h-7 w-fit items-center gap-1.5 rounded-md px-2.5 text-small font-medium whitespace-nowrap',
         TONE_STYLES[tone],
       )}
     >
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon className="size-3.5" aria-hidden="true" />
       {status}
     </span>
   )
@@ -59,7 +61,7 @@ function Explanation({ licence }: { licence: Licence }) {
       return (
         <div className="grid gap-2">
           <p>We couldn’t verify your licence. Please fix the problem below and submit it again.</p>
-          <p className="rounded-md border border-red-600/30 bg-red-600/5 px-3 py-2">
+          <p className="rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-3 py-2.5">
             <span className="font-medium">Reason: </span>
             {licence.rejection_reason || 'No reason was recorded.'}
           </p>
@@ -78,8 +80,8 @@ function Explanation({ licence }: { licence: Licence }) {
 /** The customer's licence at a glance (Appendix A licence status). */
 export function LicenceStatusCard({ licence }: { licence: Licence }) {
   return (
-    <Card>
-      <CardHeader className="gap-3">
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={cn(SETTINGS_LABEL, 'gap-3')}>
         <CardTitle>
           <h2>Licence status</h2>
         </CardTitle>
@@ -87,16 +89,16 @@ export function LicenceStatusCard({ licence }: { licence: Licence }) {
           <LicenceStatusBadge status={licence.status} />
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 text-sm">
+      <CardContent className="grid max-w-2xl gap-5 text-sm">
         <Explanation licence={licence} />
         {licence.licence_number ? (
-          <dl className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+          <dl className="grid gap-x-6 gap-y-2 border-t pt-5 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <dt className="text-muted-foreground">Licence number</dt>
-            <dd className="font-medium">{licence.licence_number}</dd>
+            <dd className="num font-medium">{licence.licence_number}</dd>
             <dt className="text-muted-foreground">Issued by</dt>
             <dd className="font-medium">{licence.issuing_authority || '—'}</dd>
             <dt className="text-muted-foreground">Valid</dt>
-            <dd className="font-medium">
+            <dd className="num font-medium">
               {formatDate(licence.issue_date)} to {formatDate(licence.expiry_date)}
             </dd>
             <dt className="text-muted-foreground">Categories</dt>

@@ -8,6 +8,7 @@ import { ApiError } from '@/api/client'
 import { type Profile, ROLE_LABELS } from '@/api/types'
 import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +18,7 @@ import { useAuth } from '@/features/auth/auth-context'
 import { MOBILE_HINT, OTP_LENGTH, OTP_RESEND_COOLDOWN_SECONDS, PASSWORD_RULES } from '@/features/auth/schemas'
 import { useCountdown } from '@/hooks/countdown'
 import { applyServerErrors, describedBy } from '@/lib/form'
+import { SETTINGS_ROW, SETTINGS_LABEL } from '@/lib/layout'
 
 import {
   type DetailsValues,
@@ -35,17 +37,25 @@ export function ProfilePage() {
   const profile = useQuery({ queryKey: PROFILE_KEY, queryFn: getProfile })
 
   return (
-    <section>
+    <section className="stage">
       <PageHeader title="My profile" description="Your details, mobile number and password." />
       {profile.isPending ? (
         <LoadingState label="Loading your profile…" />
       ) : profile.isError ? (
         <ErrorState title="We couldn’t load your profile" error={profile.error} onRetry={() => void profile.refetch()} />
       ) : (
-        <div className="grid gap-6">
-          <DetailsCard profile={profile.data} />
-          <MobileCard profile={profile.data} />
-          <PasswordCard />
+        // B14: the forms in the main column, a whole-subject photo in a right rail from 1536 px.
+        <div className="grid items-start gap-10 2xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+          <div className="grid gap-8">
+            <DetailsCard profile={profile.data} />
+            <div className="reveal">
+              <MobileCard profile={profile.data} />
+            </div>
+            <div className="reveal">
+              <PasswordCard />
+            </div>
+          </div>
+          <Photo id="step-account-1" alt="" sizes="26rem" className="enter hidden aspect-[3/2] rounded-xl 2xl:sticky 2xl:top-24 2xl:block" />
         </div>
       )}
     </section>
@@ -85,17 +95,17 @@ function DetailsCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Your details</h2>
         </CardTitle>
         <CardDescription>Your e-mail address identifies your account and cannot be changed here.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4">
+      <CardContent className="grid max-w-xl gap-5">
         <StatusMessage message={saved} tone="success" />
         {editing ? (
-          <form onSubmit={onSubmit} noValidate className="grid gap-4">
+          <form onSubmit={onSubmit} noValidate className="grid gap-5">
             <FormAlert message={formError} />
             <Field id="profile-name" label="Full name" error={errors.name?.message}>
               <Input
@@ -123,8 +133,6 @@ function DetailsCard({ profile }: { profile: Profile }) {
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className="h-10"
                 onClick={() => {
                   reset()
                   setFormError(null)
@@ -137,7 +145,7 @@ function DetailsCard({ profile }: { profile: Profile }) {
           </form>
         ) : (
           <>
-            <dl className="grid gap-3 text-sm sm:grid-cols-[10rem_1fr]">
+            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_minmax(0,1fr)]">
               <dt className="text-muted-foreground">Name</dt>
               <dd className="font-medium">{profile.name}</dd>
               <dt className="text-muted-foreground">E-mail</dt>
@@ -150,8 +158,6 @@ function DetailsCard({ profile }: { profile: Profile }) {
             <div>
               <Button
                 variant="outline"
-                size="lg"
-                className="h-10"
                 onClick={() => {
                   setSaved(null)
                   setEditing(true)
@@ -217,21 +223,21 @@ function MobileCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Mobile number</h2>
         </CardTitle>
         <CardDescription>
-          Current number: <span className="font-medium text-foreground">{profile.mobile_no}</span>
+          Current number: <span className="num font-medium text-foreground">{profile.mobile_no}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4">
+      <CardContent className="grid max-w-xl gap-5">
         <FormAlert message={formError} />
         <StatusMessage message={status} tone={pendingMobile ? 'info' : 'success'} />
         {pendingMobile ? (
           // Distinct keys: React must not reuse the number input as the code input.
-          <form key="confirm-code" onSubmit={onConfirm} noValidate className="grid gap-4">
+          <form key="confirm-code" onSubmit={onConfirm} noValidate className="grid gap-5">
             <Field
               id="mobile-code"
               label={`Code sent to ${pendingMobile}`}
@@ -242,7 +248,7 @@ function MobileCard({ profile }: { profile: Profile }) {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 maxLength={OTP_LENGTH}
-                className="h-11 max-w-48 text-center font-mono text-lg tracking-[0.4em]"
+                className="num h-12 max-w-48 text-center text-lead tracking-[0.4em]"
                 aria-invalid={codeForm.formState.errors.code ? true : undefined}
                 aria-describedby={describedBy('mobile-code', {
                   error: Boolean(codeForm.formState.errors.code),
@@ -257,8 +263,6 @@ function MobileCard({ profile }: { profile: Profile }) {
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className="h-10"
                 disabled={remaining > 0}
                 onClick={() => void requestCode(pendingMobile)}
               >
@@ -267,8 +271,6 @@ function MobileCard({ profile }: { profile: Profile }) {
               <Button
                 type="button"
                 variant="ghost"
-                size="lg"
-                className="h-10"
                 onClick={() => {
                   setPendingMobile(null)
                   setStatus(null)
@@ -280,7 +282,7 @@ function MobileCard({ profile }: { profile: Profile }) {
             </div>
           </form>
         ) : (
-          <form key="request-code" onSubmit={onRequest} noValidate className="grid gap-4">
+          <form key="request-code" onSubmit={onRequest} noValidate className="grid gap-5">
             <Field
               id="new-mobile"
               label="New mobile number"
@@ -345,8 +347,8 @@ function PasswordCard() {
   })
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Password</h2>
         </CardTitle>
@@ -354,8 +356,8 @@ function PasswordCard() {
           Changing your password signs you out on every device, including this one.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+      <CardContent className="max-w-xl">
+        <form onSubmit={onSubmit} noValidate className="grid gap-5">
           <FormAlert message={formError} />
           <Field id="current_password" label="Current password" error={errors.current_password?.message}>
             <Input autoComplete="current-password" {...field('current_password')} />

@@ -1,19 +1,22 @@
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Star } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type ReactNode, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '@/api/client'
+import { representativeImage } from '@/assets/vehicles/registry'
 import { FormAlert, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
+import { StickyRail } from '@/components/sticky-rail'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate, formatDateTime } from '@/lib/dates'
+import { RAIL_LAYOUT } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import {
   type AddOn,
@@ -31,6 +34,7 @@ import { PriceSummary, TermsList } from './PriceSummary'
 
 const BOOKING_FIELDS = ['terms_accepted', 'safety_notice_acknowledged', 'add_ons', 'discount_code']
 
+
 function readPeriod(params: URLSearchParams): Period | null {
   const pickup = params.get('pickup_datetime')
   const ret = params.get('return_datetime')
@@ -47,60 +51,87 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
     vehicle.seating_capacity ? `${vehicle.seating_capacity} seats` : null,
     vehicle.engine_cc ? `${vehicle.engine_cc} cc` : null,
   ].filter(Boolean)
+  // B12: the vehicle's own photographs first; without them, the representative
+  // model (or category) photo, labelled as such, above the existing note.
+  const representative = vehicle.photos.length ? null : representativeImage(vehicle)
   return (
-    <Card>
-      <CardContent className="grid gap-4">
-        {vehicle.photos.length ? (
-          <ul aria-label="Photographs" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {vehicle.photos.map((url, index) => (
-              <li key={url}>
-                <img
-                  src={url}
-                  alt={`${vehicle.brand} ${vehicle.model}, photo ${index + 1} of ${vehicle.photos.length}`}
-                  className="aspect-[4/3] w-full rounded-md object-cover"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No photographs have been added yet.</p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">{vehicle.category}</Badge>
-          <Badge variant="outline">{vehicle.vehicle_type}</Badge>
+    <div className="grid gap-5">
+      {vehicle.photos.length ? (
+        <ul aria-label="Photographs" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {vehicle.photos.map((url, index) => (
+            <li key={url} className="first:col-span-full">
+              <img
+                src={url}
+                alt={`${vehicle.brand} ${vehicle.model}, photo ${index + 1} of ${vehicle.photos.length}`}
+                className={cn('w-full object-cover', index === 0 ? 'aspect-[3/2] rounded-xl' : 'aspect-[4/3] rounded-md')}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : representative ? (
+        <div className="grid gap-2">
+          <Photo
+            id={representative.id}
+            alt={representative.alt}
+            sizes="(min-width: 1280px) 50vw, (min-width: 768px) 60vw, 100vw"
+            aspect="native"
+            className="rounded-xl"
+          />
+          <p className="text-small text-muted-foreground">No photographs have been added yet.</p>
         </div>
-        <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">Specification</dt>
-          <dd>{spec.join(' · ')}</dd>
-          <dt className="text-muted-foreground">Pickup branch</dt>
-          <dd>{vehicle.home_branch}</dd>
-          <dt className="text-muted-foreground">Rating</dt>
-          <dd className="flex items-center gap-1">
-            {vehicle.average_rating ? (
-              <>
-                <Star className="size-3.5 fill-current text-amber-500" aria-hidden="true" />
-                {Number(vehicle.average_rating).toFixed(1)} out of 5
-              </>
-            ) : (
-              'No ratings yet'
-            )}
-          </dd>
-          <dt className="text-muted-foreground">Last serviced</dt>
-          <dd>{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
-          {vehicle.tariff ? (
+      ) : (
+        <p className="flex aspect-[3/1] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground sm:aspect-[5/1]">
+          No photographs have been added yet.
+        </p>
+      )}
+      <p className="text-small text-muted-foreground">
+        <span className="font-medium text-foreground">{vehicle.category}</span>
+        {' · '}
+        <span>{vehicle.vehicle_type}</span>
+      </p>
+      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <dt className="text-muted-foreground">Specification</dt>
+        <dd>{spec.join(' · ')}</dd>
+        <dt className="text-muted-foreground">Pickup branch</dt>
+        <dd>{vehicle.home_branch}</dd>
+        <dt className="text-muted-foreground">Rating</dt>
+        <dd className="flex items-center gap-1">
+          {vehicle.average_rating ? (
             <>
-              <dt className="text-muted-foreground">Tariff</dt>
-              <dd>
-                {formatCurrency(vehicle.tariff.hourly_rate, currency)} per hour,{' '}
-                {formatCurrency(vehicle.tariff.daily_rate, currency)} per day
-              </dd>
+              <Star className="size-3.5 fill-current text-signal" aria-hidden="true" />
+              {Number(vehicle.average_rating).toFixed(1)} out of 5
             </>
-          ) : null}
-          <dt className="text-muted-foreground">Security deposit</dt>
-          <dd>{formatCurrency(vehicle.security_deposit, currency)}, refundable</dd>
-        </dl>
-      </CardContent>
-    </Card>
+          ) : (
+            'No ratings yet'
+          )}
+        </dd>
+        <dt className="text-muted-foreground">Last serviced</dt>
+        <dd className="num">{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
+        {vehicle.tariff ? (
+          <>
+            <dt className="text-muted-foreground">Tariff</dt>
+            <dd>
+              {formatCurrency(vehicle.tariff.hourly_rate, currency)} per hour,{' '}
+              {formatCurrency(vehicle.tariff.daily_rate, currency)} per day
+            </dd>
+          </>
+        ) : null}
+        <dt className="text-muted-foreground">Security deposit</dt>
+        <dd>{formatCurrency(vehicle.security_deposit, currency)}, refundable</dd>
+      </dl>
+    </div>
+  )
+}
+
+function Policies({ vehicle }: { vehicle: VehicleDetail }) {
+  if (!vehicle.terms) return null
+  return (
+    <section aria-labelledby="policies-heading" className="reveal grid gap-3 border-t pt-6">
+      <h2 id="policies-heading" className="text-section">
+        Policies
+      </h2>
+      <TermsList terms={vehicle.terms} />
+    </section>
   )
 }
 
@@ -116,53 +147,59 @@ function AddOnPicker({
   const { currency } = useAgency()
   if (!addOns.length) return null
   return (
-    <fieldset className="grid gap-2">
-      <legend className="mb-1 text-sm font-medium">Add-ons, charged per day</legend>
-      {addOns.map((addOn) => {
-        const id = `addon-${addOn.id}`
-        const quantity = chosen[addOn.id]
-        return (
-          <div key={addOn.id} className="flex flex-wrap items-center gap-3">
-            <label htmlFor={id} className="flex min-h-10 items-center gap-2 text-sm">
-              <input
-                id={id}
-                type="checkbox"
-                className="size-4 accent-[var(--brand)]"
-                checked={quantity !== undefined}
-                onChange={(event) => {
-                  const next = { ...chosen }
-                  if (event.target.checked) next[addOn.id] = 1
-                  else delete next[addOn.id]
-                  onChange(next)
-                }}
-              />
-              {addOn.name} ({formatCurrency(addOn.daily_rate, currency)} per day)
-            </label>
-            {quantity !== undefined ? (
-              <label className="flex items-center gap-2 text-sm">
-                Quantity
-                <Input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={quantity}
-                  className="h-9 w-20"
-                  aria-label={`Quantity of ${addOn.name}`}
+    <fieldset className="grid gap-1">
+      <legend className="heading mb-2 text-section">Add-ons, charged per day</legend>
+      <div className="divide-y border-y">
+        {addOns.map((addOn) => {
+          const id = `addon-${addOn.id}`
+          const quantity = chosen[addOn.id]
+          return (
+            <div key={addOn.id} className="flex min-h-12 flex-wrap items-center gap-x-6 gap-y-2 py-1">
+              <label htmlFor={id} className="flex min-h-12 flex-1 items-center gap-3 text-sm">
+                <input
+                  id={id}
+                  type="checkbox"
+                  className="size-4"
+                  checked={quantity !== undefined}
                   onChange={(event) => {
-                    const value = Number.parseInt(event.target.value, 10)
-                    onChange({ ...chosen, [addOn.id]: Number.isInteger(value) && value > 0 ? value : 1 })
+                    const next = { ...chosen }
+                    if (event.target.checked) next[addOn.id] = 1
+                    else delete next[addOn.id]
+                    onChange(next)
                   }}
                 />
+                {addOn.name} ({formatCurrency(addOn.daily_rate, currency)} per day)
               </label>
-            ) : null}
-          </div>
-        )
-      })}
+              {quantity !== undefined ? (
+                <label className="enter flex items-center gap-2 text-sm text-muted-foreground">
+                  Quantity
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={quantity}
+                    className="h-8 w-20"
+                    aria-label={`Quantity of ${addOn.name}`}
+                    onChange={(event) => {
+                      const value = Number.parseInt(event.target.value, 10)
+                      onChange({ ...chosen, [addOn.id]: Number.isInteger(value) && value > 0 ? value : 1 })
+                    }}
+                  />
+                </label>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
     </fieldset>
   )
 }
 
-function BookingForm({ vehicle, period }: { vehicle: VehicleDetail; period: Period }) {
+/**
+ * Book.Create. One form across both columns: the facts, add-ons, discount
+ * code and terms in the main column, the price and the action in the rail.
+ */
+function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; period: Period; children: ReactNode }) {
   const navigate = useNavigate()
   const [chosen, setChosen] = useState<Record<number, number>>({})
   const [codeInput, setCodeInput] = useState('')
@@ -227,64 +264,124 @@ function BookingForm({ vehicle, period }: { vehicle: VehicleDetail; period: Peri
   const refusal = book.error instanceof ApiError && book.error.code ? book.error : null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2>Book this vehicle</h2>
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {formatDateTime(period.pickup_datetime)} to {formatDateTime(period.return_datetime)}, collected at{' '}
-          {vehicle.home_branch}.
-        </p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} noValidate className="grid gap-5" aria-label="Book this vehicle">
-          <BookingRefusal error={refusal} />
-          <FormAlert message={formError} />
+    <form onSubmit={onSubmit} noValidate className={RAIL_LAYOUT} aria-label="Book this vehicle">
+      <div className="grid gap-8">
+        <BookingRefusal error={refusal} />
+        <FormAlert message={formError} />
+        {children}
 
+        <div className="reveal grid gap-2 border-t pt-6">
           {addOns.isError ? (
             <p className="text-sm text-muted-foreground">Add-ons could not be loaded; you can book without them.</p>
           ) : (
             <AddOnPicker addOns={addOns.data ?? []} chosen={chosen} onChange={setChosen} />
           )}
-          {fieldErrors.add_ons ? <p className="text-sm text-destructive">{fieldErrors.add_ons}</p> : null}
+          {fieldErrors.add_ons ? <p className="text-small font-medium text-destructive">{fieldErrors.add_ons}</p> : null}
+        </div>
 
-          <div className="grid gap-1.5">
-            <label htmlFor="discount-code" className="text-sm font-medium">
-              Discount code
-            </label>
-            <div className="flex gap-2">
-              <Input
-                id="discount-code"
-                value={codeInput}
-                autoComplete="off"
-                className="max-w-56"
-                aria-invalid={codeError ? true : undefined}
-                aria-describedby={codeError ? 'discount-code-error' : undefined}
-                onChange={(event) => setCodeInput(event.target.value)}
-              />
-              <Button type="button" variant="outline" className="h-10" onClick={() => setAppliedCode(codeInput.trim())}>
-                Apply
+        <div className="grid gap-1.5">
+          <label htmlFor="discount-code" className="text-label font-medium">
+            Discount code
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              id="discount-code"
+              value={codeInput}
+              autoComplete="off"
+              className="num max-w-56"
+              aria-invalid={codeError ? true : undefined}
+              aria-describedby={codeError ? 'discount-code-error' : undefined}
+              onChange={(event) => setCodeInput(event.target.value)}
+            />
+            <Button type="button" variant="outline" onClick={() => setAppliedCode(codeInput.trim())}>
+              Apply
+            </Button>
+            {appliedCode ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setAppliedCode('')
+                  setCodeInput('')
+                }}
+              >
+                Remove
               </Button>
-              {appliedCode ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-10"
-                  onClick={() => {
-                    setAppliedCode('')
-                    setCodeInput('')
-                  }}
-                >
-                  Remove
-                </Button>
-              ) : null}
-            </div>
-            {codeError ? (
-              <p id="discount-code-error" className="text-sm text-destructive">
-                {codeError}
+            ) : null}
+          </div>
+          {codeError ? (
+            <p id="discount-code-error" className="text-small font-medium text-destructive">
+              {codeError}
+            </p>
+          ) : null}
+        </div>
+
+        {quote.data ? (
+          <section aria-labelledby="terms-heading" className="reveal grid gap-3 border-t pt-6">
+            <h3 id="terms-heading" className="text-subsection">
+              Rental terms
+            </h3>
+            <TermsList terms={quote.data.terms} />
+          </section>
+        ) : null}
+
+        <div className="grid gap-1">
+          <label htmlFor="accept-terms" className="flex items-start gap-3 text-sm">
+            <input
+              id="accept-terms"
+              type="checkbox"
+              className="mt-[3px] size-4"
+              checked={termsAccepted}
+              aria-invalid={fieldErrors.terms_accepted ? true : undefined}
+              aria-describedby={fieldErrors.terms_accepted ? 'accept-terms-error' : undefined}
+              onChange={(event) => setTermsAccepted(event.target.checked)}
+            />
+            I accept the rental terms above.
+          </label>
+          {fieldErrors.terms_accepted ? (
+            <p id="accept-terms-error" className="text-small font-medium text-destructive">
+              {fieldErrors.terms_accepted}
+            </p>
+          ) : null}
+        </div>
+
+        {twoWheeler ? (
+          <div className="grid gap-2 border-l-2 border-l-status-maintenance pl-4">
+            <p className="text-sm font-medium">Safety notice</p>
+            <p className="text-sm text-muted-foreground">
+              One helmet per rider is included with this two-wheeler. Every rider must wear a helmet while
+              riding.
+            </p>
+            <label htmlFor="accept-safety" className="flex items-start gap-3 text-sm">
+              <input
+                id="accept-safety"
+                type="checkbox"
+                className="mt-[3px] size-4"
+                checked={safetyAcknowledged}
+                aria-invalid={fieldErrors.safety_notice_acknowledged ? true : undefined}
+                aria-describedby={fieldErrors.safety_notice_acknowledged ? 'accept-safety-error' : undefined}
+                onChange={(event) => setSafetyAcknowledged(event.target.checked)}
+              />
+              I have read the safety notice.
+            </label>
+            {fieldErrors.safety_notice_acknowledged ? (
+              <p id="accept-safety-error" className="text-small font-medium text-destructive">
+                {fieldErrors.safety_notice_acknowledged}
               </p>
             ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <StickyRail>
+        <div className="grid gap-5 lg:pt-1">
+          <div>
+            <h2 className="text-section">Book this vehicle</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              <span className="num">{formatDateTime(period.pickup_datetime)}</span> to{' '}
+              <span className="num">{formatDateTime(period.return_datetime)}</span>, collected at{' '}
+              {vehicle.home_branch}.
+            </p>
           </div>
 
           <div aria-live="polite" aria-busy={quote.isFetching}>
@@ -297,73 +394,22 @@ function BookingForm({ vehicle, period }: { vehicle: VehicleDetail; period: Peri
             )}
           </div>
 
-          {quote.data ? (
-            <section aria-labelledby="terms-heading" className="grid gap-2">
-              <h3 id="terms-heading" className="text-sm font-semibold">
-                Rental terms
-              </h3>
-              <TermsList terms={quote.data.terms} />
-            </section>
-          ) : null}
-
-          <div className="grid gap-1">
-            <label htmlFor="accept-terms" className="flex items-start gap-2 text-sm">
-              <input
-                id="accept-terms"
-                type="checkbox"
-                className="mt-0.5 size-4 accent-[var(--brand)]"
-                checked={termsAccepted}
-                aria-invalid={fieldErrors.terms_accepted ? true : undefined}
-                aria-describedby={fieldErrors.terms_accepted ? 'accept-terms-error' : undefined}
-                onChange={(event) => setTermsAccepted(event.target.checked)}
-              />
-              I accept the rental terms above.
-            </label>
-            {fieldErrors.terms_accepted ? (
-              <p id="accept-terms-error" className="text-sm text-destructive">
-                {fieldErrors.terms_accepted}
-              </p>
-            ) : null}
-          </div>
-
-          {twoWheeler ? (
-            <div className="grid gap-2 rounded-md border p-3">
-              <p className="text-sm font-medium">Safety notice</p>
-              <p className="text-sm text-muted-foreground">
-                One helmet per rider is included with this two-wheeler. Every rider must wear a helmet while
-                riding.
-              </p>
-              <label htmlFor="accept-safety" className="flex items-start gap-2 text-sm">
-                <input
-                  id="accept-safety"
-                  type="checkbox"
-                  className="mt-0.5 size-4 accent-[var(--brand)]"
-                  checked={safetyAcknowledged}
-                  aria-invalid={fieldErrors.safety_notice_acknowledged ? true : undefined}
-                  aria-describedby={fieldErrors.safety_notice_acknowledged ? 'accept-safety-error' : undefined}
-                  onChange={(event) => setSafetyAcknowledged(event.target.checked)}
-                />
-                I have read the safety notice.
-              </label>
-              {fieldErrors.safety_notice_acknowledged ? (
-                <p id="accept-safety-error" className="text-sm text-destructive">
-                  {fieldErrors.safety_notice_acknowledged}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div>
-            <SubmitButton busy={book.isPending} busyLabel="Holding the vehicle…" disabled={!quote.data || Boolean(codeError)}>
+          <div className="border-t pt-5">
+            <SubmitButton
+              busy={book.isPending}
+              busyLabel="Holding the vehicle…"
+              disabled={!quote.data || Boolean(codeError)}
+              className="sm:w-full"
+            >
               Hold this vehicle and pay
             </SubmitButton>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-small text-muted-foreground">
               We hold the vehicle for you for 15 minutes while you pay.
             </p>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </StickyRail>
+    </form>
   )
 }
 
@@ -381,8 +427,8 @@ export function VehicleDetailPage() {
   const title = vehicle.data ? `${vehicle.data.brand} ${vehicle.data.model} (${vehicle.data.year})` : 'Vehicle'
 
   return (
-    <section className="max-w-3xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    <section className="stage">
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-3">
         <Link to={period ? `/app/search?${new URLSearchParams({ ...period, branch: String(vehicle.data?.home_branch_id ?? '') })}` : '/app/search'}>
           <ArrowLeft aria-hidden="true" />
           Back to search
@@ -393,32 +439,32 @@ export function VehicleDetailPage() {
         <LoadingState label="Loading the vehicle…" />
       ) : vehicle.isError ? (
         <ErrorState title="We couldn’t load this vehicle" error={vehicle.error} onRetry={() => void vehicle.refetch()} />
-      ) : (
-        <div className="grid gap-6">
+      ) : vehicle.data.tariff && period ? (
+        <BookingForm vehicle={vehicle.data} period={period}>
           <VehicleFacts vehicle={vehicle.data} />
-          {vehicle.data.terms ? (
-            <section aria-labelledby="policies-heading" className="grid gap-2">
-              <h2 id="policies-heading" className="text-lg font-semibold">
-                Policies
-              </h2>
-              <TermsList terms={vehicle.data.terms} />
-            </section>
-          ) : null}
-          {!vehicle.data.tariff ? (
-            <EmptyState title="Not bookable yet" description="No price has been published for this category." />
-          ) : period ? (
-            <BookingForm vehicle={vehicle.data} period={period} />
-          ) : (
-            <EmptyState
-              title="Choose your dates first"
-              description="Search with a pickup branch and a period to book this vehicle."
-              action={
-                <Button asChild className="h-10">
-                  <Link to="/app/search">Search vehicles</Link>
-                </Button>
-              }
-            />
-          )}
+          <Policies vehicle={vehicle.data} />
+        </BookingForm>
+      ) : (
+        <div className={RAIL_LAYOUT}>
+          <div className="grid gap-8">
+            <VehicleFacts vehicle={vehicle.data} />
+            <Policies vehicle={vehicle.data} />
+          </div>
+          <StickyRail>
+            {!vehicle.data.tariff ? (
+              <EmptyState title="Not bookable yet" description="No price has been published for this category." />
+            ) : (
+              <EmptyState
+                title="Choose your dates first"
+                description="Search with a pickup branch and a period to book this vehicle."
+                action={
+                  <Button asChild>
+                    <Link to="/app/search">Search vehicles</Link>
+                  </Button>
+                }
+              />
+            )}
+          </StickyRail>
         </div>
       )}
     </section>

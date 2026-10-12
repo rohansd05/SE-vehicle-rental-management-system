@@ -15,6 +15,7 @@ import {
 } from '@/api/maintenance'
 import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { StickyRail } from '@/components/sticky-rail'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +33,7 @@ import { VehicleStatusBadge } from '@/components/VehicleStatusBadge'
 import { useSignedInUser } from '@/features/auth/auth-context'
 import { formatINR } from '@/lib/currency'
 import { formatDate, formatDateTime } from '@/lib/dates'
+import { DETAILS_LIST, RAIL_LAYOUT } from '@/lib/layout'
 import { describedBy } from '@/lib/form'
 
 import { JobStatusBadge, SeverityBadge } from './badges'
@@ -59,8 +61,8 @@ function DetailsCard({ job }: { job: MaintenanceJob }) {
           <h2>Job and vehicle</h2>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_1fr]">
+      <CardContent className="@container">
+        <dl className={DETAILS_LIST}>
           <Row label="Vehicle">
             {vehicle.registration_no} · {vehicle.brand} {vehicle.model} ({vehicle.category})
           </Row>
@@ -115,8 +117,8 @@ function WorkRecordCard({ job }: { job: MaintenanceJob }) {
           <h2>Work recorded</h2>
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_1fr]">
+      <CardContent className="@container grid gap-4">
+        <dl className={DETAILS_LIST}>
           <Row label="Service date">{formatDate(job.service_date)}</Row>
           <Row label="Odometer at service">{formatKm(job.odometer_at_service)}</Row>
           <Row label="Work performed">{job.work_description}</Row>
@@ -124,24 +126,25 @@ function WorkRecordCard({ job }: { job: MaintenanceJob }) {
           <Row label="Labour">{formatINR(job.labour_cost)}</Row>
         </dl>
         {job.parts.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div>
+            {/* B14: in a column narrower than 28 rem each part becomes a stacked block, same cells and labels. */}
+            <table className="w-full text-sm @max-md:block">
               <caption className="sr-only">Parts used</caption>
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th scope="col" className="py-2 pr-2 font-normal">Part</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-normal">Qty</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-normal">Unit cost</th>
-                  <th scope="col" className="py-2 text-right font-normal">Amount</th>
+              <thead className="@max-md:sr-only">
+                <tr className="border-b text-left text-label text-muted-foreground">
+                  <th scope="col" className="w-[40%] py-2.5 pr-3 font-normal">Part</th>
+                  <th scope="col" className="w-[12%] py-2.5 pr-3 text-right font-normal">Qty</th>
+                  <th scope="col" className="w-[24%] py-2.5 pr-3 text-right font-normal">Unit cost</th>
+                  <th scope="col" className="w-[24%] py-2.5 text-right font-normal">Amount</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="@max-md:block">
                 {job.parts.map((part) => (
-                  <tr key={part.id} className="border-b">
-                    <td className="py-2 pr-2">{part.part_name}</td>
-                    <td className="py-2 pr-2 text-right">{part.quantity}</td>
-                    <td className="py-2 pr-2 text-right">{formatINR(part.unit_cost)}</td>
-                    <td className="py-2 text-right">{formatINR(part.total_cost)}</td>
+                  <tr key={part.id} className="border-b @max-md:grid @max-md:grid-cols-[auto_minmax(0,1fr)] @max-md:gap-x-4 @max-md:py-2 @max-md:[&>td]:contents @max-md:[&>td]:before:text-muted-foreground @max-md:[&>td]:before:content-[attr(data-label)]">
+                    <td data-label="Part" className="py-2.5 pr-3">{part.part_name}</td>
+                    <td data-label="Qty" className="num py-2.5 pr-3 text-right">{part.quantity}</td>
+                    <td data-label="Unit cost" className="num py-2.5 pr-3 text-right whitespace-nowrap">{formatINR(part.unit_cost)}</td>
+                    <td data-label="Amount" className="num py-2.5 text-right whitespace-nowrap">{formatINR(part.total_cost)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -152,7 +155,7 @@ function WorkRecordCard({ job }: { job: MaintenanceJob }) {
         )}
         <p className="flex justify-between border-t pt-3 font-medium">
           <span>Total cost</span>
-          <span>{formatINR(job.total_cost)}</span>
+          <span className="num-strong whitespace-nowrap">{formatINR(job.total_cost)}</span>
         </p>
       </CardContent>
     </Card>
@@ -183,7 +186,7 @@ function CancelDialog({ job, onCancelled }: { job: MaintenanceJob; onCancelled: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg" className="h-10">
+        <Button variant="outline">
           Cancel job
         </Button>
       </DialogTrigger>
@@ -206,7 +209,7 @@ function CancelDialog({ job, onCancelled }: { job: MaintenanceJob; onCancelled: 
             />
           </Field>
           <DialogFooter>
-            <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Keep the job
             </Button>
             <SubmitButton busy={isSubmitting} busyLabel="Cancelling…">
@@ -224,7 +227,7 @@ function ApproveDialog({ job, onApprove, busy }: { job: MaintenanceJob; onApprov
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="h-10">
+        <Button>
           Clear Unsafe flag and complete
         </Button>
       </DialogTrigger>
@@ -237,12 +240,12 @@ function ApproveDialog({ job, onApprove, busy }: { job: MaintenanceJob; onApprov
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => setOpen(false)}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Not yet
           </Button>
           <Button
-            size="lg"
-            className="h-10"
+           
+           
             disabled={busy}
             aria-busy={busy}
             onClick={() => {
@@ -320,7 +323,7 @@ export function JobDetailPage() {
 
   const backTo = isTechnician ? '/app/jobs' : '/app/maintenance'
   const back = (
-    <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
       <Link to={backTo}>
         <ArrowLeft aria-hidden="true" />
         {isTechnician ? 'Back to my jobs' : 'Back to maintenance'}
@@ -344,6 +347,9 @@ export function JobDetailPage() {
 
   const data = job.data
   const inProgress = data.status === 'In Progress' && !data.awaiting_clearance
+  const canCancel = isManager && (data.status === 'Reported' || data.status === 'Scheduled')
+  const hasRail =
+    data.awaiting_clearance || (isTechnician && (data.status === 'Scheduled' || inProgress)) || canCancel
 
   return (
     <section>
@@ -357,85 +363,96 @@ export function JobDetailPage() {
           </span>
         }
       />
-      <div className="grid gap-6">
+      <div className="grid gap-4 has-[[role]>*]:mb-6">
         <StatusMessage message={message} tone="success" />
         <FormAlert message={actionError} />
+      </div>
+      {/* Main column (scheduling, the job, the work) and, when there is
+          something to do or wait for, a sticky right rail (ui-brief.md 6.6). */}
+      <div className={hasRail ? RAIL_LAYOUT : 'grid gap-8'}>
+        <div className="grid min-w-0 content-start gap-8">
+          {isManager && data.status === 'Reported' ? (
+            <ScheduleCard job={data} onScheduled={(next) => update(next, `Job scheduled and assigned to ${next.technician?.name}. They have been e-mailed.`)} />
+          ) : null}
 
-        {data.awaiting_clearance ? (
-          <div role="status" className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-            <ShieldAlert className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
-            <div>
-              <p className="font-medium">Awaiting administrator clearance</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                The work is recorded and complete. {data.vehicle.registration_no} is flagged Unsafe, so
-                an Administrator must review the work and clear the flag before the job closes and the
-                vehicle can be rented (BR-16). Requested {formatDateTime(data.clearance_requested_at)}.
-              </p>
+          <DetailsCard job={data} />
+
+          {isTechnician && inProgress ? (
+            <RecordWorkForm
+              key={`${data.job_id}-${data.service_date ?? 'new'}`}
+              job={data}
+              onSaved={(next) => update(next, `Work recorded. Total cost ${formatINR(next.total_cost)}.`)}
+            />
+          ) : null}
+
+          <WorkRecordCard job={data} />
+        </div>
+
+        {hasRail ? (
+          <StickyRail>
+            <div className="grid gap-6 lg:pt-1">
+              {data.awaiting_clearance ? (
+                <div role="status" className="flex items-start gap-3 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-3">
+                  <ShieldAlert className="mt-1 size-5 shrink-0 text-status-unsafe" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium">Awaiting administrator clearance</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      The work is recorded and complete. {data.vehicle.registration_no} is flagged Unsafe, so
+                      an Administrator must review the work and clear the flag before the job closes and the
+                      vehicle can be rented (BR-16). Requested {formatDateTime(data.clearance_requested_at)}.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              {isTechnician && data.status === 'Scheduled' ? (
+                <div>
+                  <Button onClick={() => start.mutate()} disabled={start.isPending} aria-busy={start.isPending}>
+                    {start.isPending ? 'Starting…' : 'Start job'}
+                  </Button>
+                </div>
+              ) : null}
+
+              {isTechnician && inProgress ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      <h2>Complete the job</h2>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3">
+                    {data.missing_work.length ? (
+                      <p className="text-sm text-muted-foreground">
+                        Still to record: {data.missing_work.join(', ')}.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        The work record is complete. Completing releases the vehicle, or asks an
+                        Administrator to clear it if it is flagged Unsafe.
+                      </p>
+                    )}
+                    <div>
+                      <Button onClick={() => complete.mutate()} disabled={complete.isPending} aria-busy={complete.isPending}>
+                        {complete.isPending ? 'Completing…' : 'Complete job'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {isAdmin && data.awaiting_clearance ? (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <ApproveDialog job={data} busy={approve.isPending} onApprove={() => approve.mutate()} />
+                </div>
+              ) : null}
+
+              {canCancel ? (
+                <div>
+                  <CancelDialog job={data} onCancelled={(next) => update(next, `Job ${next.job_id} cancelled.`)} />
+                </div>
+              ) : null}
             </div>
-          </div>
-        ) : null}
-
-        {isTechnician && data.status === 'Scheduled' ? (
-          <div>
-            <Button size="lg" className="h-10" onClick={() => start.mutate()} disabled={start.isPending} aria-busy={start.isPending}>
-              {start.isPending ? 'Starting…' : 'Start job'}
-            </Button>
-          </div>
-        ) : null}
-
-        {isManager && data.status === 'Reported' ? (
-          <ScheduleCard job={data} onScheduled={(next) => update(next, `Job scheduled and assigned to ${next.technician?.name}. They have been e-mailed.`)} />
-        ) : null}
-
-        <DetailsCard job={data} />
-
-        {isTechnician && inProgress ? (
-          <RecordWorkForm
-            key={`${data.job_id}-${data.service_date ?? 'new'}`}
-            job={data}
-            onSaved={(next) => update(next, `Work recorded. Total cost ${formatINR(next.total_cost)}.`)}
-          />
-        ) : null}
-
-        <WorkRecordCard job={data} />
-
-        {isTechnician && inProgress ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h2>Complete the job</h2>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {data.missing_work.length ? (
-                <p className="text-sm text-muted-foreground">
-                  Still to record: {data.missing_work.join(', ')}.
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  The work record is complete. Completing releases the vehicle, or asks an
-                  Administrator to clear it if it is flagged Unsafe.
-                </p>
-              )}
-              <div>
-                <Button size="lg" className="h-10" onClick={() => complete.mutate()} disabled={complete.isPending} aria-busy={complete.isPending}>
-                  {complete.isPending ? 'Completing…' : 'Complete job'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {isAdmin && data.awaiting_clearance ? (
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <ApproveDialog job={data} busy={approve.isPending} onApprove={() => approve.mutate()} />
-          </div>
-        ) : null}
-
-        {isManager && (data.status === 'Reported' || data.status === 'Scheduled') ? (
-          <div>
-            <CancelDialog job={data} onCancelled={(next) => update(next, `Job ${next.job_id} cancelled.`)} />
-          </div>
+          </StickyRail>
         ) : null}
       </div>
     </section>

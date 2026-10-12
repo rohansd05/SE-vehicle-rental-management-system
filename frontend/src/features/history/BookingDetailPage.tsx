@@ -4,44 +4,50 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { FormAlert, StatusMessage } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { StickyRail } from '@/components/sticky-rail'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime } from '@/lib/dates'
 
 import { type BookingDetail, downloadInvoice, getBooking } from '@/features/booking/api'
 import { bookingKey } from '@/features/booking/keys'
 import { PriceSummary } from '@/features/booking/PriceSummary'
+import { RAIL_LAYOUT } from '@/lib/layout'
 
 import { BookingStatusBadge } from './BookingStatusBadge'
 
 function Confirmation({ booking }: { booking: BookingDetail }) {
   return (
-    <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
+    // B14: label above value until the column is 28rem wide; references never wrap.
+    <div className="@container">
+    <dl className="grid gap-x-6 gap-y-1 text-sm @md:grid-cols-[10rem_minmax(0,1fr)] @md:gap-y-3">
       <dt className="text-muted-foreground">Booking reference</dt>
-      <dd className="font-mono font-semibold">{booking.booking_reference}</dd>
+      <dd className="num font-medium whitespace-nowrap">{booking.booking_reference}</dd>
       {booking.pickup_code ? (
         <>
-          <dt className="text-muted-foreground">Pickup code</dt>
+          <dt className="mt-2 text-muted-foreground @md:mt-0 @md:pt-1">Pickup code</dt>
           <dd>
-            <span className="font-mono text-lg font-semibold tracking-widest">{booking.pickup_code}</span>
-            <span className="block text-xs text-muted-foreground">Show this code at the branch to collect the vehicle.</span>
+            <span className="num-lg block tracking-[0.25em] text-foreground">
+              {booking.pickup_code}
+            </span>
+            <span className="block text-small text-muted-foreground">Show this code at the branch to collect the vehicle.</span>
           </dd>
         </>
       ) : null}
       {booking.transaction_id ? (
         <>
-          <dt className="text-muted-foreground">Transaction</dt>
-          <dd className="font-mono">{booking.transaction_id}</dd>
+          <dt className="mt-2 text-muted-foreground @md:mt-0">Transaction</dt>
+          <dd className="num whitespace-nowrap">{booking.transaction_id}</dd>
         </>
       ) : null}
       {booking.invoice_number ? (
         <>
-          <dt className="text-muted-foreground">Invoice</dt>
-          <dd className="font-mono">{booking.invoice_number}</dd>
+          <dt className="mt-2 text-muted-foreground @md:mt-0">Invoice</dt>
+          <dd className="num whitespace-nowrap">{booking.invoice_number}</dd>
         </>
       ) : null}
     </dl>
+    </div>
   )
 }
 
@@ -61,8 +67,8 @@ export function BookingDetailPage() {
   })
 
   return (
-    <section className="max-w-2xl">
-      <Button asChild variant="ghost" size="lg" className="mb-2 -ml-2 h-10">
+    <section className="stage">
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-3">
         <Link to="/app/bookings">
           <ArrowLeft aria-hidden="true" />
           My bookings
@@ -74,56 +80,62 @@ export function BookingDetailPage() {
       ) : booking.isError ? (
         <ErrorState title="We couldn’t load this booking" error={booking.error} onRetry={() => void booking.refetch()} />
       ) : (
-        <div className="grid gap-6">
-          {justConfirmed && booking.data.status === 'Confirmed' ? (
-            <StatusMessage
-              tone="success"
-              message="Your booking is confirmed. Keep the pickup code safe; you will need it at the branch."
-            />
-          ) : null}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex flex-wrap items-center justify-between gap-2">
-                <h2>
+        <div className={RAIL_LAYOUT}>
+          <div className="grid gap-8">
+            {justConfirmed && booking.data.status === 'Confirmed' ? (
+              <StatusMessage
+                tone="success"
+                message="Your booking is confirmed. Keep the pickup code safe; you will need it at the branch."
+              />
+            ) : null}
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-section">
                   {booking.data.vehicle.brand} {booking.data.vehicle.model}
                 </h2>
                 <BookingStatusBadge status={booking.data.status} />
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {formatDateTime(booking.data.pickup_datetime)} to {formatDateTime(booking.data.return_datetime)},
-                collected at {booking.data.pickup_branch}.
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <span className="num">{formatDateTime(booking.data.pickup_datetime)}</span> to{' '}
+                <span className="num">{formatDateTime(booking.data.return_datetime)}</span>, collected at{' '}
+                {booking.data.pickup_branch}.
               </p>
-            </CardHeader>
-            <CardContent className="grid gap-5">
-              {booking.data.booking_reference ? <Confirmation booking={booking.data} /> : null}
-              {booking.data.status === 'Pending Payment' || booking.data.status === 'Draft' ? (
+            </div>
+            {booking.data.booking_reference ? (
+              <div className="reveal border-t pt-6">
+                <Confirmation booking={booking.data} />
+              </div>
+            ) : null}
+            {booking.data.status === 'Pending Payment' || booking.data.status === 'Draft' ? (
+              <div className="border-t pt-6">
+                <Button asChild>
+                  <Link to={`/app/bookings/${booking.data.id}/pay`}>
+                    {booking.data.status === 'Draft' ? 'Hold again and pay' : 'Continue to payment'}
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
+            {booking.data.invoice_number ? (
+              <div className="reveal grid gap-3 border-t pt-6">
+                <FormAlert message={download.error instanceof Error ? download.error.message : null} />
                 <div>
-                  <Button asChild className="h-10">
-                    <Link to={`/app/bookings/${booking.data.id}/pay`}>
-                      {booking.data.status === 'Draft' ? 'Hold again and pay' : 'Continue to payment'}
-                    </Link>
+                  <Button
+                    variant="outline"
+                    disabled={download.isPending}
+                    onClick={() => download.mutate(booking.data)}
+                  >
+                    <Download aria-hidden="true" />
+                    {download.isPending ? 'Preparing the invoice…' : `Download invoice ${booking.data.invoice_number}`}
                   </Button>
                 </div>
-              ) : null}
+              </div>
+            ) : null}
+          </div>
+          <StickyRail>
+            <div className="lg:pt-1">
               <PriceSummary quote={booking.data.price} caption="Price" />
-              {booking.data.invoice_number ? (
-                <div className="grid gap-2">
-                  <FormAlert message={download.error instanceof Error ? download.error.message : null} />
-                  <div>
-                    <Button
-                      variant="outline"
-                      className="h-10"
-                      disabled={download.isPending}
-                      onClick={() => download.mutate(booking.data)}
-                    >
-                      <Download aria-hidden="true" />
-                      {download.isPending ? 'Preparing the invoice…' : `Download invoice ${booking.data.invoice_number}`}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+            </div>
+          </StickyRail>
         </div>
       )}
     </section>

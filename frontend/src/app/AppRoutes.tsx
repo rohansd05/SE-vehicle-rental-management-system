@@ -13,6 +13,7 @@ import { MyLicencePage } from '@/features/licence/MyLicencePage'
 import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { searchRoutes } from '@/features/search/routes'
+import { CreditsPage } from '@/pages/CreditsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { HelpPage } from '@/pages/HelpPage'
 import { NotAvailablePage } from '@/pages/NotAvailablePage'
@@ -54,6 +55,7 @@ export function AppRoutes() {
           }
         />
         <Route path="help" element={<HelpPage />} />
+        <Route path="credits" element={<CreditsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 

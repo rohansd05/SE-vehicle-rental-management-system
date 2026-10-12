@@ -344,6 +344,92 @@ rotation: the second presents a just-blacklisted token and is signed out.
 Coordinating tabs (for example with a BroadcastChannel) is proposed as F1
 below.
 
+## D22 — Self-hosted Fontsource fonts (SIL OFL 1.1), no CDN
+
+**Decision.** CO-7 is amended further: fonts under the SIL Open Font
+Licence 1.1 are permitted when used unmodified and self-hosted through
+Fontsource npm packages. The frontend uses three (type system C, chosen
+12 Oct 2026; Fraunces and Archivo, used briefly on 11 Oct, were removed):
+
+| Package | Font | Licence | Role |
+|---|---|---|---|
+| `@fontsource-variable/schibsted-grotesk` | Schibsted Grotesk | OFL-1.1 | Hero and all headings |
+| `@fontsource-variable/ibm-plex-sans` | IBM Plex Sans | OFL-1.1 | Body and UI |
+| `@fontsource/ibm-plex-mono` | IBM Plex Mono | OFL-1.1 | Numbers, prices, dates, IDs, plates |
+
+The font files are bundled by Vite and served by Caddy with the React build
+(D1). No CDN, no Google Fonts link and no other third-party font request:
+the lab network may have no internet access. Each package's full axis or
+weight file is imported, because the rupee sign (U+20B9) is in the Latin
+Extended subset; every subset is declared with a `unicode-range`, so the
+browser downloads only the subsets a page actually uses (Latin and Latin
+Extended in practice).
+
+**Rationale.** The UI redesign (`docs/design/ui-brief.md`) needs a heading
+face, a legible body face and a tabular face for money and IDs; the
+choice between three candidate systems is recorded in
+`docs/design/type-options.md`; the system
+font stack gives none of these consistently across Windows, Android and iOS.
+The OFL lets a font be used, bundled and redistributed with software
+freely; its conditions (keep the licence and copyright notice, do not sell
+the font on its own, rename modified versions) are met by shipping the
+unmodified Fontsource files, which include the licence. Self-hosting keeps
+the app working offline and sends no visitor data to a font host.
+
+This reverses the reasoning in D10 that kept Geist out because OFL 1.1 was
+not on the CO-7 list. Geist itself stays removed: it is not one of the three
+fonts chosen.
+
+## D23 — Photographs: licensed sources only, self-hosted, credited
+
+**Decision.** Photographs in the frontend come only from:
+
+- **Unsplash** under the Unsplash License (never an "Unsplash+" image);
+- **Pexels** under the Pexels License;
+- **Wikimedia Commons**, only files under CC0, Public Domain, CC BY or
+  CC BY-SA (never NC, ND or "fair use" files).
+
+Never an image, illustration or icon from a reference site, a vehicle
+manufacturer (including a manufacturer's own account on Unsplash or
+Pexels), a dealer or a rental company. Each photo's page is opened and its
+photographer, source URL and exact licence recorded before use
+(`frontend/scripts/image-sources.json`). Originals are downloaded by hand
+into the git-ignored `frontend/.image-src/` and optimised by
+`frontend/scripts/optimise-images.mjs` (sharp, a development dependency) to
+AVIF, WebP and JPEG in `frontend/public/images/` (static files; the manifest
+of sizes and credits is `frontend/src/assets/images/manifest.json`); only those outputs are
+committed. Readable number plates are blurred in that script; no famous
+landmark is a photo's subject; no AI-generated images. Every photo is
+self-hosted: no hotlinking and no image CDN. Every photo in use is credited
+in `docs/design/image-credits.md` and on the public "Photo credits" page
+(`/credits`), rendered from the same data file, including the changes made
+(crop, colour grade, plate blur), as CC BY and CC BY-SA require.
+
+**Rationale.** The redesign uses real photography (landing page, auth
+panel, vehicle listings, page bands; `docs/design/imagery-brief.md`). These
+three sources allow free use in a project like this one; the excluded
+licences either forbid derivatives (ND), restrict use (NC), or give no
+licence at all (fair use). Brand and rental-company imagery carries
+trademark and endorsement problems even when a platform hosts it.
+Self-hosting keeps the app working on an offline lab network.
+
+## D24 — Product name Veyora and tagline "Your Ride, Your Rules"
+
+**Decision.** The product is named **Veyora**, with the tagline **"Your
+Ride, Your Rules"**. The name is set through `AGENCY_NAME` in
+`backend/.env` (`AGENCY_NAME=Veyora`), which the health endpoint returns as
+`agency_name` (D7). The frontend falls back to "Veyora" while the setting is
+unset or still the bracketed default placeholder. The tagline is a frontend
+constant. The wordmark is the name set in Schibsted Grotesk 800 (one shared
+`Brand` component, no logo mark); the tagline is set in IBM Plex Sans's own
+italic (one shared `Tagline` component). Page titles read "<Page> - Veyora",
+and the landing page "Veyora - Your Ride, Your Rules".
+
+**Rationale.** The team named the product on 12 Oct 2026. Keeping the name
+in `AGENCY_NAME` leaves D7 intact (one configurable name, read from the
+API), and the frontend fallback means the UI shows the right name before
+the backend setting is changed.
+
 ## Phase 1C frontend: proposed items (awaiting team approval)
 
 The SRS does not settle these; the frontend implements them as listed.
@@ -355,7 +441,7 @@ The SRS does not settle these; the frontend implements them as listed.
 | F3 | OTP error wording | The server answers every failure the same way. The verify screen knows when the code was sent and how many tries were made on this screen, so it says "wrong (n tries left)", "expired" or "too many attempts". After a page reload it falls back to the server's generic message. |
 | F4 | Licence review screen | There is no `GET licences/{id}/`; the review screen uses the licence passed from the queue, or finds it in the queue's first page (20 oldest). Proposal: add the detail endpoint. |
 | F5 | Mobile-change resend | A visible 60-second countdown on the client, matching A3; the server applies only the profile throttle (A1) to mobile-change codes. |
-| F6 | Accent colour | `oklch(0.47 0.12 240)` in light mode and `oklch(0.76 0.11 235)` in dark mode, as the `--brand` token; light and dark follow the OS. |
+| F6 | Accent colour | **Superseded by the UI redesign (light only, docs/design/ui-brief.md).** Was: `oklch(0.47 0.12 240)` in light mode and `oklch(0.76 0.11 235)` in dark mode, as the `--brand` token; light and dark follow the OS. |
 | F7 | Help link (UI-2) | Present on every screen; it leads to a short help page until the online help system (UD-1) is built. |
 | F8 | Planned features in the menu | Shown with a "Soon" label and an honest "not available yet" page; no sample data. |
 | F9 | Registration fields | Date of birth (BR-2) and an emergency contact (SA-4) are asked at registration, because the backend requires them. |
@@ -482,6 +568,9 @@ React is pinned to 18 because current Vite templates default to React 19
 | cn | 0.4.0 | MIT | OK (shadcn/ui; shadcn's replacement for clsx + tailwind-merge) |
 | tw-animate-css | 1.4.0 | MIT | OK (shadcn/ui; CSS only) |
 | lucide-react | 1.52.0 | ISC | OK under D10 (shadcn/ui's icon set) |
+| @fontsource-variable/schibsted-grotesk | 5.3.0 | OFL-1.1 | OK under D22 (hero and heading font, self-hosted) |
+| @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | OK under D22 (body and UI font, self-hosted) |
+| @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | OK under D22 (numbers, prices, dates and IDs, self-hosted) |
 
 ### Frontend development (`frontend/package.json` devDependencies)
 
@@ -498,11 +587,15 @@ React is pinned to 18 because current Vite templates default to React 19
 | @testing-library/jest-dom | 7.0.1 | MIT | OK |
 | jsdom | 30.1.2 | MIT | OK |
 | oxlint | 1.87.0 | MIT | OK (the Vite template's linter; `npm run lint`) |
+| sharp | 0.35.5 | Apache-2.0 | OK (build-time image optimisation only, `scripts/optimise-images.mjs`; never shipped, D10, D23) |
 | @types/react, @types/react-dom, @types/node | 18.3.31, 18.3.7, 22.20.5 | MIT | OK |
 
-Removed: `@fontsource-variable/geist` (added by `shadcn init`). The Geist font
-is under the SIL Open Font Licence 1.1, which fails CO-7; the UI uses the
-system font stack instead.
+Removed: `@fontsource-variable/geist` (added by `shadcn init`). Geist stays
+removed. SIL OFL 1.1 fonts are now permitted under D22, and the UI uses
+Schibsted Grotesk, IBM Plex Sans and IBM Plex Mono (see "Frontend runtime"
+above). Fraunces, Archivo and the type-comparison candidates (Barlow,
+Barlow Semi Condensed, JetBrains Mono, Red Hat Display, Red Hat Text, Red
+Hat Mono) were installed during the redesign and removed again.
 
 ### Frontend transitive dependencies outside MIT / Apache / BSD
 

@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { todayISO } from '@/lib/dates'
 import { applyServerErrors, describedBy } from '@/lib/form'
+import { FORM, FORM_INDENT } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import { type RecordValues, recordSchema } from './schemas'
 
@@ -85,9 +87,9 @@ export function RecordWorkForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form onSubmit={onSubmit} noValidate className={FORM}>
           <FormAlert message={formError} />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 @lg/form:grid-cols-2 @3xl/form:grid-cols-1">
             <Field id="record-date" label="Service date" error={errors.service_date?.message}>
               <Input id="record-date" type="date" max={todayISO()} {...invalid('service_date', 'record-date')} {...register('service_date')} />
             </Field>
@@ -109,7 +111,7 @@ export function RecordWorkForm({
           <Field id="record-work" label="Work performed" error={errors.work_description?.message}>
             <Textarea id="record-work" rows={4} {...invalid('work_description', 'record-work')} {...register('work_description')} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 @lg/form:grid-cols-2 @3xl/form:grid-cols-1">
             <Field id="record-labour" label="Labour cost (₹)" error={errors.labour_cost?.message}>
               <Input id="record-labour" inputMode="decimal" {...invalid('labour_cost', 'record-labour')} {...register('labour_cost')} />
             </Field>
@@ -118,7 +120,7 @@ export function RecordWorkForm({
             </Field>
           </div>
 
-          <fieldset className="grid gap-3">
+          <fieldset className={cn('grid gap-3', FORM_INDENT)}>
             <legend className="mb-1 text-sm font-medium">Parts used</legend>
             {parts.fields.length === 0 ? (
               <p className="text-sm text-muted-foreground">No parts added. Add each part replaced, if any.</p>
@@ -126,7 +128,7 @@ export function RecordWorkForm({
             {parts.fields.map((field, index) => {
               const partErrors = errors.parts?.[index]
               return (
-                <div key={field.id} className="grid gap-3 rounded-md border p-3 sm:grid-cols-[1fr_6rem_8rem_auto] sm:items-end">
+                <div key={field.id} className="@container/form grid gap-3 border-t pt-4 @lg/form:grid-cols-[minmax(0,1fr)_6rem_8rem_auto] @lg/form:items-end">
                   <Field id={`part-${index}-name`} label={`Part ${index + 1}`} error={partErrors?.part_name?.message}>
                     <Input id={`part-${index}-name`} aria-invalid={partErrors?.part_name ? true : undefined} {...register(`parts.${index}.part_name`)} />
                   </Field>
@@ -136,7 +138,7 @@ export function RecordWorkForm({
                   <Field id={`part-${index}-cost`} label="Unit cost (₹)" error={partErrors?.unit_cost?.message}>
                     <Input id={`part-${index}-cost`} inputMode="decimal" aria-invalid={partErrors?.unit_cost ? true : undefined} {...register(`parts.${index}.unit_cost`)} />
                   </Field>
-                  <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => parts.remove(index)}>
+                  <Button type="button" variant="outline" onClick={() => parts.remove(index)}>
                     <Trash2 aria-hidden="true" />
                     <span className="sr-only sm:not-sr-only">Remove</span>
                     <span className="sr-only"> part {index + 1}</span>
@@ -148,8 +150,8 @@ export function RecordWorkForm({
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className="h-10"
+               
+               
                 onClick={() => parts.append({ part_name: '', quantity: '1', unit_cost: '' })}
               >
                 <Plus aria-hidden="true" />
@@ -158,10 +160,10 @@ export function RecordWorkForm({
             </div>
           </fieldset>
 
-          <p className="text-sm text-muted-foreground">
+          <p className={cn('text-sm text-muted-foreground', FORM_INDENT)}>
             The total cost (labour plus parts) is worked out when you save.
           </p>
-          <div>
+          <div className={FORM_INDENT}>
             <SubmitButton busy={save.isPending} busyLabel="Saving…">
               Save work record
             </SubmitButton>

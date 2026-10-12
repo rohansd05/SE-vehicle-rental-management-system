@@ -34,12 +34,12 @@ export function ImagePicker({
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex aspect-[85/54] w-full max-w-56 items-center justify-center overflow-hidden rounded-md border bg-muted">
+      <div className="flex flex-col gap-3">
+        <div className="flex aspect-[85/54] w-full max-w-72 items-center justify-center overflow-hidden rounded-md border bg-muted">
           {preview ? (
             <img src={preview} alt={`Preview: ${label.toLowerCase()}`} className="size-full object-cover" />
           ) : (
-            <Upload className="size-6 text-muted-foreground" aria-hidden="true" />
+            <Upload className="size-5 text-ink-subtle" aria-hidden="true" />
           )}
         </div>
         <div className="grid gap-1">
@@ -49,7 +49,7 @@ export function ImagePicker({
             accept={LICENCE_IMAGE_ACCEPT}
             aria-invalid={error ? true : undefined}
             aria-describedby={describedBy(id, { hint: true, error: Boolean(error) })}
-            className="text-sm file:mr-3 file:h-9 file:rounded-md file:border file:bg-background file:px-3 file:text-sm file:font-medium hover:file:bg-muted"
+            className="max-w-full text-sm text-muted-foreground file:mr-3 file:h-8 file:rounded-md file:border file:border-input file:bg-surface file:px-3 file:text-small file:font-medium file:text-foreground hover:file:bg-muted"
             onChange={(event) => {
               const chosen = event.target.files?.[0] ?? null
               if (!chosen) {
@@ -65,12 +65,12 @@ export function ImagePicker({
               }
             }}
           />
-          <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          <p id={`${id}-hint`} className="text-small text-muted-foreground">
             JPG or PNG, up to 5 MB. Make sure every detail is readable.
           </p>
-          {file ? <p className="text-xs text-muted-foreground">Chosen: {file.name}</p> : null}
+          {file ? <p className="text-small text-muted-foreground">Chosen: {file.name}</p> : null}
           {error ? (
-            <p id={`${id}-error`} className="text-sm text-destructive">
+            <p id={`${id}-error`} className="text-small font-medium text-destructive">
               {error}
             </p>
           ) : null}

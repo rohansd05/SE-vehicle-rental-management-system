@@ -18,12 +18,14 @@ function JobsView({
   basePath,
   emptyText,
   canReport,
+  photo,
 }: {
   title: string
   description: string
   basePath: string
   emptyText: string
   canReport: boolean
+  photo: string
 }) {
   const location = useLocation()
   const flash = (location.state as { flash?: string } | null)?.flash ?? null
@@ -38,9 +40,11 @@ function JobsView({
       <PageHeader
         title={title}
         description={description}
+        photo={photo}
+        variant="compact"
         actions={
           canReport ? (
-            <Button asChild size="lg" className="h-10">
+            <Button asChild>
               <Link to="/app/maintenance/report">
                 <Plus aria-hidden="true" />
                 Report a fault
@@ -49,12 +53,19 @@ function JobsView({
           ) : null
         }
       />
-      <div className="mb-4 grid gap-4">
-        <StatusMessage message={flash} tone="success" />
+      <StatusMessage message={flash} tone="success" />
+      {/* One toolbar row (ui-brief.md 6.4.1): the filter, and the count once the jobs load. */}
+      <div className="mt-4 mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <StatusFilter value={status} onChange={setStatus} />
+        {jobs.data && jobs.data.results.length > 0 ? (
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {jobs.data.count} {jobs.data.count === 1 ? 'job' : 'jobs'}
+            {jobs.data.next ? `, showing the latest ${jobs.data.results.length}` : ''}.
+          </p>
+        ) : null}
       </div>
       {jobs.isPending ? (
-        <LoadingState label="Loading jobs…" />
+        <LoadingState label="Loading jobs…" rows={4} />
       ) : jobs.isError ? (
         <ErrorState title="We couldn’t load the jobs" error={jobs.error} onRetry={() => void jobs.refetch()} />
       ) : jobs.data.results.length === 0 ? (
@@ -63,13 +74,7 @@ function JobsView({
           description={status ? 'Choose another status to see more jobs.' : emptyText}
         />
       ) : (
-        <>
-          <p className="mb-3 text-sm text-muted-foreground" aria-live="polite">
-            {jobs.data.count} {jobs.data.count === 1 ? 'job' : 'jobs'}
-            {jobs.data.next ? `, showing the latest ${jobs.data.results.length}` : ''}.
-          </p>
-          <JobList jobs={jobs.data.results} basePath={basePath} />
-        </>
+        <JobList jobs={jobs.data.results} basePath={basePath} />
       )}
     </section>
   )
@@ -84,6 +89,7 @@ export function MyJobsPage() {
       basePath="/app/jobs"
       emptyText="No maintenance jobs are assigned to you."
       canReport={false}
+      photo="band-technician-1"
     />
   )
 }
@@ -97,6 +103,7 @@ export function BranchJobsPage() {
       basePath="/app/maintenance"
       emptyText="No faults have been reported on your branch’s vehicles."
       canReport
+      photo="band-maintenance-1"
     />
   )
 }

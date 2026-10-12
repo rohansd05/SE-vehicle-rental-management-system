@@ -4,6 +4,7 @@ import { Link, Outlet } from 'react-router-dom'
 
 import { ROLE_LABELS } from '@/api/types'
 import { navItemsFor } from '@/app/navigation'
+import { Brand, Tagline } from '@/components/brand'
 import { SkipLink } from '@/components/page'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,7 +16,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { useSignedInUser, useAuth } from '@/features/auth/auth-context'
-import { useAgency, useRouteFocus } from '@/hooks/page'
+import { useRouteFocus } from '@/hooks/page'
+import { useScrolled } from '@/hooks/scroll'
+import { cn } from '@/lib/utils'
 
 import { NavList } from './NavList'
 
@@ -33,93 +36,105 @@ function initials(name: string): string {
 /**
  * The signed-in layout (UI-1, UI-2): every screen shows the application
  * name, who is signed in, a help link and sign-out in the same places.
- * Navigation is a sidebar on wider screens and a drawer on phones (OE-3).
+ * Navigation is a fixed sidebar on wider screens and a drawer on phones
+ * (OE-3); the top bar is slim (docs/design/ui-brief.md, 6.0).
  */
 export function AppShell() {
   const user = useSignedInUser()
   const { signOut } = useAuth()
-  const agency = useAgency()
   const items = navItemsFor(user.role)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const mainRef = useRouteFocus<HTMLElement>()
   const roleLabel = ROLE_LABELS[user.role]
+  // The top bar shows its hairline edge once content has scrolled under it (B5).
+  const scrolled = useScrolled()
+
+  const brandLink = (className: string) => (
+    <Link to="/app" className={cn('min-w-0 truncate rounded-sm text-foreground', className)}>
+      <Brand size="bar" />
+    </Link>
+  )
 
   return (
     <div className="min-h-svh bg-background text-foreground">
       <SkipLink />
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
-          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon-lg" className="md:hidden" aria-label="Open menu">
-                <Menu aria-hidden="true" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <SheetHeader className="border-b">
-                <SheetTitle>{agency.name}</SheetTitle>
-                <SheetDescription>
-                  {user.name} · {roleLabel}
-                </SheetDescription>
-              </SheetHeader>
-              <nav aria-label="Main">
-                <NavList items={items} onNavigate={() => setDrawerOpen(false)} />
-              </nav>
-            </SheetContent>
-          </Sheet>
-
-          <Link
-            to="/app"
-            className="min-w-0 truncate rounded-sm font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            {agency.name}
-          </Link>
-
-          <div className="ml-auto flex items-center gap-1">
-            <div className="flex items-center gap-2 pr-1">
-              <span className="sr-only">
-                Signed in as {user.name}, {roleLabel}
-              </span>
-              <span
-                aria-hidden="true"
-                className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
-              >
-                {initials(user.name)}
-              </span>
-              <span aria-hidden="true" className="hidden text-right leading-tight sm:block">
-                <span className="block max-w-40 truncate text-sm font-medium">{user.name}</span>
-                <span className="block text-xs text-muted-foreground">{roleLabel}</span>
-              </span>
-            </div>
-            <Button asChild variant="ghost" size="lg">
-              <Link to="/help" aria-label="Help">
-                <CircleHelp aria-hidden="true" />
-                <span className="hidden sm:inline">Help</span>
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" onClick={() => void signOut()} aria-label="Sign out">
-              <LogOut aria-hidden="true" />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[18.5rem] flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        {/* The wordmark and, at 15 px, the tagline (D24); the tagline sits outside the link. */}
+        <div className="flex h-18 shrink-0 flex-col justify-center border-b border-sidebar-border px-6">
+          {brandLink('self-start')}
+          <Tagline size="small" className="mt-0.5 text-muted-foreground" />
         </div>
-      </header>
+        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto">
+          <NavList items={items} />
+        </nav>
+      </aside>
 
-      <div className="flex">
-        <aside className="hidden w-60 shrink-0 border-r md:block">
-          <nav aria-label="Main" className="sticky top-14">
-            <NavList items={items} />
-          </nav>
-        </aside>
+      <div className="md:pl-[18.5rem]">
+        <header
+          data-scrolled={scrolled ? '' : undefined}
+          className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
+        >
+          <div className="flex h-18 items-center gap-2 px-3 sm:px-6 lg:px-8">
+            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon-lg" className="-ml-1 md:hidden" aria-label="Open menu">
+                  <Menu aria-hidden="true" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 gap-0 bg-sidebar p-0">
+                <SheetHeader className="border-b border-sidebar-border px-6 py-4">
+                  <SheetTitle className="pr-8">
+                    <Brand size="bar" />
+                  </SheetTitle>
+                  <SheetDescription>
+                    {user.name} · {roleLabel}
+                  </SheetDescription>
+                </SheetHeader>
+                <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto">
+                  <NavList items={items} onNavigate={() => setDrawerOpen(false)} />
+                </nav>
+              </SheetContent>
+            </Sheet>
+
+            {brandLink('md:hidden')}
+
+            <div className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
+              <div className="flex items-center gap-2.5 pr-1 sm:pr-2">
+                <span className="sr-only">
+                  Signed in as {user.name}, {roleLabel}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="hidden size-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-semibold text-primary sm:flex"
+                >
+                  {initials(user.name)}
+                </span>
+                <span aria-hidden="true" className="hidden text-right lg:block">
+                  <span className="block max-w-56 truncate text-sm leading-6 font-medium">{user.name}</span>
+                  <span className="block text-small leading-5 text-muted-foreground">{roleLabel}</span>
+                </span>
+              </div>
+              <Button asChild variant="ghost" className="px-2.5 sm:px-3">
+                <Link to="/help" aria-label="Help">
+                  <CircleHelp aria-hidden="true" />
+                  <span className="hidden sm:inline">Help</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="px-2.5 sm:px-3" onClick={() => void signOut()} aria-label="Sign out">
+                <LogOut aria-hidden="true" />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
+            </div>
+          </div>
+        </header>
+
         <main
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8"
+          className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
         >
-          <div className="mx-auto max-w-4xl">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>

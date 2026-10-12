@@ -29,13 +29,13 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
       title: 'Your driving licence doesn’t allow this booking yet',
       actions: (
         <>
-          <Button asChild size="lg" className="h-10">
+          <Button asChild>
             <Link to="/app/licence">Submit your licence</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="h-10">
+          <Button asChild variant="outline">
             <Link to="/app/search">Keep browsing</Link>
           </Button>
-          <Button asChild variant="ghost" size="lg" className="h-10">
+          <Button asChild variant="ghost">
             <Link to="/app">Exit</Link>
           </Button>
         </>
@@ -47,7 +47,7 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
       return {
         title: 'This vehicle has just been taken',
         actions: (
-          <Button asChild size="lg" className="h-10">
+          <Button asChild>
             <Link to="/app/search">Choose another vehicle</Link>
           </Button>
         ),
@@ -64,10 +64,10 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
         title: 'You can’t make this booking',
         actions: (
           <>
-            <Button asChild variant="outline" size="lg" className="h-10">
+            <Button asChild variant="outline">
               <Link to="/app/search">Keep browsing</Link>
             </Button>
-            <Button asChild variant="ghost" size="lg" className="h-10">
+            <Button asChild variant="ghost">
               <Link to="/app">Exit</Link>
             </Button>
           </>
@@ -78,7 +78,7 @@ function explain(code: string | undefined, onHoldAgain?: () => void, holding = f
         return {
           title: code === 'hold_expired' ? 'Your hold on this vehicle has expired' : 'The price needs checking again',
           actions: onHoldAgain ? (
-            <Button size="lg" className="h-10" onClick={onHoldAgain} disabled={holding}>
+            <Button onClick={onHoldAgain} disabled={holding}>
               {holding ? 'Holding…' : 'Hold the vehicle again'}
             </Button>
           ) : null,
@@ -112,16 +112,16 @@ export function BookingRefusal({
       tabIndex={-1}
       role="alert"
       data-code={code}
-      className="grid gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 outline-none"
+      className="enter grid gap-4 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint px-4 py-4 outline-none"
     >
-      <div className="flex items-start gap-2">
-        <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+      <div className="flex items-start gap-2.5">
+        <CircleAlert className="mt-[3px] size-4 shrink-0 text-status-unsafe" aria-hidden="true" />
         <div>
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-muted-foreground">{message}</p>
+          <p className="heading text-subsection text-foreground">{title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{message}</p>
         </div>
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2 pl-[26px]">{actions}</div> : null}
     </div>
   )
 }
