@@ -455,9 +455,17 @@
         @apply bg-background font-sans text-foreground antialiased;
         text-rendering: optimizeLegibility;
         scroll-behavior: smooth;
+        /* Keep the scrollbar's space on short pages too, so the shell and the content edges never move sideways between pages. */
+        scrollbar-gutter: stable;
+    }
+    /* The gutter above already holds the scrollbar's space, so a dialog's scroll lock must not add it again. */
+    html body[data-scroll-locked] {
+        margin-right: 0 !important;
     }
     body {
         @apply bg-background text-sm text-foreground;
+        /* Amounts inside sentences ("₹150.00 per hour") keep the body face but line up like the mono ones. */
+        font-variant-numeric: tabular-nums;
     }
 
     /* Headings (B2, system C): Schibsted Grotesk 700, tight; subsections 650. */

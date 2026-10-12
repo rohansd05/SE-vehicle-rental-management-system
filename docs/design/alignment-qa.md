@@ -477,3 +477,131 @@ label line height, loading state, dialog width): no new issues.
 - **Browsers:** Safari and Firefox.
 - **Reduced motion:** checked beyond the CSS rule only for the skeletons
   (`motion-reduce:animate-none`).
+
+---
+
+# Stage 6 QA: demo readiness (13 Oct 2026)
+
+Measured in Chromium (Playwright) on the running dev servers, signed in as
+each demo account. Recording viewport 1920 x 960; also 1536 x 730,
+1440 x 900, 1024 x 768, 768 x 1024, 390 x 844 and 320 x 640.
+
+The Stage 4.9 probe ran on every route and width. It was extended with:
+
+- **Content:** "undefined", "null", "NaN", "Invalid Date", "[object
+  Object]", "[Agency Name]", lorem ipsum, raw enum values, bare "—"
+  values, rupee format and alignment, tabular figures, the date formats
+  found.
+- **Accessibility:** h1 count, heading order, unlabelled fields, alt text,
+  broken images.
+- **Visual rules:** radius over 6 px, shadows outside overlays,
+  pointer-only elements.
+- **Network and console:** every failing request and every console error
+  or warning.
+
+No record was created, changed or deleted. Validation was tried only
+client side (never a wrong password). Error and loading states were made
+by intercepting one API call in the test browser.
+
+Check groups: 1 visual system, 2 typography, 3 layout, 4 images,
+5 content, 6 interaction, 7 motion, 8 console and network,
+9 accessibility. P = pass, F = fail before the fix, then fixed.
+
+## Tier 1: the demo story (all seven viewports)
+
+| Route | Role | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | Fixes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `/` landing | signed out | P | P | P | P | P | P | P | P (a) | P | |
+| `/help`, `/credits` | signed out | P | P | P | P | P | P | P | P (a) | P | |
+| `/register`, `/login`, `/verify` | signed out | P | P | P | P | P | P | P | P (a) | P | |
+| `/app` home | customer | P | P | F | P | P | P | P | P | P | scrollbar gutter (F2) |
+| `/app/search` empty and with results, category filter | customer | P | F | F | P | P | P | P | P | P | tabular figures (F3), gutter (F2) |
+| `/app/vehicles/21` (Baleno), price summary | customer | P | F | P | P | P | P | P | P | P | tabular figures (F3) |
+| `/app/bookings/2/pay` | customer | P | F | F | P | P | P | P | P | P | payment column (F1), F3 |
+| `/app/bookings`, `/app/bookings/1`, `/app/bookings/2` | customer | P | P | F | P | P | P | P | P | P | F2 |
+| `/app/licence` | customer | P | P | P | P | F (b) | P | P | P | P | backend data, reported |
+| `/app/profile`, sign out | customer | P | P | P | P | P | P | P | P | P | |
+| `/app/licences`, `/app/licences/2` | staff, admin | P | P | F | P | P | F (c) | P | P | P | F2, dialog scroll lock (F4) |
+| `/app/maintenance`, `/report`, `/1`, `/3` | staff | P | F | P | P | P | P | P | P | P | F3 |
+| `/app/handover`, `/app/branch-bookings` | staff | P | P | P | P | P | P | P | P | P | |
+| `/app/jobs`, `/app/jobs/1` to `/4` ("Work recorded") | technician | P | P | P | P | P | P | P | P | P | |
+| `/app`, `/app/reports`, `/app/maintenance`, jobs 2 and 3 | manager | P | P | P | P | P | P | P | P | P | |
+| `/app`, fleet, tariffs, users, reports, audit, licence checks, maintenance, job 3, clearances, profile | admin | P | P | F | P | P | P | P | P | P | F2 |
+
+- **(a)** One expected 401 from `POST /api/v1/auth/refresh/` on every
+  signed-out load (no session cookie). Chrome logs it as a console error.
+  It is not from our code; see the backend findings.
+- **(b)** "Your licence was verified on —". The frontend reads
+  `verified_at`; the API returns `null` for the seeded licence. Missing
+  backend data.
+- **(c)** Opening a dialog shifted the shell 15 px left once F2 was in
+  place; F4 fixes it.
+
+## Tier 2: every other route (all seven viewports)
+
+The Tier 1 batches already covered every route in the Stage 5 inventory.
+The extra Tier 2 routes:
+
+| Route | Role | Result |
+|---|---|---|
+| 403 (`/app/licences` as a customer) | customer | P on all groups |
+| 404 (`/no-such-page`, `/app/nope`) | signed out, customer | P |
+| `/app/bookings` signed out | signed out | Redirects to "Sign in"; P |
+
+## Tier 3: states (1920, 390)
+
+| State | How | Result |
+|---|---|---|
+| Validation: sign in, register, search, report a fault, pay | Empty submit; bad e-mail and mobile | P: every invalid field has `aria-invalid` and its message in `aria-describedby`; focus goes to the first invalid field; no overflow; nothing under 15 px |
+| Empty lists | My bookings "Status" Cancelled; maintenance "Status" Cancelled | P: "No Cancelled bookings" with its photo; no overflow |
+| Server error | `GET /api/v1/bookings/` answered 500 | P: "We couldn’t load your bookings", "Try again" |
+| Network failure | search request aborted | P: "We couldn’t search right now" with the connection message |
+| Loading | bookings and jobs delayed 3 s | P: announced label plus skeleton rows; no shift when data lands (CLS at most 0.006 everywhere) |
+| Sign out | top bar "Sign out" | P: back on `/login` |
+| Keyboard | Tab through licence review, maintenance, report a fault, search, vehicle, pay, bookings | P: every stop shows the focus outline (the date-time inputs too, 1.6 px). The order follows the page |
+| Dialogs and menu | Reject dialog; mobile menu at 390 | P: Escape closes and focus returns to the trigger ("Reject", "Open menu"); both "Main" navigation landmarks are present when the menu is open |
+| Reduced motion | emulated `prefers-reduced-motion: reduce` | P: no running animations on home, bookings or search. Without it only the B5 reveal transform runs, once |
+| Long text | Toyota Innova Crysta, "Demo Customer (licence pending)", the Andheri address, VRMS-20261011-0001, INV-2026-000001, TXN-… | P: no mid-token breaks, no clipping |
+
+## Fixes (before, after)
+
+| # | Problem | Fix | After |
+|---|---|---|---|
+| F1 | Pay page at 1920: the form column stopped at 672 px, leaving a 410 px empty band before the rail | The column fills the main grid column (`min-w-0` instead of `max-w-2xl`), like the vehicle and booking pages; the password field keeps its own width | No band; probe clean at all seven widths |
+| F2 | Content edges moved 15 px between pages: short pages (licence checks, clearances, booking detail) have no scrollbar. Sign out sat at x 1888 there and x 1873 elsewhere | `scrollbar-gutter: stable` on `html` | Sign out at x 1873 and the header frame 1545 px wide on every route at 1920 |
+| F3 | Amounts inside sentences ("₹150.00 per hour", "Rental, 2 days at ₹1,800.00", the Pay button, labour cost) used proportional figures | `font-variant-numeric: tabular-nums` on `body`; the mono `num` utilities unchanged | Every amount on every route has tabular figures |
+| F4 | With F2, a dialog's scroll lock added a 15 px margin, so the shell jumped when Reject opened | `html body[data-scroll-locked] { margin-right: 0 !important }` | Sign out stays at x 1873 with a dialog open |
+
+## Remaining P2 (not fixed)
+
+- **Data-dependent blank space:** 224 to 473 px below the content of the
+  one-item queues (licence checks, unsafe clearances), the unsubmitted
+  search form, and booking detail at 1920 x 960.
+- **Booking title:** "Booking VRMS-20261011-0001" takes two lines below
+  1024 px. The reference itself never breaks (known since Stage 4.9).
+- **Skip link:** every page load moves focus to the page content, so
+  "Skip to main content" is reached with Shift+Tab, not the first Tab.
+  Behaviour, left as is.
+- **Native date-time inputs:** they show the operating system's format
+  (14-10-2026 10:00) while every other date reads "14 Oct 2026, 10:00
+  am". Browser control, not styled.
+- **Month name:** Indian English writes September as "Sept"
+  (28 Sept 2026). Consistent everywhere, from `Intl`.
+- **Licence page dividers:** the divider above the licence details spans
+  the content column (42 rem) and the one above "Update licence details"
+  spans the row. This follows the settings-row pattern.
+
+## Not checked
+
+- **States that change data:** the live "Record the work" form, "Complete
+  the job", "Assign and schedule", the payment result and the booking
+  confirmation banner. Each needs a data change and is covered by the
+  component tests. The booking flow up to "Hold this vehicle and pay" was
+  checked.
+- **Discount codes:** applying one was not tried.
+- **Downloads:** the invoice PDF was not opened.
+- **Browsers:** Safari, Firefox and real phones.
+- **Network throttling:** Slow 4G was approximated with 3 s API delays, not
+  DevTools throttling of all assets.
+- **Contrast:** text on a photo exists only on the landing hero, measured
+  in Stage 4.10; Stage 6 found no other text on a photo.

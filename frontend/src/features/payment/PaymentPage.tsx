@@ -186,7 +186,7 @@ export function PaymentPage() {
         <ErrorState title="We couldn’t load this booking" error={booking.error} onRetry={() => void booking.refetch()} />
       ) : (
         <div className={RAIL_LAYOUT}>
-          <div className="max-w-2xl">
+          <div className="min-w-0">
             {booking.data.status === 'Draft' ? (
               <BookingRefusal
                 error={
