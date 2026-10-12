@@ -30,6 +30,7 @@ export function BookingHistoryPage() {
     <section className="stage">
       <PageHeader
         title="My bookings"
+        photo="band-bookings-1"
         description="Every booking you have made, the most recent pickup first."
         actions={
           <Button asChild>

@@ -6,6 +6,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '@/api/client'
 import { Field, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
 import { StickyRail } from '@/components/sticky-rail'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Input } from '@/components/ui/input'
@@ -209,6 +210,8 @@ export function PaymentPage() {
           </div>
           <StickyRail>
             <div className="grid gap-5 lg:pt-1">
+              {/* The small payment photo (imagery-brief.md, 2): decorative, beside the summary from 1024 px. */}
+              <Photo id="band-payment-1" alt="" sizes="24rem" className="hidden aspect-[4/3] rounded-xl lg:block" />
               <div>
                 <h2 className="text-section">
                   {booking.data.vehicle.brand} {booking.data.vehicle.model}

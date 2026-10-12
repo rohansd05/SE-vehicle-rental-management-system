@@ -4,8 +4,10 @@ import { type FormEvent, type ReactNode, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '@/api/client'
+import { representativeImage } from '@/assets/vehicles/registry'
 import { FormAlert, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
 import { StickyRail } from '@/components/sticky-rail'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
@@ -13,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate, formatDateTime } from '@/lib/dates'
+import { cn } from '@/lib/utils'
 
 import {
   type AddOn,
@@ -49,20 +52,33 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
     vehicle.seating_capacity ? `${vehicle.seating_capacity} seats` : null,
     vehicle.engine_cc ? `${vehicle.engine_cc} cc` : null,
   ].filter(Boolean)
+  // B12: the vehicle's own photographs first; without them, the representative
+  // model (or category) photo, labelled as such, above the existing note.
+  const representative = vehicle.photos.length ? null : representativeImage(vehicle)
   return (
     <div className="grid gap-5">
       {vehicle.photos.length ? (
         <ul aria-label="Photographs" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {vehicle.photos.map((url, index) => (
-            <li key={url}>
+            <li key={url} className="first:col-span-full">
               <img
                 src={url}
                 alt={`${vehicle.brand} ${vehicle.model}, photo ${index + 1} of ${vehicle.photos.length}`}
-                className="aspect-[4/3] w-full rounded-md object-cover"
+                className={cn('w-full object-cover', index === 0 ? 'aspect-[3/2] rounded-xl' : 'aspect-[4/3] rounded-md')}
               />
             </li>
           ))}
         </ul>
+      ) : representative ? (
+        <div className="grid gap-2">
+          <Photo
+            id={representative.id}
+            alt={representative.alt}
+            sizes="(min-width: 1280px) 50vw, (min-width: 768px) 60vw, 100vw"
+            className="aspect-[3/2] rounded-xl"
+          />
+          <p className="text-small text-muted-foreground">No photographs have been added yet.</p>
+        </div>
       ) : (
         <p className="flex aspect-[3/1] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground sm:aspect-[5/1]">
           No photographs have been added yet.

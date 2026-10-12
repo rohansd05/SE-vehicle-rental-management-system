@@ -380,6 +380,39 @@ This reverses the reasoning in D10 that kept Geist out because OFL 1.1 was
 not on the CO-7 list. Geist itself stays removed: it is not one of the three
 fonts chosen.
 
+## D23 — Photographs: licensed sources only, self-hosted, credited
+
+**Decision.** Photographs in the frontend come only from:
+
+- **Unsplash** under the Unsplash License (never an "Unsplash+" image);
+- **Pexels** under the Pexels License;
+- **Wikimedia Commons**, only files under CC0, Public Domain, CC BY or
+  CC BY-SA (never NC, ND or "fair use" files).
+
+Never an image, illustration or icon from a reference site, a vehicle
+manufacturer (including a manufacturer's own account on Unsplash or
+Pexels), a dealer or a rental company. Each photo's page is opened and its
+photographer, source URL and exact licence recorded before use
+(`frontend/scripts/image-sources.json`). Originals are downloaded by hand
+into the git-ignored `frontend/.image-src/` and optimised by
+`frontend/scripts/optimise-images.mjs` (sharp, a development dependency) to
+AVIF, WebP and JPEG in `frontend/public/images/` (static files; the manifest
+of sizes and credits is `frontend/src/assets/images/manifest.json`); only those outputs are
+committed. Readable number plates are blurred in that script; no famous
+landmark is a photo's subject; no AI-generated images. Every photo is
+self-hosted: no hotlinking and no image CDN. Every photo in use is credited
+in `docs/design/image-credits.md` and on the public "Photo credits" page
+(`/credits`), rendered from the same data file, including the changes made
+(crop, colour grade, plate blur), as CC BY and CC BY-SA require.
+
+**Rationale.** The redesign uses real photography (landing page, auth
+panel, vehicle listings, page bands; `docs/design/imagery-brief.md`). These
+three sources allow free use in a project like this one; the excluded
+licences either forbid derivatives (ND), restrict use (NC), or give no
+licence at all (fair use). Brand and rental-company imagery carries
+trademark and endorsement problems even when a platform hosts it.
+Self-hosting keeps the app working on an offline lab network.
+
 ## Phase 1C frontend: proposed items (awaiting team approval)
 
 The SRS does not settle these; the frontend implements them as listed.
@@ -537,6 +570,7 @@ React is pinned to 18 because current Vite templates default to React 19
 | @testing-library/jest-dom | 7.0.1 | MIT | OK |
 | jsdom | 30.1.2 | MIT | OK |
 | oxlint | 1.87.0 | MIT | OK (the Vite template's linter; `npm run lint`) |
+| sharp | 0.35.5 | Apache-2.0 | OK (build-time image optimisation only, `scripts/optimise-images.mjs`; never shipped, D10, D23) |
 | @types/react, @types/react-dom, @types/node | 18.3.31, 18.3.7, 22.20.5 | MIT | OK |
 
 Removed: `@fontsource-variable/geist` (added by `shadcn init`). Geist stays

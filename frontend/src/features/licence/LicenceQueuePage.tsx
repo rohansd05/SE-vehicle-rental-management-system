@@ -21,6 +21,7 @@ export function LicenceQueuePage() {
     <section>
       <PageHeader
         title="Licence checks"
+        photo="band-licence-checks-1"
         description="Licences customers have submitted, oldest first. Check each one against its photos."
         actions={
           <Button variant="outline" onClick={() => void queue.refetch()} disabled={queue.isFetching}>

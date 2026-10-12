@@ -70,7 +70,10 @@ export function BookingDetailPage() {
           My bookings
         </Link>
       </Button>
-      <PageHeader title={booking.data?.booking_reference ? `Booking ${booking.data.booking_reference}` : 'Booking'} />
+      <PageHeader
+        title={booking.data?.booking_reference ? `Booking ${booking.data.booking_reference}` : 'Booking'}
+        photo="band-bookings-1"
+      />
       {booking.isPending ? (
         <LoadingState label="Loading the booking…" />
       ) : booking.isError ? (

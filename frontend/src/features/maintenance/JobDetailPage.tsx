@@ -319,6 +319,7 @@ export function JobDetailPage() {
   })
 
   const backTo = isTechnician ? '/app/jobs' : '/app/maintenance'
+  const bandPhoto = isTechnician ? 'band-technician-1' : 'band-maintenance-1'
   const back = (
     <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
       <Link to={backTo}>
@@ -332,7 +333,7 @@ export function JobDetailPage() {
     return (
       <section>
         {back}
-        <PageHeader title={`Job ${id}`} />
+        <PageHeader title={`Job ${id}`} photo={bandPhoto} />
         {job.isPending ? (
           <LoadingState label="Loading the job…" />
         ) : (
@@ -350,6 +351,7 @@ export function JobDetailPage() {
       {back}
       <PageHeader
         title={`Job ${data.job_id} · ${data.vehicle.registration_no}`}
+        photo={bandPhoto}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <JobStatusBadge job={data} />

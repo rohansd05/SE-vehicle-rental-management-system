@@ -4,6 +4,7 @@
 import { CircleAlert, Inbox, LoaderCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { Photo } from '@/components/photo'
 import { Button } from '@/components/ui/button'
 
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
@@ -57,8 +58,10 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="enter flex items-start gap-3 border-y py-8">
-      <Inbox className="mt-1 size-5 shrink-0 text-ink-subtle" aria-hidden="true" />
+    <div className="enter flex items-start gap-3 border-y py-8 sm:gap-6">
+      <Inbox className="mt-1 size-5 shrink-0 text-ink-subtle sm:hidden" aria-hidden="true" />
+      {/* The quiet photo stands in for the icon from 640 px (imagery-brief.md, 2). */}
+      <Photo id="band-quiet-2" alt="" sizes="9rem" className="hidden aspect-[3/2] w-36 shrink-0 rounded-lg sm:block" />
       <div className="flex min-w-0 flex-col items-start gap-1">
         <p className="font-medium text-foreground">{title}</p>
         {description ? <p className="max-w-prose text-sm text-muted-foreground">{description}</p> : null}

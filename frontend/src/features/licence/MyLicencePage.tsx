@@ -32,6 +32,7 @@ export function MyLicencePage() {
     <section className="stage">
       <PageHeader
         title="Driving licence"
+        photo="band-licence-1"
         description="A verified licence that covers the vehicle’s category is needed before you can book."
       />
       {licence.isPending ? (

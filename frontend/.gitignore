@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Stage 4.7: original photos before optimisation (only the optimised outputs are committed)
+.image-src/

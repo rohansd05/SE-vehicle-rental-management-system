@@ -18,12 +18,14 @@ function JobsView({
   basePath,
   emptyText,
   canReport,
+  photo,
 }: {
   title: string
   description: string
   basePath: string
   emptyText: string
   canReport: boolean
+  photo: string
 }) {
   const location = useLocation()
   const flash = (location.state as { flash?: string } | null)?.flash ?? null
@@ -38,6 +40,7 @@ function JobsView({
       <PageHeader
         title={title}
         description={description}
+        photo={photo}
         actions={
           canReport ? (
             <Button asChild>
@@ -84,6 +87,7 @@ export function MyJobsPage() {
       basePath="/app/jobs"
       emptyText="No maintenance jobs are assigned to you."
       canReport={false}
+      photo="band-technician-1"
     />
   )
 }
@@ -97,6 +101,7 @@ export function BranchJobsPage() {
       basePath="/app/maintenance"
       emptyText="No faults have been reported on your branch’s vehicles."
       canReport
+      photo="band-maintenance-1"
     />
   )
 }

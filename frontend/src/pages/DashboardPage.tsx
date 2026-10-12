@@ -17,6 +17,7 @@ export function DashboardPage() {
       <PageHeader
         title={`Welcome, ${user.name}`}
         description={`Signed in as ${ROLE_LABELS[user.role]}.`}
+        photo="band-dashboard-1"
       />
       <ul className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => (

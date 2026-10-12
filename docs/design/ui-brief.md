@@ -73,6 +73,27 @@ of this brief differs, these win.
 - **B8.** Installed frontend, UI/UX, motion or accessibility skills may be
   used, but these rules win; any skill advice that would change copy,
   behaviour or tests is ignored.
+- **B9. One system for every page:** colours only from the tokens in
+  `index.css`; fonts only from type system C through the type tokens;
+  spacing only from the 4 px scale; one radius scale; one shadow (overlays
+  only, plus the vehicle-tile hover); one photo treatment
+  (`imagery-brief.md`, section 4); one icon set (lucide) and stroke width;
+  one button, input, table, pill, alert, tile and page-header style. No raw
+  hex or rgb colours, no Tailwind palette colour classes (emerald-, sky-,
+  slate-, gray- and so on) and no arbitrary font sizes outside `index.css`
+  and the shared components.
+- **B10. Checked by a script:** `frontend/scripts/check-design.mjs`
+  (`npm run check:design`) fails if a file under `src/` outside `index.css`
+  and `components/ui` contains a raw hex, rgb, hsl or oklch colour, a
+  Tailwind palette colour class or an arbitrary text size such as
+  `text-[13px]`. It runs in every stage alongside vitest, lint and build.
+- **B11. Every page matches the others:** the same page header (with or
+  without a photo band), gutters, content-width rules, type scale, image
+  treatment and motion language, for existing and future pages.
+- **B12. Vehicle imagery:** a vehicle's own photos come first, then the
+  exact-model representative photo, then the category photo, always with
+  honest "Representative image of a ..." alt text. Image-led tiles are used
+  only for vehicles (`imagery-brief.md`, section 3).
 
 Implementation notes for B1 to B8 are in sections 4 (type), 5 (space and
 motion) and 6.0 (shell and content width) below, which were updated to
@@ -507,6 +528,37 @@ additions below, each true of the current app or SRS behaviour.
 | For branch teams / Branch staff, technicians and administrators sign in to the same system. | The roles in `ROLE_LABELS`; UI-1 (one application, menus by role). Items reuse the menu labels and descriptions. |
 | Help (section heading) | Existing page title. Topics are the help page's, unchanged. |
 
+**Photography (Stage 4.7B, 12 Oct 2026).** The hero, the four step photos
+and the CTA band are decorative (`alt=""`); the hero and the CTA band sit
+under the petrol overlay (`bg-primary-hover/75`, at least 5.1:1 for white
+text), with a white primary button and a white outline button. The slim
+footer moved into the public layout (6.2.2). New text, approved as a
+proposed addition with the photo choices:
+
+| New text | Source |
+|---|---|
+| Cars and two-wheelers (band title) | The auth panel fact "Cars and two-wheelers, free for the dates you choose."; the licence categories Car and Two-Wheeler (D18). |
+| Hatchback, Sedan, SUV, Scooter, Motorcycle (category row, display only, no links) | The tariff categories of the demo fleet (`seed_demo` CATEGORIES). If the agency's categories change, change this row. |
+| Representative image of a Hatchback (and of a Sedan, of an SUV, of a Scooter, of a Motorcycle) | Alt text of the category photos (imagery-brief.md, 3). |
+
+### 6.2.2 Public footer and photo credits (Stage 4.7B, 12 Oct 2026)
+
+Every public page (home, sign in, register, verify, help, 404, photo
+credits) ends with one slim footer: the agency name, then a "Footer" nav
+with "Help" and "Photo credits". `/credits` uses the help page's two-column
+layout: a list of every photo (thumbnail, title, author, source link,
+licence link, changes made), from `src/assets/images/manifest.json`, the
+same data as `docs/design/image-credits.md`, with "Where to go" on the
+right. New text (D23 requires the credits):
+
+| New text | Source |
+|---|---|
+| Photo credits (footer link, page title) | D23; the licences' attribution terms (CC BY, CC BY-SA). |
+| The photographs in this app, who took them, where they come from and their licences. Vehicle photos are representative images of each model or category, not the vehicles in our fleet. | D23; B12 (representative photos never claim to be the vehicle). |
+| By <author>, <source>, <licence> / Changes made: <changes>. | The manifest; CC BY and CC BY-SA require indicating changes. |
+| Footer (nav label) | Names the footer's link group for assistive technology. |
+| Representative image of a <Make> <Model> | Alt text on search tiles and the vehicle page when the vehicle has no photographs (B12). |
+
 ### 6.3 Page header (every signed-in page)
 
 Optional back link above; `title`; one-line description in `ink-muted`;
@@ -544,8 +596,10 @@ the header, 24 px before content.
 
 The search form becomes one horizontal filter bar at ≥1024 (branch,
 category, pickup, return, Search), on `canvas-sunken` with hairlines above
-and below, not a card. Two columns at 768, one at 390. Results follow as in
-6.4 with the existing heading and summary sentence.
+and below, not a card. Two columns at 768, one at 390. Results follow with
+the existing heading and summary sentence, as image-led tiles (Stage 4.7B,
+B12, imagery-brief.md 3) in the same "Available vehicles" list: one column
+at 390, two from 640, three from 1280, four from 1536.
 
 ### 6.6 Detail with a side rail
 

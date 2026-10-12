@@ -143,6 +143,10 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
 - **D22 Fonts:** CO-7 amended: SIL OFL 1.1 fonts are permitted, unmodified and
   self-hosted through Fontsource (Schibsted Grotesk, IBM Plex Sans, IBM Plex
   Mono); no CDN or Google Fonts link. Geist stays removed.
+- **D23 Photos:** only Unsplash, Pexels or Wikimedia Commons (CC0, PD, CC BY,
+  CC BY-SA), self-hosted and optimised, credited in docs/design/image-credits.md
+  and on the public "Photo credits" page; no hotlinking, no CDN, no
+  manufacturer, dealer or rental-company images.
 
 ## Team workflow (from 10 Oct 2026)
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.

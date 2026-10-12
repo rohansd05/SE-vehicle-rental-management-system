@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import type { NavItem } from '@/app/navigation'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
 import { Button } from '@/components/ui/button'
 
 /** An honest placeholder for a planned feature: no sample or fake data. */
@@ -10,6 +11,7 @@ export function NotAvailablePage({ item }: { item: NavItem }) {
   return (
     <section className="max-w-xl">
       <PageHeader title={item.label} description={item.description} />
+      <Photo id="band-quiet-2" alt="" sizes="36rem" className="enter mb-6 hidden aspect-[3/1] rounded-xl sm:block" />
       <div className="flex items-start gap-3 rounded-lg border p-4">
         <Clock className="mt-0.5 size-5 text-muted-foreground" aria-hidden="true" />
         <div>

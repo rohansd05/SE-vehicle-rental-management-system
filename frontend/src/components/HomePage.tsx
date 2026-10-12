@@ -15,6 +15,8 @@ import {
 import { type ReactNode, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
+import { CATEGORIES, representativeAlt } from '@/assets/vehicles/registry'
+import { Photo } from '@/components/photo'
 import { Reveal } from '@/components/reveal'
 import { TONE_PILL } from '@/components/status-tone'
 import { Button } from '@/components/ui/button'
@@ -27,7 +29,8 @@ import { HELP_TOPICS } from '@/pages/help-topics'
 // The public landing page (docs/design/ui-brief.md, 6.2 and 6.2.1). Every
 // sentence below the hero describes what the app does today; each one and
 // its source is listed in the brief. No numbers, prices, ratings,
-// testimonials, images or other claims.
+// testimonials or other claims. Photos (imagery-brief.md, 2) are decorative
+// except the category row, whose alt text says the photos are representative.
 
 type Tone = 'ok' | 'warn' | 'error' | 'muted'
 
@@ -58,6 +61,11 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 /** Page gutters, shared by every band so their edges line up (B4). */
 const GUTTER = 'px-4 sm:px-6 lg:px-8'
+
+/** Buttons over a photo and its petrol overlay: a light primary and a white outline. */
+const ON_PHOTO_PRIMARY = 'bg-surface text-foreground hover:bg-canvas active:bg-canvas'
+const ON_PHOTO_OUTLINE =
+  'border-primary-foreground/60 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:bg-primary-foreground/15'
 
 /** A landing band: a centred heading and one line of context, then full-width content. */
 function Band({
@@ -125,23 +133,39 @@ const FEATURES: readonly Item[] = [
 ]
 
 /** The customer's steps, in order (SE-7, Book.Eligible, Search.Available, Book.Hold, Pay.Authorize). */
-const STEPS: readonly { title: string; body: string }[] = [
+const STEPS: readonly { title: string; body: string; photo: string }[] = [
   {
+    photo: 'step-account-1',
     title: 'Create your account',
     body: "We'll send a code to your mobile number to confirm it's yours.",
   },
   {
+    photo: 'step-licence-1',
     title: 'Submit your licence',
     body: 'Enter the details exactly as printed and add clear photos of both sides. Our staff verify it before you can book.',
   },
   {
+    photo: 'step-search-1',
     title: 'Search and hold',
     body: 'Choose a pickup branch and your rental period. We hold the vehicle for you for 15 minutes while you pay.',
   },
   {
+    photo: 'step-collect-1',
     title: 'Pay and collect',
     body: 'Pay by card, online or in cash at the branch, then show your pickup code at the branch to collect the vehicle, or have it delivered.',
   },
+]
+
+/**
+ * The tariff categories of the demo fleet (seed_demo CATEGORIES; D18), display
+ * only: nothing here links to search, which needs a branch and dates first.
+ */
+const FLEET_CATEGORIES: readonly { name: string; photo: string }[] = [
+  { name: 'Hatchback', photo: CATEGORIES.hatchback },
+  { name: 'Sedan', photo: CATEGORIES.sedan },
+  { name: 'SUV', photo: CATEGORIES.suv },
+  { name: 'Scooter', photo: CATEGORIES.scooter },
+  { name: 'Motorcycle', photo: CATEGORIES.motorcycle },
 ]
 
 /** The staff side, in the menu's own words (app/navigation.ts, maintenance/navigation.ts). */
@@ -181,28 +205,37 @@ export function HomePage() {
     <div>
       {/* Hero: fills the first viewport under the 64 px top bar; the group sits
           slightly above the mathematical centre (more padding below than above). */}
-      <section className={cn('relative flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center pt-12 pb-[14svh] text-center', GUTTER)}>
+      <section
+        className={cn(
+          'relative isolate flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center overflow-hidden pt-12 pb-[14svh] text-center text-primary-foreground',
+          GUTTER,
+        )}
+      >
+        {/* The hero photo under the petrol overlay (imagery-brief.md, 4): white
+            text on primary-hover at 75% is at least 5.1:1 anywhere on the photo. */}
+        <Photo id="hero-1" alt="" priority className="hero-zoom absolute inset-0 -z-20" imgClassName="object-[50%_72%]" />
+        <div className="absolute inset-0 -z-10 bg-primary-hover/75" />
         <h1
           className="enter display mx-auto max-w-[18ch] text-display break-words"
           style={stagger(0, 90)}
         >
           {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
         </h1>
-        <p className="enter mx-auto mt-6 max-w-[60ch] text-lead text-muted-foreground" style={stagger(1, 90)}>
+        <p className="enter mx-auto mt-6 max-w-[60ch] text-lead" style={stagger(1, 90)}>
           Book a car or two-wheeler online for the dates you need, collect it from a branch or
           have it delivered, and pay by card, online or in cash at the branch.
         </p>
         <div className="enter mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row" style={stagger(2, 90)}>
           {signedIn ? (
-            <Button asChild className="w-full sm:w-auto">
+            <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
               <Link to="/app">Go to my account</Link>
             </Button>
           ) : (
             <>
-              <Button asChild className="w-full sm:w-auto">
+              <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
                 <Link to="/register">Create an account</Link>
               </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Button asChild variant="outline" className={cn('w-full sm:w-auto', ON_PHOTO_OUTLINE)}>
                 <Link to="/login">Sign in</Link>
               </Button>
             </>
@@ -212,7 +245,7 @@ export function HomePage() {
         <a
           href="#features"
           aria-labelledby="features-heading"
-          className="enter absolute bottom-8 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border text-ink-muted transition-colors hover:border-line-strong hover:text-foreground"
+          className="enter absolute bottom-8 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-primary-foreground/50 text-primary-foreground transition-colors hover:border-primary-foreground hover:bg-primary-foreground/10"
           style={stagger(6, 90)}
         >
           <ChevronDown className="size-5" aria-hidden="true" />
@@ -237,9 +270,15 @@ export function HomePage() {
 
       <Band id="how-it-works" title="How it works" intro="Four steps from your account to the keys.">
         <ol className="grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map(({ title, body }, index) => (
-            <Reveal as="li" staggered key={title} className="border-t-2 border-foreground pt-5" style={stagger(index, 70)}>
-              <span aria-hidden="true" className="num-lg block text-primary">
+          {STEPS.map(({ title, body, photo }, index) => (
+            <Reveal as="li" staggered key={title} style={stagger(index, 70)}>
+              <Photo
+                id={photo}
+                alt=""
+                sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 100vw"
+                className="mb-6 aspect-[4/3] rounded-xl"
+              />
+              <span aria-hidden="true" className="num-lg block border-t-2 border-foreground pt-5 text-primary">
                 {index + 1}
               </span>
               <h3 className="mt-3 text-subsection">{title}</h3>
@@ -247,6 +286,22 @@ export function HomePage() {
             </Reveal>
           ))}
         </ol>
+      </Band>
+
+      <Band id="fleet" title="Cars and two-wheelers">
+        <ul className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+          {FLEET_CATEGORIES.map(({ name, photo }, index) => (
+            <Reveal as="li" staggered key={name} style={stagger(index, 70)}>
+              <Photo
+                id={photo}
+                alt={representativeAlt(name)}
+                sizes="(min-width: 1024px) 18vw, (min-width: 640px) 30vw, 50vw"
+                className="aspect-[3/2] rounded-xl"
+              />
+              <h3 className="mt-3 text-subsection">{name}</h3>
+            </Reveal>
+          ))}
+        </ul>
       </Band>
 
       <Band
@@ -338,22 +393,27 @@ export function HomePage() {
       {/* Final call to action. It reuses the top bar's own labels ("Register",
           "Sign in", "My account") so the hero's actions stay the only
           "Create an account" and "Go to my account" links on the page. */}
-      <section aria-labelledby="start-heading" className={cn('border-t py-24 text-center lg:py-32', GUTTER)}>
+      <section
+        aria-labelledby="start-heading"
+        className={cn('relative isolate overflow-hidden py-24 text-center text-primary-foreground lg:py-32', GUTTER)}
+      >
+        <Photo id="cta-band-1" alt="" className="absolute inset-0 -z-20" />
+        <div className="absolute inset-0 -z-10 bg-primary-hover/75" />
         <Reveal className="mx-auto flex max-w-[46rem] flex-col items-center">
           <h2 id="start-heading" className="display text-title">
             {signedIn ? (agencyName ?? PRODUCT_NAME) : 'Create your account'}
           </h2>
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
             {signedIn ? (
-              <Button asChild className="w-full sm:w-auto">
+              <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
                 <Link to="/app">My account</Link>
               </Button>
             ) : (
               <>
-                <Button asChild className="w-full sm:w-auto">
+                <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
                   <Link to="/register">Register</Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Button asChild variant="outline" className={cn('w-full sm:w-auto', ON_PHOTO_OUTLINE)}>
                   <Link to="/login">Sign in</Link>
                 </Button>
               </>
@@ -361,13 +421,6 @@ export function HomePage() {
           </div>
         </Reveal>
       </section>
-
-      <footer className={cn('flex flex-wrap items-center justify-between gap-4 border-t py-8', GUTTER)}>
-        <p className="heading text-subsection">{agencyName ?? PRODUCT_NAME}</p>
-        <Link to="/help" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-          Help
-        </Link>
-      </footer>
     </div>
   )
 }

@@ -1,103 +1,8 @@
-import { Bike, Car, Star } from 'lucide-react'
-import { Link } from 'react-router-dom'
-
 import { Button } from '@/components/ui/button'
-import { useAgency } from '@/hooks/page'
-import { formatCurrency } from '@/lib/currency'
-import { formatDate } from '@/lib/dates'
 import { stagger } from '@/lib/motion'
 
 import type { AvailableVehicle } from './api'
-
-/** The specification line a customer chooses by (Search.Filter fields). */
-function specification(vehicle: AvailableVehicle): string {
-  const parts = [vehicle.fuel_type, vehicle.colour]
-  if (vehicle.transmission) parts.push(vehicle.transmission)
-  if (vehicle.seating_capacity) parts.push(`${vehicle.seating_capacity} seats`)
-  if (vehicle.engine_cc) parts.push(`${vehicle.engine_cc} cc`)
-  return parts.join(' · ')
-}
-
-function billedFor(unit: 'day' | 'hour', count: number): string {
-  return `${count} ${unit}${count === 1 ? '' : 's'}`
-}
-
-/** Search.Price: the estimate for the searched period, marked as one; the deposit apart (Pay.Deposit). */
-function Estimate({ vehicle }: { vehicle: AvailableVehicle }) {
-  const { currency } = useAgency()
-  const estimate = vehicle.estimate
-  if (!estimate) {
-    return <p className="text-sm text-muted-foreground lg:text-right">No price is published for this category yet.</p>
-  }
-  return (
-    <div className="grid gap-1 lg:text-right">
-      <p className="text-sm">
-        <span className="text-muted-foreground">Estimated price </span>
-        <span className="num-strong text-foreground">
-          {formatCurrency(estimate.total_payable, currency)}
-        </span>
-        <span className="text-muted-foreground">
-          {' '}
-          for {billedFor(estimate.billing_unit, estimate.billing_count)}
-        </span>
-      </p>
-      <p className="text-small text-muted-foreground">
-        Includes tax. Add-ons, discounts and usage-based charges are not included.
-      </p>
-      <p className="text-small text-muted-foreground">
-        Refundable security deposit {formatCurrency(estimate.security_deposit, currency)}, held
-        separately.
-      </p>
-    </div>
-  )
-}
-
-/** One result row (docs/design/ui-brief.md, 6.4): vehicle, rating and service, price, action. */
-export function VehicleCard({ vehicle, href }: { vehicle: AvailableVehicle; href: string }) {
-  const Icon = vehicle.vehicle_type === 'Two-Wheeler' ? Bike : Car
-  return (
-    <div className="grid gap-x-8 gap-y-4 py-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start xl:grid-cols-[2.75rem_minmax(0,1fr)_12rem_18rem_auto] xl:gap-x-10">
-      <span className="hidden size-11 items-center justify-center rounded-md bg-muted xl:flex" aria-hidden="true">
-        <Icon className="size-5 text-ink-muted" />
-      </span>
-      <div className="min-w-0">
-        <h3 className="text-subsection">
-          {vehicle.brand} {vehicle.model}{' '}
-          <span className="num font-normal text-muted-foreground">({vehicle.year})</span>
-        </h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">{specification(vehicle)}</p>
-        <p className="mt-1.5 text-small text-muted-foreground">
-          <span className="font-medium text-foreground">{vehicle.category}</span>
-          {' · '}
-          <span>{vehicle.vehicle_type}</span>
-        </p>
-      </div>
-      <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm lg:col-start-1 lg:row-start-2 xl:col-auto xl:row-auto xl:grid-cols-1 xl:gap-y-0.5">
-        <dt className="text-muted-foreground">Rating</dt>
-        <dd className="flex items-center gap-1">
-          {vehicle.average_rating ? (
-            <>
-              <Star className="size-3.5 fill-current text-signal" aria-hidden="true" />
-              {Number(vehicle.average_rating).toFixed(1)} out of 5
-            </>
-          ) : (
-            'No ratings yet'
-          )}
-        </dd>
-        <dt className="text-muted-foreground xl:mt-2">Last serviced</dt>
-        <dd className="num">{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
-      </dl>
-      <div className="lg:col-start-2 lg:row-start-1 xl:col-auto xl:row-auto">
-        <Estimate vehicle={vehicle} />
-      </div>
-      <Button asChild size="sm" className="lg:col-start-2 lg:row-start-2 lg:justify-self-end xl:col-auto xl:row-auto">
-        <Link to={href} aria-label={`View and book the ${vehicle.brand} ${vehicle.model}`}>
-          View and book
-        </Link>
-      </Button>
-    </div>
-  )
-}
+import { VehicleTile } from './VehicleTile'
 
 export function VehicleResults({
   vehicles,
@@ -116,10 +21,11 @@ export function VehicleResults({
 }) {
   return (
     <div className="grid gap-6">
-      <ul aria-label="Available vehicles" className="border-t">
+      {/* Image-led tiles (B12, imagery-brief.md 3), in a list so each vehicle stays one list item. */}
+      <ul aria-label="Available vehicles" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {vehicles.map((vehicle, index) => (
-          <li key={vehicle.id} className="enter border-b" style={stagger(index)}>
-            <VehicleCard vehicle={vehicle} href={hrefFor(vehicle)} />
+          <li key={vehicle.id} className="enter" style={stagger(index % 8)}>
+            <VehicleTile vehicle={vehicle} href={hrefFor(vehicle)} />
           </li>
         ))}
       </ul>

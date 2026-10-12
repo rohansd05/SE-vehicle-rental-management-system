@@ -11,7 +11,9 @@
     "test": "vitest",
     "api:schema": "node scripts/export-schema.mjs",
     "api:types": "openapi-typescript ../docs/api/openapi.yaml -o src/api/schema.d.ts",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "check:design": "node scripts/check-design.mjs",
+    "images:optimise": "node scripts/optimise-images.mjs"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
@@ -47,6 +49,7 @@
     "openapi-typescript": "^7.13.0",
     "oxlint": "^1.81.0",
     "shadcn": "^4.21.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",

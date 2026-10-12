@@ -9,11 +9,14 @@ import { useScrolled } from '@/hooks/scroll'
 import { cn } from '@/lib/utils'
 
 /**
- * Layout for pages anyone can open: home, sign-in, registration, help
- * (docs/design/ui-brief.md, 6.1 and 6.2). The top bar stays at the top and
- * shows its hairline edge once content scrolls under it (B5). The landing
- * page sets its own gutters, because its hero and bands run edge to edge.
+ * Layout for pages anyone can open: home, sign-in, registration, help and
+ * photo credits (docs/design/ui-brief.md, 6.1 and 6.2). The top bar stays at
+ * the top and shows its hairline edge once content scrolls under it (B5). The
+ * landing page sets its own gutters, because its hero and bands run edge to
+ * edge. The footer links the help and the photo credits (D23).
  */
+const FOOTER_LINK = 'text-sm font-medium text-muted-foreground transition-colors hover:text-primary'
+
 export function PublicLayout() {
   const { status } = useAuth()
   const agency = useAgency()
@@ -67,6 +70,17 @@ export function PublicLayout() {
       >
         <Outlet />
       </main>
+      <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t px-4 py-8 sm:px-6 lg:px-8">
+        <p className="heading text-subsection">{agency.name}</p>
+        <nav aria-label="Footer" className="flex items-center gap-6">
+          <Link to="/help" className={FOOTER_LINK}>
+            Help
+          </Link>
+          <Link to="/credits" className={FOOTER_LINK}>
+            Photo credits
+          </Link>
+        </nav>
+      </footer>
     </div>
   )
 }

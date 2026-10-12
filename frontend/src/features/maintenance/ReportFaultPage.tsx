@@ -70,6 +70,7 @@ export function ReportFaultPage() {
       </Button>
       <PageHeader
         title="Report a fault"
+        photo="band-maintenance-1"
         description="The job starts as Reported. The vehicle goes Under Maintenance when the job is scheduled, or at once if you flag it Unsafe."
       />
       {vehicles.isPending ? (

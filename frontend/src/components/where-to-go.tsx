@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { navItemsFor } from '@/app/navigation'
+import { Photo } from '@/components/photo'
 import { useAuth } from '@/features/auth/auth-context'
 
 /**
@@ -23,6 +24,8 @@ export function WhereToGo() {
 
   return (
     <aside aria-labelledby="where-to-go" className="lg:border-l lg:pl-10">
+      {/* The quiet photo (imagery-brief.md, 2): decorative, from 1024 px only. */}
+      <Photo id="band-quiet-2" alt="" sizes="24rem" className="mb-8 hidden aspect-[5/2] rounded-xl lg:block" />
       <h2 id="where-to-go" className="text-section">
         Where to go
       </h2>
