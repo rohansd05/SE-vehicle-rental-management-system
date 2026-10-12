@@ -5,6 +5,9 @@ import { createRoot } from 'react-dom/client'
 // fetches only Latin and Latin Extended (which holds the rupee sign).
 import '@fontsource-variable/schibsted-grotesk/wght.css'
 import '@fontsource-variable/ibm-plex-sans/wght.css'
+// The real italic of IBM Plex Sans, for the tagline only (D24): one variable
+// file holds the 400 and 500 italics it uses; never a synthesised slant.
+import '@fontsource-variable/ibm-plex-sans/wght-italic.css'
 import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'
 import './index.css'

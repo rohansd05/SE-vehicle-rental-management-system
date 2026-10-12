@@ -4,6 +4,7 @@ import { Link, Outlet } from 'react-router-dom'
 
 import { ROLE_LABELS } from '@/api/types'
 import { navItemsFor } from '@/app/navigation'
+import { Brand, Tagline } from '@/components/brand'
 import { SkipLink } from '@/components/page'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,7 +16,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { useSignedInUser, useAuth } from '@/features/auth/auth-context'
-import { useAgency, useRouteFocus } from '@/hooks/page'
+import { useRouteFocus } from '@/hooks/page'
 import { useScrolled } from '@/hooks/scroll'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +42,6 @@ function initials(name: string): string {
 export function AppShell() {
   const user = useSignedInUser()
   const { signOut } = useAuth()
-  const agency = useAgency()
   const items = navItemsFor(user.role)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const mainRef = useRouteFocus<HTMLElement>()
@@ -50,14 +50,8 @@ export function AppShell() {
   const scrolled = useScrolled()
 
   const brandLink = (className: string) => (
-    <Link
-      to="/app"
-      className={cn(
-        'heading min-w-0 truncate rounded-sm text-foreground',
-        className,
-      )}
-    >
-      {agency.name}
+    <Link to="/app" className={cn('min-w-0 truncate rounded-sm text-foreground', className)}>
+      <Brand size="bar" />
     </Link>
   )
 
@@ -65,8 +59,10 @@ export function AppShell() {
     <div className="min-h-svh bg-background text-foreground">
       <SkipLink />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[18.5rem] flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex h-18 shrink-0 items-center border-b border-sidebar-border px-6">
-          {brandLink('text-subsection')}
+        {/* The wordmark and, at 15 px, the tagline (D24); the tagline sits outside the link. */}
+        <div className="flex h-18 shrink-0 flex-col justify-center border-b border-sidebar-border px-6">
+          {brandLink('self-start')}
+          <Tagline size="small" className="mt-0.5 text-muted-foreground" />
         </div>
         <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto">
           <NavList items={items} />
@@ -87,7 +83,9 @@ export function AppShell() {
               </SheetTrigger>
               <SheetContent side="left" className="w-80 gap-0 bg-sidebar p-0">
                 <SheetHeader className="border-b border-sidebar-border px-6 py-4">
-                  <SheetTitle className="pr-8">{agency.name}</SheetTitle>
+                  <SheetTitle className="pr-8">
+                    <Brand size="bar" />
+                  </SheetTitle>
                   <SheetDescription>
                     {user.name} · {roleLabel}
                   </SheetDescription>
@@ -98,7 +96,7 @@ export function AppShell() {
               </SheetContent>
             </Sheet>
 
-            {brandLink('text-subsection md:hidden')}
+            {brandLink('md:hidden')}
 
             <div className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
               <div className="flex items-center gap-2.5 pr-1 sm:pr-2">

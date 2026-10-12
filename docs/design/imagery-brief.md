@@ -56,7 +56,7 @@ only when the whole subject plus a 4 % margin stays in the frame, else
 | Role | Where | What it shows | Ratio | Treatment |
 |---|---|---|---|---|
 | Hero | Landing page, first viewport | An Indian road with a car, natural light | From 1024 px a full-bleed band at the photo's own shape, capped at the first viewport; below, the whole photo under the text | `--photo-overlay-strong`; the text on a local `--photo-scrim` panel above the car |
-| Auth panel | Sign in, register, verify (right column, from 1024 px) | A key-in-hand detail | 16:9 frame at the top of the petrol panel (subject fits) | `--photo-overlay-strong`; the agency name and facts on the solid petrol below, never on the photo |
+| Auth panel | Sign in, register, verify (right column, from 1024 px) | A key-in-hand detail | 16:9 frame at the top of the petrol panel (subject fits) | `--photo-overlay-strong`; the Veyora wordmark, the tagline and the facts on the solid petrol below, never on the photo |
 | Section photo | Landing "How it works" steps | One per step: phone in hand, hands on the wheel, a parked car, keys changing hands | 3:2 | Radius `--radius-xl`, no overlay |
 | Category row | Landing, the five categories in the demo fleet | A real model photo per category | 3:2 | Radius `--radius-xl` |
 | Split photo | Landing "Book online", "For branch teams" and "System status" | A car on a wet road; a workshop; dashboard gauges | The photo's own shape | Radius `--radius-xl`, no overlay; vertically centred against the text |

@@ -8,7 +8,7 @@ record of the research and the alternatives.
 Three complete type systems to replace B2 (Fraunces display, wide Archivo
 headings). Compare them live at **http://localhost:5173/_type** (development
 builds only; the route and its fonts are not in a production build). Each
-system is shown on the landing hero (agency name, intro paragraph, the two
+system is shown on the landing hero (brand name, intro paragraph, the two
 actions, centred) and on a sample app section (page title, section title,
 body paragraph, a booking row with a plate, a date, an amount and a status,
 and a price summary), with real app strings and the real demo booking.

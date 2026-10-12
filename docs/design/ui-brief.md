@@ -181,7 +181,7 @@ for the rest. The console had no errors.
 | G2 | System font stack (Segoe UI on Windows). Headings, body and numbers share one face, so there is no hierarchy and no tabular figures. | all |
 | G3 | Card boxes everywhere: home status card, dashboard tile grid, search form, result cards, vehicle detail, licence status, three profile cards, job detail cards, licence review cards, auth forms. | all |
 | G4 | Content is capped at `max-w-4xl` (896 px) inside the shell, and some pages at `max-w-xl`/`max-w-3xl`. At 1440 that leaves 300 to 500 px of dead canvas on the right of most pages. | 1440 |
-| G5 | Sidebar is not a fixed rail: its border stops where the content ends, there is no brand at its top, and the agency name sits in the top bar instead. | 1440, 1024 |
+| G5 | Sidebar is not a fixed rail: its border stops where the content ends, there is no brand at its top, and the brand name sits in the top bar instead. | 1440, 1024 |
 | G6 | Top bar uses `backdrop-blur` (an AI tell per the brief) and repeats name, role, help and sign-out with mixed button styles. | all |
 | G7 | Hard-coded Tailwind palette colours (`emerald-*`, `sky-*`, `amber-*`, `red-*`) in six files instead of tokens: `HomePage`, `VehicleStatusBadge`, `BookingStatusBadge`, `maintenance/badges`, `LicenceStatusCard`, `form.tsx` (`StatusMessage`). | all |
 | G8 | Inconsistent control heights: buttons are 32, 36 or 40 px depending on the page (`h-8`, `h-9`, plus `className="h-10"` overrides); inputs are 40. Radius is 10 px. | all |
@@ -419,7 +419,7 @@ their own.
 
 | Token (class) | Size / line | Family, weight | Use |
 |---|---|---|---|
-| `display` (`.display`) | clamp(40 at 390, fluid, 76 at 1440) / 1.0 | Schibsted Grotesk 800, −0.03 em | Home hero (the agency name) |
+| `display` (`.display`) | clamp(40 at 390, fluid, 76 at 1440) / 1.0 | Schibsted Grotesk 800, −0.03 em | Home hero (the Veyora wordmark) |
 | `title` (`text-title`) | clamp(32, fluid, 36) / 1.17 | Schibsted Grotesk 700, −0.02 em | Page title (`h1`) |
 | `section` (`text-section`) | clamp(22, fluid, 24) / 1.27 | Schibsted Grotesk 700, −0.02 em | Section title (`h2`), dialog title, table caption (`.heading`) |
 | `subsection` (`text-subsection`) | 19 / 26 | Schibsted Grotesk 650, −0.01 em | `h3`, form group legends (`.heading`) |
@@ -476,7 +476,7 @@ page actions and inputs, 36 px in-row buttons, 16 px text.
 ### 6.0 App shell (signed in)
 
 - **Sidebar, ≥768 px:** fixed, full height, 272 px, `canvas-sunken`, hairline
-  right edge. Top: agency name (Schibsted Grotesk 700, from `useAgency`, never
+  right edge. Top: the Veyora wordmark (the `Brand` component, from `useAgency`, never
   hard-coded, D7). Then the role's navigation from `navItemsFor` (unchanged).
   Active item: `primary-tint` background, `primary` text, a 2 px `signal` bar
   on the left edge. Available items in `ink`. Planned items in `ink-subtle`
@@ -487,7 +487,7 @@ page actions and inputs, 36 px in-row buttons, 16 px text.
   visible text.
 - **Top bar:** 64 px, `canvas`, no blur; its hairline edge appears once
   content scrolls under it (B5). Left: the
-  phone menu button (below 768 px) and the agency name (phones only, since
+  phone menu button (below 768 px) and the Veyora wordmark (phones only, since
   the sidebar is hidden). Right: avatar initials, name and role (≥640 px),
   Help (ghost) and Sign out (outline). Same labels and `aria-label`s as now.
 - **Phone drawer:** the existing Sheet, restyled to match the sidebar.
@@ -500,7 +500,7 @@ page actions and inputs, 36 px in-row buttons, 16 px text.
 Split layout from 1024 px: form on the left (form column max 26 rem for
 sign-in and verify, 36 rem with two-column field pairs for register),
 product panel on the right (about half the width). The panel is
-`canvas-sunken` with a hairline, ink text, the agency name in the display style and
+`canvas-sunken` with a hairline, ink text, the brand name in the display style and
 the facts in `lead`; it is the same material as the sidebar, not a second
 colour block (decided 11 Oct 2026 after the solid petrol panel read as two
 unrelated halves). No image, no gradient. Below 1024 the panel is hidden and
@@ -522,11 +522,11 @@ on the help, 403 and 404 pages (section 6.9). It is the only new visible
 string outside the panel facts; the links under it reuse the menu labels
 and descriptions, or "Sign in" and "Create an account" from the home page.
 
-The agency name heads the panel (from `AGENCY_NAME`).
+The Veyora wordmark heads the panel (from `AGENCY_NAME`, D24), with the tagline under it (Stage 4.10).
 
 ### 6.2 Public home
 
-Two-column band at the top: agency name (`display`), the existing intro
+Two-column band at the top: brand name (`display`), the existing intro
 paragraph and actions on the left; "System status" as a description list on
 the right with hairline rows and status pills, "Check again" as a text
 button. Below, a hairline and a three-column row of the help topics already
@@ -537,7 +537,7 @@ re-uses existing help headings and links; no new claims.)
 ### 6.2.1 Landing page (Stage 4.6, 12 Oct 2026)
 
 The public home page is a landing page: a centred hero that fills the first
-viewport under the top bar (the agency name as the headline, the existing
+viewport under the top bar (the Veyora wordmark as the headline, the existing
 intro paragraph at about 60 characters, the existing actions, a scroll cue),
 then bands revealed on scroll: what the system does, how it works, the
 staff side, system status with the help topics, a final call to action and
@@ -569,7 +569,7 @@ additions below, each true of the current app or SRS behaviour.
 **Photography (Stage 4.7B, revised in Stage 4.8, 12 Oct 2026).** Every
 landing photo is decorative (`alt=""`) except the category row. From
 1024 px the hero photo fills a band at its own shape (no taller than the
-first viewport) under `--photo-overlay-strong`, and the agency name, intro
+first viewport) under `--photo-overlay-strong`, and the wordmark, intro
 and actions sit on a local `--photo-scrim` panel above the vehicle; the
 final call to action is a 3:1 band whose text sits on its left, on the
 gutter, over a scrim that fades to transparent before the car. Both use a
@@ -590,7 +590,7 @@ proposed addition with the photo choices:
 ### 6.2.2 Public footer and photo credits (Stage 4.7B, 12 Oct 2026)
 
 Every public page (home, sign in, register, verify, help, 404, photo
-credits) ends with one slim footer: the agency name, then a "Footer" nav
+credits) ends with one slim footer: the Veyora wordmark and tagline, then a "Footer" nav
 with "Help" and "Photo credits". `/credits` uses the help page's two-column
 layout: a list of every photo (thumbnail, title, author, source link,
 licence link, changes made), from `src/assets/images/manifest.json`, the
@@ -604,6 +604,23 @@ right. New text (D23 requires the credits):
 | By <author>, <source>, <licence> / Changes made: <changes>. | The manifest; CC BY and CC BY-SA require indicating changes. |
 | Footer (nav label) | Names the footer's link group for assistive technology. |
 | Representative image of a <Make> <Model> | Alt text on search tiles and the vehicle page when the vehicle has no photographs (B12). |
+
+### 6.2.3 Veyora and the tagline (Stage 4.10, 12 Oct 2026)
+
+Authorised exception to B1 (frozen copy): the product name **Veyora** and
+the tagline **"Your Ride, Your Rules"** (D24). The name replaces the
+placeholder everywhere it showed (top bar, sidebar, footer, hero, auth
+panel, page titles); it still comes from `AGENCY_NAME` through the health
+endpoint, with Veyora as the frontend fallback. The wordmark is one shared
+`Brand` component (Schibsted Grotesk 800, -0.035 em, no logo mark, no
+gradient); the tagline is one shared `Tagline` component (IBM Plex Sans
+italic, its own italic file). The tagline appears under the hero wordmark,
+under the final call-to-action heading, in the public footer, in the
+sign-in and register panels and in the app sidebar; not in the top bar,
+page headers, tables, forms or printed views. Page titles: "<Page> -
+Veyora"; the landing page "Veyora - Your Ride, Your Rules". The landing
+hero's text panel is translucent (`--hero-panel-bg`, 57 %) with a 20 %
+white hairline; measurements in `alignment-qa.md`, Stage 4.10.
 
 ### 6.3 Page header (every signed-in page)
 

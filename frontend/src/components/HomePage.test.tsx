@@ -6,7 +6,7 @@ import { API, server, signedInAs } from '@/test/server'
 import { renderApp } from '@/test/render'
 
 describe('HomePage', () => {
-  it('shows the agency name and currency from the health endpoint (D7)', async () => {
+  it('shows the brand name and currency from the health endpoint (D7)', async () => {
     renderApp({ route: '/' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Test Rentals' })).toBeInTheDocument()
     expect(screen.getByText('INR')).toBeInTheDocument()

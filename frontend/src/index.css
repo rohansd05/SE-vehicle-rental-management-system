@@ -26,11 +26,12 @@
        `text-small` and `text-xs` are secondary text, captions and pills
        (15 px floor, 16 px from about 1024). `text-label` is field labels and
        table headers (16 px). Nothing in the app renders below 15 px. */
-    /* The landing headline: 30 px at 320 so a two-word agency name stays on
-       one line, 76 px from about 1040 px. */
-    --text-display: clamp(1.875rem, 0.6rem + 6.4vw, 4.75rem);
+    /* The landing headline, the Veyora wordmark at its largest (D24): 48 px
+       on phones so the tagline under it is about half its size, 76 px from
+       about 1150 px. */
+    --text-display: clamp(3rem, 2rem + 3.6vw, 4.75rem);
     --text-display--line-height: 1;
-    /* The auth panel's agency name: the display style one step smaller. */
+    /* The auth panel's wordmark: the display style one step smaller. */
     --text-display-sm: clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem);
     --text-display-sm--line-height: 1;
     /* Page title (h1): 32 px up to about 920 px, 36 px at 1024, 48 px at
@@ -73,6 +74,18 @@
     --text-small--line-height: 1.5;
     --text-xs: clamp(0.9375rem, 0.85rem + 0.2vw, 1rem);
     --text-xs--line-height: 1.4;
+    /* The Veyora wordmark in the top bar, sidebar and footer (D24). */
+    --text-brand: clamp(1.375rem, 1.2rem + 0.4vw, 1.625rem);
+    --text-brand--line-height: 1.1;
+    /* The tagline (D24): large under the hero wordmark (about half its size),
+       medium in the call to action, footer and auth panels, small in the
+       sidebar (15 px, the floor). */
+    --text-tagline-hero: clamp(1.5rem, 1.05rem + 1.25vw, 2.25rem);
+    --text-tagline-hero--line-height: 1.2;
+    --text-tagline: clamp(1.125rem, 1rem + 0.35vw, 1.375rem);
+    --text-tagline--line-height: 1.35;
+    --text-tagline-sm: 0.9375rem;
+    --text-tagline-sm--line-height: 1.35;
     /* Field labels and table headers: never below 16 px. */
     --text-label: 1rem;
     --text-label--line-height: 1.4;
@@ -93,6 +106,8 @@
     --color-photo-overlay-strong: var(--photo-overlay-strong);
     --color-photo-overlay-soft: var(--photo-overlay-soft);
     --color-photo-scrim: var(--photo-scrim);
+    --color-hero-panel: var(--hero-panel-bg);
+    --color-hero-panel-border: var(--hero-panel-border);
     --color-signal-tint: var(--signal-tint);
     --color-on-signal: var(--on-signal);
     --color-status-available: var(--status-available);
@@ -235,6 +250,11 @@
     --photo-overlay-strong: color-mix(in srgb, var(--primary-hover) 30%, transparent);
     --photo-overlay-soft: color-mix(in srgb, var(--primary-hover) 20%, transparent);
     --photo-scrim: color-mix(in srgb, var(--primary-hover) 84%, transparent);
+    /* The landing hero's text panel (Stage 4.10): translucent petrol, set to
+       the lowest opacity at which every white text passes AA with a 0.3
+       margin on the real photo (alignment-qa.md), and a 20 % white hairline. */
+    --hero-panel-bg: color-mix(in srgb, color-mix(in srgb, var(--primary-hover) 75%, var(--ink)) 57%, transparent);
+    --hero-panel-border: color-mix(in srgb, var(--on-primary) 20%, transparent);
 
     /* Kept for feature code that still reads it; same as the primary. */
     --brand: var(--primary);
@@ -283,6 +303,22 @@
     font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: -0.03em;
+}
+
+/* The Veyora wordmark (D24): Schibsted Grotesk at its heaviest, tracked in,
+   no icon, no gradient. Sizes come from the brand and display tokens. */
+@utility brand {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+}
+
+/* The tagline (D24): IBM Plex Sans's real italic, never a synthesised slant. */
+@utility tagline {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-synthesis: none;
+    letter-spacing: 0;
 }
 
 /* Heading style for elements that are not h1 to h4 (legends, captions, alert titles). */

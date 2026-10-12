@@ -16,12 +16,13 @@ import { type CSSProperties, type ReactNode, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 import { CATEGORIES, representativeAlt } from '@/assets/vehicles/registry'
+import { Brand, Tagline } from '@/components/brand'
 import { Photo } from '@/components/photo'
 import { Reveal } from '@/components/reveal'
 import { TONE_PILL } from '@/components/status-tone'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
-import { PRODUCT_NAME, useAgency } from '@/hooks/page'
+import { PRODUCT_NAME, TAGLINE, useAgency } from '@/hooks/page'
 import { PHOTOS } from '@/lib/images'
 import { stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -71,7 +72,7 @@ const GUTTER = 'px-4 sm:px-6 lg:px-8'
  */
 const ON_PHOTO_PRIMARY = 'lg:bg-surface lg:text-foreground lg:hover:bg-canvas lg:active:bg-canvas'
 const ON_PHOTO_OUTLINE =
-  'lg:border-primary-foreground/60 lg:bg-transparent lg:text-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground lg:active:bg-primary-foreground/15'
+  'lg:border-primary-foreground/80 lg:bg-transparent lg:text-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground lg:active:bg-primary-foreground/15'
 
 /** Split rows (B13): a whole photo at its own shape beside text, vertically centred; one gap everywhere. */
 const SPLIT = 'grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16'
@@ -194,16 +195,16 @@ const BRANCH_TEAMS: readonly Item[] = [
   },
 ]
 
-/** The public landing page: the agency, what it does, how it works, its status and help. */
+/** The public landing page: Veyora, what it does, how it works, its status and help. */
 export function HomePage() {
   const { status } = useAuth()
-  const { health } = useAgency()
-  const agencyName = health.data?.agency_name
+  const { health, name } = useAgency()
   const signedIn = status === 'signed-in'
 
+  // The landing page alone carries the tagline in its title (D24).
   useEffect(() => {
-    document.title = agencyName || PRODUCT_NAME
-  }, [agencyName])
+    document.title = `${name} - ${TAGLINE}`
+  }, [name])
 
   let apiTone: Tone = 'muted'
   let apiLabel = 'Checking…'
@@ -219,9 +220,13 @@ export function HomePage() {
     <div>
       {/* Hero (B13). From 1024 px the photo fills the band at its own shape
           (never taller than the first viewport) under the light petrol tint,
-          and the agency name, intro and actions sit on a local petrol scrim
-          above the vehicle. Below 1024 px they stack: the text on the canvas,
-          then the whole photo, so no text ever sits on the vehicle. */}
+          and the wordmark, tagline, intro and actions sit on a translucent
+          petrol panel above the vehicle (Stage 4.10: `--hero-panel-bg`, the
+          lowest opacity that passes AA on the real photo). Below 1024 px they
+          stack: the text on the canvas, then the whole photo, so no text ever
+          sits on the vehicle. The panel's top padding is 12 px less than its
+          sides and bottom because the wordmark carries that much space above
+          its capitals, so the visible margins are equal (measured). */}
       <section
         className={cn(
           'relative isolate flex flex-col items-center pt-12 pb-10 text-center lg:h-(--hero-height) lg:justify-start lg:pt-[7vh] lg:pb-0',
@@ -229,18 +234,19 @@ export function HomePage() {
         )}
         style={{ '--hero-height': `min(calc(100svh - 4.5rem), calc(100vw * ${HERO_RATIO}))` } as CSSProperties}
       >
-        <div className="w-full max-w-[52rem] lg:w-auto lg:rounded-xl lg:bg-photo-scrim lg:px-12 lg:py-10 lg:text-primary-foreground">
-          <h1
-            className="enter display mx-auto max-w-[18ch] text-display break-words"
-            style={stagger(0, 90)}
-          >
-            {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
+        <div className="w-full max-w-[52rem] lg:w-auto lg:max-w-[min(68rem,calc(100vw-4rem))] lg:rounded-xl lg:border lg:border-hero-panel-border lg:bg-hero-panel lg:p-12 lg:pt-9 lg:text-primary-foreground">
+          <h1 className="enter mx-auto max-w-[18ch] text-display leading-none" style={stagger(0, 90)}>
+            <Brand
+              size="hero"
+              name={health.data ? undefined : health.isError ? 'Service unavailable' : 'Loading…'}
+            />
           </h1>
-          <p className="enter mx-auto mt-6 max-w-[60ch] text-lead text-muted-foreground lg:text-primary-foreground" style={stagger(1, 90)}>
+          <Tagline size="hero" className="enter mt-3 text-primary lg:text-primary-foreground" style={stagger(1, 90)} />
+          <p className="enter mx-auto mt-6 max-w-[62rem] text-lead text-balance text-muted-foreground lg:text-primary-foreground" style={stagger(2, 90)}>
             Book a car or two-wheeler online for the dates you need, collect it from a branch or
             have it delivered, and pay by card, online or in cash at the branch.
           </p>
-          <div className="enter mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row" style={stagger(2, 90)}>
+          <div className="enter mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row" style={stagger(3, 90)}>
             {signedIn ? (
               <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
                 <Link to="/app">Go to my account</Link>
@@ -447,8 +453,9 @@ export function HomePage() {
         </div>
         <Reveal className="mx-auto flex max-w-[46rem] flex-col items-center lg:mx-0 lg:w-[calc(30vw-2rem)] lg:max-w-[26rem] lg:items-start">
           <h2 id="start-heading" className="display text-title">
-            {signedIn ? (agencyName ?? PRODUCT_NAME) : 'Create your account'}
+            {signedIn ? name : 'Create your account'}
           </h2>
+          <Tagline size="medium" className="mt-3 text-primary lg:text-primary-foreground" />
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start">
             {signedIn ? (
               <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>

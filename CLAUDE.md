@@ -147,6 +147,8 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   CC BY-SA), self-hosted and optimised, credited in docs/design/image-credits.md
   and on the public "Photo credits" page; no hotlinking, no CDN, no
   manufacturer, dealer or rental-company images.
+- **D24 Name:** the product is Veyora, tagline "Your Ride, Your Rules", set via
+  AGENCY_NAME in backend/.env with a frontend fallback to "Veyora".
 
 ## Team workflow (from 10 Oct 2026)
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.

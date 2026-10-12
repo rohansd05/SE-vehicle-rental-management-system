@@ -18,7 +18,7 @@ the text sits on the canvas. The auth panel's text sits on solid petrol
 
 | Page | Photo | Text | 1440 | 1280 | 1024 | 768, 390, 320 |
 |---|---|---|---|---|---|---|
-| Landing hero | hero-1 (tint 30 %, text on the 84 % scrim panel) | Agency name (large) | 8.69:1 | 8.54:1 | 8.72:1 | text on canvas |
+| Landing hero | hero-1 (tint 30 %, text on the 84 % scrim panel) | Brand name (large) | 8.69:1 | 8.54:1 | 8.72:1 | text on canvas |
 | | | Intro paragraph | 8.90:1 | 8.85:1 | 8.91:1 | text on canvas |
 | | | "Sign in" (white outline button) | 9.10:1 | 9.05:1 | 9.01:1 | text on canvas |
 | Landing call to action | cta-band-1 (tint 30 %, scrim fade from the left) | "Create your account" (large) | 8.35:1 | 8.37:1 | 8.38:1 | text on canvas |
@@ -220,10 +220,10 @@ Mono figures: measured in Chromium, IBM Plex Mono and IBM Plex Sans share a
 | Header frame, public pages at 1440 and 1536 | 384 px tall | Cap at 22.5 rem | 360 px |
 | My profile, 1280 | Form column 177 px; "Change password" wrapped | Photo rail from 1536 px; settings label column 14 rem (16 rem from 1536) | No single-word lines or overflow at 1280 (probe) |
 | Report a fault, 1536 | Header frame 672 px (the page was capped at the form's width) | The cap moved to the form | Frame 1161 px |
-| Top bar, 320 (public) | Register button 1 px past the edge | Top-bar clusters never shrink or wrap; the agency name truncates | No overflow |
+| Top bar, 320 (public) | Register button 1 px past the edge | Top-bar clusters never shrink or wrap; the brand name truncates | No overflow |
 | Top bar, 390 (signed in) | Sign out cut off | Decorative initials hidden below 640 px (the screen-reader text stays) | No overflow |
 | Top bar, 768 (branch manager) | 5 px overflow | Name and role text from 1024 px | No overflow |
-| Landing, 320 | "[Agency Name]" one word per line | Display token 30 px at 320 | One line |
+| Landing, 320 | The placeholder brand name (before Veyora, D24) one word per line | Display token 30 px at 320 | One line |
 | Photo credits, 320 | Title one word per line | Title floor 32 px; header padding 16 px on phones | One line |
 | Home tiles, 320 | "Maintenance jobs" one word per line | Tile padding 16 px and no chevron on phones | One line |
 | Sign in, register, verify, below 1024 | Up to 380 px blank below a short form | The auth photo runs full width above the form | Filled |
@@ -265,3 +265,108 @@ Mono figures: measured in Chromium, IBM Plex Mono and IBM Plex Sans share a
   discount states, dialogs, the licence form in edit mode and the job
   record-work form while editing; Safari and Firefox; reduced motion beyond
   the CSS rule.
+
+---
+
+# Stage 4.10: Veyora, the tagline and the landing hero panel (12 Oct 2026)
+
+Decision D24 (`docs/decisions.md`). Measured in Chromium (Playwright) on the
+running dev server, signed out, at 1920 x 1080, 1536 x 730, 1440 x 900,
+1280 x 800, 1024 x 768, 768 x 1024, 390 x 844 and 320 x 640.
+
+## 1. Hero panel opacity
+
+Final token: `--hero-panel-bg` = petrol (`--primary-hover`) mixed with 25 %
+ink, at **57 %** opacity (was the 84 % `--photo-scrim`). Border: one
+hairline in `--hero-panel-border` (20 % white); radius 6 px; no blur, no
+backdrop filter. The photo, its position, focal point and the 30 %
+overlay outside the panel are unchanged.
+
+How it was found: every pixel of the real photo behind each text block was
+composited with the 30 % overlay and the panel at every opacity from 30 %
+to 90 %, and the lightest result taken.
+- **Pure petrol:** the paragraph at 1536 (over the mist) needed 60 % to
+  reach 4.8:1 (4.5 plus the 0.3 margin).
+- **No text shadow:** a halo cannot be measured as a change of background
+  on real pixels, so it was not used.
+- **Darker tone:** petrol with 25 % ink reached the target at 55 % in the
+  first layout.
+- **Final opacity:** once the wordmark sat on one line, the paragraph moved
+  over a lighter patch (4.76:1 at 55 %), so the opacity rose to 57 %.
+
+The outline button's border went from 60 % to 80 % white so it keeps 3:1
+against the translucent panel.
+
+| Text block (white) | Size at 1536 | 1920 | 1536 | 1440 | 1280 | 1024 |
+|---|---|---|---|---|---|---|
+| Wordmark "Veyora" (large, 3:1) | 76 px / 800 | 7.40 | 7.14 | 7.66 | 7.66 | 7.07 |
+| Tagline (large, 3:1) | 36 px / 500 italic | 7.60 | 7.34 | 7.39 | 7.53 | 7.48 |
+| Paragraph (4.5:1) | 22.9 px / 400 | 7.09 | 4.95 | 7.50 | 7.29 | 7.72 |
+| "Sign in" text (4.5:1) | 18 px / 500 | 7.87 | 5.54 | 8.16 | 7.94 | 8.07 |
+| "Sign in" border (non-text, 3:1) | 80 % white | 5.64 | 4.36 | 5.90 | 5.84 | 5.75 |
+
+The lowest is the paragraph at 1536, 4.95:1 (margin 0.45). Below 1024 px
+there is no panel: the text stands on the canvas (the tagline in
+`--primary`, 7.4:1). The "Create an account" button is ink on white,
+independent of the photo.
+
+## 2. Panel geometry
+
+- **Width:** content clamped at 68 rem; panel 1088 px wide from 1280 px,
+  945 at 1024.
+- **Paragraph:** two balanced lines at 768 px and wider (last line 773 of
+  990 px at 1536; no single word alone). Four lines at 390 and five at
+  320, on the canvas.
+- **Padding:** 48 px on the sides and bottom, 36 px at the top, because the
+  wordmark carries 12 px of its own space above its capitals. Measured
+  margins: 48 px from the panel's top to the wordmark's cap height, 49 px
+  from the buttons' bottom to the panel's bottom, at 1024 to 1920.
+- **Centre lines:** panel, wordmark, tagline, paragraph and buttons share
+  one centre within 0.1 px of the viewport's at every width. At 1536: 760.4
+  for each, against a viewport centre of 760.5.
+- **The photo:** identical before and after at 1536, 1440 and 1024 (frame,
+  image box, `cover`, object-position, source file, 30 % overlay). At 390
+  the stacked photo keeps its size and crop (343 x 229, `cover`, 50 % 50 %)
+  but sits 54 px lower, under the tagline and the larger phone wordmark.
+- **The car:** at 1536 x 730 the hero is only 658 px tall, so the panel's
+  lower part overlaps the car's roof. Those pixels are part of the
+  measurements above.
+
+## 3. Wordmark and tagline sizes
+
+| Place | Wordmark | Tagline |
+|---|---|---|
+| Landing hero | `--text-display`: 48 px at 320 and 390, 60 at 768, 69 at 1024, 76 from about 1150 | `--text-tagline-hero` 500: 24 px at 320 and 390, 26 at 768, 30 at 1024, 33 at 1280, 35 at 1440, 36 from 1536 (about half the wordmark) |
+| Final call to action | (the heading; the name when signed in) | `--text-tagline` 500: 18 px at 320 and 390, 19 at 768, 20 at 1024, 21 at 1440 and 1536, 22 at 1920 |
+| Public footer | `--text-brand` 22 to 26 px | `--text-tagline` 500, as above |
+| Sign-in and register panels | `--text-display-sm` | `--text-tagline` 500 |
+| App sidebar | `--text-brand` | `--text-tagline-sm` 400: 15 px, one line, not clipped |
+| Top bar, drawer | `--text-brand` | not shown |
+
+Every wordmark and tagline is one line at every width from 320 to 1920 (no
+clipping, no horizontal overflow). The tagline is IBM Plex Sans's own
+italic (`wght-italic.css`; the loaded face reports `font-style: italic`),
+`font-synthesis: none`. Contrast where it is not on a photo (calculated from the token colours): white on
+solid petrol in the auth panel 10.3:1; `--ink-muted` on the canvas (footer)
+7.1:1 and on the sidebar 6.6:1. On the call-to-action band over the photo:
+8.7:1 at 1024 to 1536.
+
+## 4. Name and titles
+
+- **Page titles:** "<Page> - Veyora" (for example "Welcome, Demo Customer
+  - Veyora"); the landing page "Veyora - Your Ride, Your Rules".
+- **Brand links:** the brand link's accessible name is "Veyora" in the
+  sidebar, the top bar and the public header.
+- **No placeholder left:** the bracketed default name no longer appears in the frontend; the
+  placeholder is recognised by its shape (a name in square brackets) and
+  replaced by the Veyora fallback until `AGENCY_NAME` is set.
+
+## 5. Not checked
+
+- **The live backend name:** the running backend still returns the
+  placeholder. Your `backend/.env` already reads `AGENCY_NAME=Veyora`, so
+  the server needs a restart; until then the UI shows the fallback.
+- **Signed-in variants:** the signed-in landing and call to action (the
+  name as the heading) were not measured.
+- **Browsers:** Safari and Firefox.
+- **Print and PDF:** not re-checked (the tagline is not used there).

@@ -1,16 +1,16 @@
 import { Car, CreditCard, IdCard, MapPin, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { Brand, Tagline } from '@/components/brand'
 import { PageHeader } from '@/components/page'
 import { Photo } from '@/components/photo'
-import { useAgency } from '@/hooks/page'
 import { stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 // The sign-in, registration and verification screens share one split
 // layout (docs/design/ui-brief.md, 6.1): the form on the left, and on the
 // right a petrol panel: the photo on top, whole subject in view under the
-// light petrol tint (B13), then the agency name and four short product facts
+// light petrol tint (B13), then the Veyora wordmark, the tagline (D24) and four short product facts
 // on the solid petrol, so no text sits on the photo. Each fact is reworded
 // from copy the app already shows (the brief lists the sources). Below
 // 1024 px the panel is hidden and the form takes the page.
@@ -33,7 +33,6 @@ export function AuthLayout({
   wide?: boolean
   children: ReactNode
 }) {
-  const agency = useAgency()
   return (
     <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,1fr)] lg:gap-16 xl:gap-24">
       <div className={cn('stage w-full lg:py-4', wide ? 'max-w-[40rem]' : 'max-w-[28rem]')}>
@@ -52,9 +51,10 @@ export function AuthLayout({
           <div className="absolute inset-0 bg-photo-overlay-strong" />
         </div>
         <div className="flex flex-1 flex-col px-10 pt-8 pb-6 xl:px-12">
-          <p className="enter display text-display-sm" style={stagger(4)}>
-            {agency.name}
+          <p className="enter" style={stagger(4)}>
+            <Brand size="panel" />
           </p>
+          <Tagline size="medium" className="enter mt-2 text-primary-foreground" style={stagger(4)} />
           <ul className="mt-6 grid gap-0 divide-y divide-primary-foreground/25">
             {FACTS.map(({ icon: Icon, text }, index) => (
               <li key={text} className="enter flex items-start gap-4 py-4" style={stagger(5 + index)}>

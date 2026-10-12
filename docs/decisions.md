@@ -413,6 +413,23 @@ licence at all (fair use). Brand and rental-company imagery carries
 trademark and endorsement problems even when a platform hosts it.
 Self-hosting keeps the app working on an offline lab network.
 
+## D24 — Product name Veyora and tagline "Your Ride, Your Rules"
+
+**Decision.** The product is named **Veyora**, with the tagline **"Your
+Ride, Your Rules"**. The name is set through `AGENCY_NAME` in
+`backend/.env` (`AGENCY_NAME=Veyora`), which the health endpoint returns as
+`agency_name` (D7). The frontend falls back to "Veyora" while the setting is
+unset or still the bracketed default placeholder. The tagline is a frontend
+constant. The wordmark is the name set in Schibsted Grotesk 800 (one shared
+`Brand` component, no logo mark); the tagline is set in IBM Plex Sans's own
+italic (one shared `Tagline` component). Page titles read "<Page> - Veyora",
+and the landing page "Veyora - Your Ride, Your Rules".
+
+**Rationale.** The team named the product on 12 Oct 2026. Keeping the name
+in `AGENCY_NAME` leaves D7 intact (one configurable name, read from the
+API), and the frontend fallback means the UI shows the right name before
+the backend setting is changed.
+
 ## Phase 1C frontend: proposed items (awaiting team approval)
 
 The SRS does not settle these; the frontend implements them as listed.

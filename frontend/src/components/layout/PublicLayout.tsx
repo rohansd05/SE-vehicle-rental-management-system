@@ -1,10 +1,11 @@
 import { CircleHelp } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
+import { Brand, Tagline } from '@/components/brand'
 import { SkipLink } from '@/components/page'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
-import { useAgency, useRouteFocus } from '@/hooks/page'
+import { useRouteFocus } from '@/hooks/page'
 import { useScrolled } from '@/hooks/scroll'
 import { cn } from '@/lib/utils'
 
@@ -19,7 +20,6 @@ const FOOTER_LINK = 'text-sm font-medium text-muted-foreground transition-colors
 
 export function PublicLayout() {
   const { status } = useAuth()
-  const agency = useAgency()
   const mainRef = useRouteFocus<HTMLElement>()
   const scrolled = useScrolled()
   const isLanding = useLocation().pathname === '/'
@@ -32,11 +32,8 @@ export function PublicLayout() {
         className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
       >
         <div className="flex h-18 w-full items-center gap-2 px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/"
-            className="heading min-w-0 truncate rounded-sm text-subsection text-foreground"
-          >
-            {agency.name}
+          <Link to="/" className="min-w-0 truncate rounded-sm text-foreground">
+            <Brand size="bar" />
           </Link>
           <nav aria-label="Account" className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
             <Button asChild variant="ghost" className="px-2 sm:px-3">
@@ -71,7 +68,12 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t px-4 py-8 sm:px-6 lg:px-8">
-        <p className="heading text-subsection">{agency.name}</p>
+        <div>
+          <p>
+            <Brand size="bar" />
+          </p>
+          <Tagline size="medium" className="mt-1 text-muted-foreground" />
+        </div>
         <nav aria-label="Footer" className="flex items-center gap-6">
           <Link to="/help" className={FOOTER_LINK}>
             Help
