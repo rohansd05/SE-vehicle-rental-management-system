@@ -146,7 +146,7 @@ MEDIA_URL_EXPIRY_SECONDS = env.int("MEDIA_URL_EXPIRY_SECONDS", default=900)
 
 # ─── Agency (D7) ─────────────────────────────────────────
 # The agency name is never hardcoded anywhere else; always read it from here.
-AGENCY_NAME = env("AGENCY_NAME", default="[Agency Name]")
+AGENCY_NAME = env("AGENCY_NAME", default="Veyora")
 CURRENCY = env("CURRENCY", default="INR")
 # Pay.Invoice: every invoice bears the agency's tax registration details.
 AGENCY_TAX_REGISTRATION = env("AGENCY_TAX_REGISTRATION", default="")

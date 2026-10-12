@@ -370,3 +370,110 @@ solid petrol in the auth panel 10.3:1; `--ink-muted` on the canvas (footer)
   name as the heading) were not measured.
 - **Browsers:** Safari and Firefox.
 - **Print and PDF:** not re-checked (the tagline is not used there).
+
+---
+
+# Stage 5: staff, technician, manager and administrator pages (12 Oct 2026)
+
+Measured in Chromium (Playwright) on the running dev server, signed in as
+each demo account, at 1920 x 1080, 1536 x 730, 1440 x 900, 1024 x 768,
+768 x 1024, 390 x 844 and 320 x 640. The probe from Stage 4.9 ran on every
+route and width, extended with cumulative layout shift (CLS, while the
+images load). No record was created, changed or deleted: every state shown
+comes from the seeded data.
+
+## 1. Routes checked (31 routes x 7 widths)
+
+| Role | Routes |
+|---|---|
+| Branch staff | home, licence checks, licence review (licence 2), maintenance, report a fault (form only, not submitted), job 1 (Scheduled), handover and return, branch bookings, my profile |
+| Technician | home, maintenance jobs, job 1 (Scheduled: Start job in the rail), job 2 (Completed: "Work recorded"), my profile |
+| Branch manager | home, maintenance, job 3 (awaiting clearance), branch bookings, reports, my profile |
+| Administrator | home, licence checks, maintenance, job 3 (awaiting clearance: approve in the rail), unsafe clearances, fleet, tariffs, users, reports, audit log, my profile |
+
+The customer pages were measured again after the shared changes (Field,
+label line height, loading state, dialog width): no new issues.
+
+## 2. Results (after)
+
+- **Type:** nothing below 15 px on any route at any width. The one 15 px
+  item at every width is the sidebar tagline, at its floor by design.
+  Body, buttons and inputs are 16 to 18 px; inputs are 16 px or more
+  everywhere.
+- **Header frames:**
+  - Full variant (homes, placeholders): 1161 x 348 at 1536, 1065 x 319 at
+    1440, the photo 50 %.
+  - Compact variant (queues, report a fault): 200 px at 1440 (1065 x 200,
+    photo 447 x 198, 42 %), 209 to 224 px at 1536, 240 px at 1920, 217 to
+    249 px at 1024.
+  - Both: photo flush to the frame (0.8 px inside the 1 px border), gap
+    32 px, text centred against the photo within 0.1 px.
+  - The one compact header over 240 px at 1440 is unsafe clearances,
+    278 px: its description takes three lines.
+- **Subject visibility:** every photo slot passes at every width after one
+  change (see 3).
+- **Contrast:** no text sits on a photo on these pages (header text sits
+  on the canvas-sunken half; home tiles put their text under the photo:
+  17.1:1).
+- **Edges and overflow:** no frame, photo, table, list, form, rail or
+  heading outside the content container; no horizontal overflow from 320
+  to 1920 on any route.
+- **Layout shift:** CLS 0.000 to 0.008 on every route but unsafe
+  clearances at 1536 x 730 (0.055: the two skeleton rows are replaced by
+  the single real row). All are under the 0.1 "good" threshold; photos
+  never shift anything (explicit width and height, or a fixed frame).
+- **Form labels:** baselines measured on report a fault at 1536. With the
+  label line height at 1.5, each label's baseline is within 0.75 px of the
+  control's text baseline (calculated from IBM Plex Sans's ascent and
+  descent; text-box centres differ by 1.2 px because the face's ascent and
+  descent are unequal). Labels start at x 328 and controls at x 544 on
+  every row.
+- **Rail tops:** at 1024 the rail's first item and the main column's first
+  heading share one top line.
+
+## 3. Fixes found by the probe (before, after)
+
+| Route, width | Before | Fix | After |
+|---|---|---|---|
+| Licence checks, 768 | Customer name one word per line in a 28 px column; the date column took the width | Row columns follow the list's own width (container query, 36 rem), not the screen | Stacked at 768 (the content is 409 px beside the sidebar) |
+| Maintenance, 768 | 44 px horizontal overflow (three columns in 409 px) | Same | No overflow |
+| Technician home, 1440 and 1536 | Header photo (`band-clearances-2`): the raised bonnet cut at the top (0 px margin) | The workshop photo (`band-maintenance-1`); the bonnet photo stays on its 3:2 home tile | Whole subject |
+| Report a fault, 1536 | Job type and Severity side by side, so their label columns collided; labels centred on the textarea's middle | Paired fields become rows once the form is 48 rem wide; `items-start` on field rows | One label column, labels on the first text line |
+| Report a fault, 1536 | Label text-box centres 1.2 px off the control | Label line height 1.4 to 1.5 | Baselines within 0.75 px |
+
+## 4. What changed on these pages
+
+- **Queues** (maintenance for staff, manager and admin; maintenance jobs;
+  licence checks; unsafe clearances):
+  - The bordered card rows became shared divider rows.
+  - The filter and the count share one toolbar row.
+  - Loading shows skeleton rows.
+  - Every page uses the compact image-led header.
+- **Job detail and licence review:** a main column plus a sticky right rail
+  for notices and actions; description lists on shared baselines; the
+  parts table stacks by its container's width; licence images sit in a
+  fixed 3:2 frame (no shift while they load).
+- **Forms** (report a fault, assign and schedule, record the work):
+  settings-style rows; the primary action lines up with the field column;
+  the Unsafe option and the scheduling conflict notice use the status
+  tints.
+- **Homes and placeholders:** a header photo per role and per planned
+  feature, from photos already in the set (no downloads; images still
+  8.12 MB).
+- **Dialogs:** 32 rem wide (was 28) for the larger type; tokens, overlay
+  shadow and 6 px radius as before.
+
+## 5. Not checked
+
+- **States that need a data change:** a Reported job (the "Assign and
+  schedule" form live), an In Progress job (the "Record the work" form
+  and "Complete the job" live), the reject dialog with its reason, and the
+  scheduling conflict notice. Seeing them would mean reporting a fault or
+  starting job 1; they are covered by the component tests. Ask, and I will
+  click through them and list the records touched.
+- **Admin data screens:** fleet, tariffs, users, reports and audit log
+  are "Not available yet" placeholders; there are no data tables,
+  manager KPIs or charts to measure yet.
+- **Browsers:** Safari and Firefox.
+- **Reduced motion:** checked beyond the CSS rule only for the skeletons
+  (`motion-reduce:animate-none`).

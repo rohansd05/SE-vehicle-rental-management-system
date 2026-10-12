@@ -88,7 +88,7 @@
     --text-tagline-sm--line-height: 1.35;
     /* Field labels and table headers: never below 16 px. */
     --text-label: 1rem;
-    --text-label--line-height: 1.4;
+    --text-label--line-height: 1.5;
 
     /* Palette (brief 3.1 to 3.3). */
     --color-canvas: var(--canvas);

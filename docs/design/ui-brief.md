@@ -636,6 +636,27 @@ right half; below 1024 px the photo runs full width above them. The plain
 header above stays for record-detail pages (booking, job, vehicle), the
 search page, payment, profile and the sign-in screens.
 
+### 6.3.1 Compact page header (Stage 5, operational pages)
+
+Queues, forms and record-work screens (licence checks, maintenance,
+maintenance jobs, unsafe clearances, report a fault) use `PageHeader`'s
+`variant="compact"`. The photo still fills the heading section (B14),
+but:
+
+- **Frame:** about 200 to 240 px tall at 1440 (`min-h` clamp 12.5 to
+  15 rem from the frame's width; text may grow it). The photo takes the
+  right 42 %, flush to the frame's edges.
+- **Title row:** the page's action sits beside the title, wrapping under
+  it when narrow.
+- **Description:** the lead size, under the title row.
+- **Below 1024 px:** the photo runs full width above the text at 2:1
+  (5:2 from 640 px).
+
+The queue or form therefore starts in the first screen from 1024 px.
+Home pages, placeholders, help, credits, 403 and 404 keep the full
+variant; record-detail pages (booking, job, licence review) keep the
+plain header.
+
 ### 6.4 List and queue pages
 
 `/app/bookings`, `/app/maintenance`, `/app/jobs`, `/app/licences`,
@@ -661,6 +682,28 @@ search page, payment, profile and the sign-in screens.
     with the existing note and deposit lines beneath) · "View and book".
 - Pagination: "Previous page" / "Next page" outline buttons, right-aligned
   under the list.
+
+### 6.4.1 Queue rows (Stage 5)
+
+Operational lists (maintenance jobs for every role, licence checks, unsafe
+clearances) use the shared `RowList` and `RowLink`
+(`components/row-list.tsx`):
+
+- **Rows:** one hairline between rows, no boxes, a quiet `muted` hover.
+  The whole row is one link with a chevron, and its visually hidden action
+  text is kept ("Open job", "Review").
+- **Columns:** once the list itself is 36 rem wide (a container query, so
+  the sidebar is allowed for) the cells sit in aligned columns: the record
+  and its status pills, the description, then people and dates
+  right-aligned. Narrower lists stack the same cells and labels.
+- **Tokens:** references, plates and dates are mono and never wrap
+  (B14). No column headers are added, because they would be new copy (B1);
+  each cell keeps its existing inline label ("Technician: ...",
+  "Submitted ...").
+- **Toolbar:** the status filter and the count share one aligned row,
+  label beside the select, with controls 48 px tall.
+- **Loading:** skeleton rows in the token tones under the announced
+  loading text.
 
 ### 6.5 Search
 
@@ -696,6 +739,20 @@ review.
     centred).
 - Below 1024 the rail moves under the main column, not sticky.
 
+Stage 5: the maintenance job and the licence review use the same main
+column and sticky right rail (`RAIL_LAYOUT`).
+
+- **Rail:** holds what the reader does or waits for: the clearance
+  notice, Start job, Complete the job, Approve and Reject, Cancel job, and
+  Clear Unsafe flag and complete.
+- **No rail:** when nothing applies (a completed job seen by staff), the
+  main column takes the width.
+- **Description lists:** `DETAILS_LIST`, a 12 rem label column and the
+  value column on shared baselines once the list's container is 28 rem
+  wide, label above value below that.
+- **Parts table:** stacks into labelled blocks when its container is
+  narrower than 28 rem.
+
 ### 6.7 Form pages
 
 Report a fault, profile, licence submission, register.
@@ -709,6 +766,23 @@ Report a fault, profile, licence submission, register.
   rule in `status-unsafe` to mark the consequence.
 - Submit buttons sit at the end of the group, left-aligned with the fields,
   natural width (not full-width) above 640 px.
+
+Stage 5: settings-style form rows. A form marked `FORM` (`lib/layout.ts`,
+a named `@container/form`) lays every `Field` out as a row once the form is
+48 rem wide: a 12 rem label column, then the control, hint and error in
+the field column.
+
+- **Baselines:** labels sit on the control's text line (label line height
+  1.5, so a 16 px label centred in its 24 px line meets a 48 px control's
+  centre).
+- **Field column:** content that belongs in it (a fieldset, a notice, the
+  submit row) takes `FORM_INDENT`, so the primary action always lines up
+  under the fields.
+- **Narrow forms:** stack label above field.
+- **Paired fields:** sit side by side between 32 and 48 rem and become
+  rows above that.
+- **Applied to:** report a fault, assign and schedule, record the work
+  (each part row is its own small container, so its fields stay stacked).
 
 ### 6.8 Dashboard (`/app`)
 

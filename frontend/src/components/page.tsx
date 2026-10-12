@@ -10,6 +10,7 @@ export function PageHeader({
   actions,
   photo,
   eyebrow,
+  variant = 'full',
 }: {
   title: string
   description?: ReactNode
@@ -26,6 +27,15 @@ export function PageHeader({
    * from its subject box (B13), decorative, and loads first.
    */
   photo?: string
+  /**
+   * "compact" for operational pages (queues, forms; ui-brief.md 6.3.1): the
+   * photo still fills the heading section, but the frame is about 200 to
+   * 240 px tall at 1440 (a minimum: text can grow it), the photo takes the
+   * right 42 %, and the action sits beside the title, so the queue or form
+   * starts in the first screen from 1024 px. Below 1024 px the photo runs
+   * full width above the text at 2:1 (5:2 from 640 px).
+   */
+  variant?: 'full' | 'compact'
 }) {
   usePageTitle(title)
   if (!photo) {
@@ -39,6 +49,32 @@ export function PageHeader({
           {description ? <p className="mt-3 max-w-[60ch] text-lead text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap gap-3">{actions}</div> : null}
+      </div>
+    )
+  }
+  if (variant === 'compact') {
+    return (
+      <div className="@container mb-8">
+        <div className="enter grid overflow-hidden rounded-xl border bg-canvas-sunken lg:min-h-[clamp(12.5rem,18cqi,15rem)] lg:grid-cols-[minmax(0,58fr)_minmax(0,42fr)]">
+          <div className="relative lg:order-last">
+            <Photo
+              id={photo}
+              alt=""
+              priority
+              sizes="(min-width: 1024px) 42vw, 100vw"
+              className="aspect-[2/1] sm:aspect-[5/2] lg:absolute lg:inset-0 lg:aspect-auto lg:size-full"
+            />
+            <div className="absolute inset-0 bg-photo-overlay-soft" />
+          </div>
+          <div className="enter flex min-w-0 flex-col justify-center gap-3 p-4 sm:px-8 sm:py-6 lg:pr-(--header-gap) lg:pl-6 xl:pl-(--header-gap)" style={stagger(1)}>
+            {eyebrow}
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <h1 className="text-header-title text-foreground lg:text-header-title-split">{title}</h1>
+              {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+            </div>
+            {description ? <p className="max-w-[60ch] text-lead text-muted-foreground">{description}</p> : null}
+          </div>
+        </div>
       </div>
     )
   }

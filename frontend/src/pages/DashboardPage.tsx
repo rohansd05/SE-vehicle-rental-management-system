@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-import { ROLE_LABELS } from '@/api/types'
+import { type Role, ROLE_LABELS } from '@/api/types'
 import { type NavItem, navItemsFor } from '@/app/navigation'
 import { PageHeader } from '@/components/page'
 import { Photo } from '@/components/photo'
@@ -22,6 +22,20 @@ const DESTINATION_PHOTOS: Record<string, string> = {
   '/app/maintenance': 'band-maintenance-1',
   '/app/jobs': 'band-technician-1',
   '/app/clearances': 'band-clearances-2',
+}
+
+/**
+ * The home page's header photo per role (Stage 5): the customer's dashboard
+ * gauges; a key handover at a branch for staff; the workshop for
+ * technicians; the branch office for managers; the dashboard overview for
+ * administrators. None repeats a tile photo on the same page.
+ */
+const HOME_PHOTO: Record<Role, string> = {
+  CUSTOMER: 'band-dashboard-1',
+  BRANCH_STAFF: 'step-collect-1',
+  MAINTENANCE_TECHNICIAN: 'band-maintenance-1',
+  BRANCH_MANAGER: 'band-licence-checks-1',
+  ADMINISTRATOR: 'band-dashboard-1',
 }
 
 const LINK_FOCUS = 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
@@ -78,7 +92,7 @@ export function DashboardPage() {
       <PageHeader
         title={`Welcome, ${user.name}`}
         description={`Signed in as ${ROLE_LABELS[user.role]}.`}
-        photo="band-dashboard-1"
+        photo={HOME_PHOTO[user.role]}
       />
       {tiles.length ? (
         <ul className="grid gap-6 lg:grid-cols-2">

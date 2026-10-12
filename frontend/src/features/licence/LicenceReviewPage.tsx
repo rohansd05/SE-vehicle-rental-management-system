@@ -7,10 +7,13 @@ import { approveLicence, listPendingLicences, rejectLicence } from '@/api/licenc
 import type { LicenceReview } from '@/api/types'
 import { FormAlert } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { StickyRail } from '@/components/sticky-rail'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/dates'
+import { DETAILS_LIST, RAIL_LAYOUT } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import { PENDING_LICENCES_KEY } from './keys'
 import { RejectDialog } from './RejectDialog'
@@ -23,7 +26,7 @@ function LicenceImage({ src, label }: { src: string | null; label: string }) {
       <figcaption className="text-sm font-medium">{label}</figcaption>
       {src && !broken ? (
         <a href={src} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-          <img src={src} alt={label} className="w-full bg-muted object-contain" onError={() => setBroken(true)} />
+          <img src={src} alt={label} className="aspect-[3/2] w-full bg-canvas-sunken object-contain" onError={() => setBroken(true)} />
           <span className="sr-only"> (opens the full image in a new tab)</span>
         </a>
       ) : (
@@ -107,16 +110,18 @@ export function LicenceReviewPage() {
         title={`Review licence: ${licence.customer.name}`}
         description={`Submitted ${formatDateTime(licence.updated_at)}`}
       />
-      <div className="grid gap-6">
-        <FormAlert message={approve.error instanceof Error ? approve.error.message : null} />
+      <FormAlert message={approve.error instanceof Error ? approve.error.message : null} />
+      {/* Main column (details, photos) and the decision in a sticky right rail (ui-brief.md 6.6). */}
+      <div className={cn(RAIL_LAYOUT, 'mt-2')}>
+        <div className="grid min-w-0 content-start gap-8">
         <Card>
           <CardHeader>
             <CardTitle>
               <h2>Details</h2>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_1fr]">
+          <CardContent className="@container">
+            <dl className={DETAILS_LIST}>
               <dt className="text-muted-foreground">Customer</dt>
               <dd className="font-medium">{licence.customer.name}</dd>
               <dt className="text-muted-foreground">E-mail</dt>
@@ -128,7 +133,7 @@ export function LicenceReviewPage() {
                 {formatDate(licence.customer.date_of_birth)} (age {age})
               </dd>
               <dt className="text-muted-foreground">Licence number</dt>
-              <dd className="font-medium">{licence.licence_number}</dd>
+              <dd className="num font-medium whitespace-nowrap">{licence.licence_number}</dd>
               <dt className="text-muted-foreground">Issued by</dt>
               <dd className="font-medium">{licence.issuing_authority}</dd>
               <dt className="text-muted-foreground">Valid</dt>
@@ -146,12 +151,14 @@ export function LicenceReviewPage() {
               <h2>Photos</h2>
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2">
+          <CardContent className="@container grid gap-6 @xl:grid-cols-2">
             <LicenceImage src={licence.front_image_url} label="Front of the licence" />
             <LicenceImage src={licence.back_image_url} label="Back of the licence" />
           </CardContent>
         </Card>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        </div>
+        <StickyRail>
+        <div className="flex flex-col gap-3 lg:pt-1">
           <Button
            
            
@@ -163,6 +170,7 @@ export function LicenceReviewPage() {
           </Button>
           <RejectDialog customerName={licence.customer.name} onReject={reject} />
         </div>
+        </StickyRail>
       </div>
     </section>
   )

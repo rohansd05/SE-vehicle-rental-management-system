@@ -6,12 +6,26 @@ import type { ReactNode } from 'react'
 
 import { Photo } from '@/components/photo'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
-export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+export function LoadingState({ label = 'Loading…', rows = 0 }: { label?: string; rows?: number }) {
   return (
-    <div role="status" className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-      <LoaderCircle className="size-4 animate-spin text-primary" aria-hidden="true" />
-      <span>{label}</span>
+    <div>
+      <div role="status" className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+        <LoaderCircle className="size-4 animate-spin text-primary" aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+      {/* Queue skeletons (Stage 5): the rows' shape in the token tones, so nothing jumps when they arrive. */}
+      {rows ? (
+        <ul aria-hidden="true" className="border-t">
+          {Array.from({ length: rows }, (_, index) => (
+            <li key={index} className="grid gap-2.5 border-b py-5">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   )
 }

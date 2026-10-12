@@ -21,6 +21,7 @@ export function ClearanceQueuePage() {
       <PageHeader
         title="Unsafe clearances"
         photo="cta-band-1"
+        variant="compact"
         description="Technicians have finished work on these Unsafe vehicles. Review the work, then clear the flag to release the vehicle."
         actions={
           <Button
@@ -38,7 +39,7 @@ export function ClearanceQueuePage() {
         <StatusMessage message={flash} tone="success" />
       </div>
       {queue.isPending ? (
-        <LoadingState label="Loading the clearance queue…" />
+        <LoadingState label="Loading the clearance queue…" rows={2} />
       ) : queue.isError ? (
         <ErrorState title="We couldn’t load the queue" error={queue.error} onRetry={() => void queue.refetch()} />
       ) : queue.data.results.length === 0 ? (

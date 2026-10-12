@@ -25,17 +25,22 @@ export function Field({
   children: ReactNode
   className?: string
 }) {
+  // Settings-style rows (ui-brief.md 6.7): inside a form marked
+  // `@container/form` that is at least 48 rem wide, the label takes a 12 rem
+  // column beside the field; narrower forms stack label above field.
   return (
-    <div className={cn('grid gap-1.5', className)}>
-      <Label htmlFor={id}>{label}</Label>
-      {children}
+    <div className={cn('grid gap-1.5 @3xl/form:grid-cols-[12rem_minmax(0,1fr)] @3xl/form:items-start @3xl/form:gap-x-6', className)}>
+      <Label htmlFor={id} className="@3xl/form:pt-3">
+        {label}
+      </Label>
+      <div className="min-w-0 @3xl/form:col-start-2">{children}</div>
       {hint ? (
-        <div id={`${id}-hint`} className="text-small text-muted-foreground">
+        <div id={`${id}-hint`} className="text-small text-muted-foreground @3xl/form:col-start-2">
           {hint}
         </div>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} className="enter flex items-start gap-1.5 text-small font-medium text-destructive">
+        <p id={`${id}-error`} className="enter flex items-start gap-1.5 text-small font-medium text-destructive @3xl/form:col-start-2">
           <CircleAlert className="mt-[3px] size-3.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
