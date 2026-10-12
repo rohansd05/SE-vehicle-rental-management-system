@@ -69,7 +69,7 @@ class ScheduleConflictError(MaintenanceError):
     def __init__(self, bookings: list):
         self.bookings = bookings
         super().__init__(
-            "The maintenance period overlaps Confirmed bookings. " "Confirm to schedule it anyway."
+            "The maintenance period overlaps Confirmed bookings. Confirm to schedule it anyway."
         )
 
 
