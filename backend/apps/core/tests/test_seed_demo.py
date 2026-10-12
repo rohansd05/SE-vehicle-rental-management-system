@@ -103,6 +103,26 @@ def test_demo_accounts_match_the_readme():
     assert User.objects.get(email="manager@vrms.test").administrator.branchmanager.branch
 
 
+def test_seeded_licences_record_verification_only_when_verified():
+    _seed()
+    verified = Customer.objects.get(user__email="customer@vrms.test").licence
+    assert verified.verified_at is not None
+    assert verified.verified_by == User.objects.get(email="staff@vrms.test")
+    pending = Licence.objects.get(status=Licence.Status.PENDING_VERIFICATION)
+    assert pending.verified_at is None and pending.verified_by is None
+    # A re-run repairs a verified licence seeded before verified_at was set.
+    Licence.objects.filter(pk=verified.pk).update(verified_at=None)
+    _seed()
+    verified.refresh_from_db()
+    assert verified.verified_at is not None
+
+
+def test_staff_accounts_have_an_address():
+    _seed()
+    for email in ["staff@vrms.test", "tech@vrms.test", "manager@vrms.test", "admin@vrms.test"]:
+        assert User.objects.get(email=email).address
+
+
 def test_tariff_deposits_follow_br3():
     _seed()
     assert {
