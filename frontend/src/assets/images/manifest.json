@@ -14,14 +14,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 639,
     "title": "2020 Suzuki Swift Facelift IMG 1884.jpg",
     "author": "Alexander-93",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2020_Suzuki_Swift_Facelift_IMG_1884.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.02,
+      0.14,
+      0.96,
+      0.86
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-hyundai-i20-1": {
     "slot": "model:hyundai-i20",
@@ -38,14 +44,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 550,
     "title": "Hyundai i20 (BC3) 1X7A6488.jpg",
     "author": "Alexander Migl",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Hyundai_i20_(BC3)_1X7A6488.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.03,
+      0.08,
+      0.99,
+      0.93
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-tata-tiago-ev-1": {
     "slot": "model:tata-tiago-ev",
@@ -62,14 +74,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 540,
     "title": "2022 Tata Tiago XZA+ front 20230512.jpg",
     "author": "Dairokkan9",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2022_Tata_Tiago_XZA%2B_front_20230512.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.06,
+      0,
+      0.94,
+      0.92
+    ],
+    "changes": "colour graded, resized"
   },
   "model-mahindra-thar-1": {
     "slot": "model:mahindra-thar",
@@ -86,14 +104,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 544,
     "title": "Mahindra Thar ROXX on rocks (cropped).jpg",
     "author": "The Drivers Hub",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Mahindra_Thar_ROXX_on_rocks_(cropped).jpg",
     "licence": "CC BY 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.1,
+      0.12,
+      0.9,
+      0.88
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-maruti-suzuki-baleno-1": {
     "slot": "model:maruti-suzuki-baleno",
@@ -110,14 +134,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 577,
     "title": "2022 Maruti Suzuki Baleno Alpha (India) front view.jpg",
     "author": "Milind Kwatra",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2022_Maruti_Suzuki_Baleno_Alpha_(India)_front_view.jpg",
     "licence": "CC BY 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.03,
+      0.02,
+      0.95,
+      0.83
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "hero-1": {
     "slot": "hero",
@@ -141,6 +171,16 @@
     "page": "https://unsplash.com/photos/white-mpv-on-misty-mountain-road-DXLDbkJtQIU",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
+    "subject": [
+      0.4,
+      0.62,
+      0.61,
+      0.81
+    ],
+    "focus": [
+      0.5,
+      1
+    ],
     "changes": "number plate blurred, colour graded, resized"
   },
   "auth-2": {
@@ -158,14 +198,20 @@
     ],
     "jpg": 800,
     "width": 1200,
-    "height": 1500,
+    "height": 800,
     "title": "person holding black and red round digital watch",
     "author": "Kashif Afridi",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/person-holding-black-and-red-round-digital-watch-gc0ohxlP9rY",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.1,
+      0.28,
+      0.55,
+      0.95
+    ],
+    "changes": "colour graded, resized"
   },
   "cta-band-1": {
     "slot": "cta-band",
@@ -182,14 +228,24 @@
     ],
     "jpg": 1600,
     "width": 2400,
-    "height": 800,
+    "height": 1600,
     "title": "white car in motion blur on a road during sunset",
     "author": "Milin John",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/white-car-in-motion-blur-on-a-road-during-sunset-_X7cZGF_PhY",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.36,
+      0.4,
+      0.86,
+      0.82
+    ],
+    "focus": [
+      0.5,
+      0.62
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "step-account-1": {
     "slot": "step-account",
@@ -204,14 +260,20 @@
     ],
     "jpg": 800,
     "width": 800,
-    "height": 600,
+    "height": 533,
     "title": "person holding black iphone",
     "author": "Ibrahim Rifath",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/person-holding-black-iphone-BRUk50UOEN8",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.3,
+      0.05,
+      0.78,
+      0.78
+    ],
+    "changes": "colour graded, resized"
   },
   "step-licence-1": {
     "slot": "step-licence",
@@ -226,14 +288,20 @@
     ],
     "jpg": 800,
     "width": 800,
-    "height": 600,
+    "height": 536,
     "title": "person holding car steering wheel",
     "author": "Erik Witsoe",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/person-holding-car-steering-wheel-NYFUVvKYAdI",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.1,
+      0.35,
+      0.65,
+      1
+    ],
+    "changes": "colour graded, resized"
   },
   "step-search-1": {
     "slot": "step-search",
@@ -248,14 +316,20 @@
     ],
     "jpg": 800,
     "width": 800,
-    "height": 600,
+    "height": 501,
     "title": "a red suv is parked on a street",
     "author": "Zoshua Colah",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-red-suv-is-parked-on-a-street-E0F7YiXn3ZQ",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.27,
+      0.3,
+      0.68,
+      0.72
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "step-collect-1": {
     "slot": "step-collect",
@@ -270,14 +344,20 @@
     ],
     "jpg": 800,
     "width": 800,
-    "height": 600,
+    "height": 533,
     "title": "person holding black rectangular device",
     "author": "angga",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/person-holding-black-rectangular-device-EbpFjy7tYhE",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.2,
+      0.28,
+      0.98,
+      0.72
+    ],
+    "changes": "colour graded, resized"
   },
   "cat-hatchback-2": {
     "slot": "cat-hatchback",
@@ -294,14 +374,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 600,
     "title": "a small white car driving down a dirt road",
     "author": "Václav Pechar",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-small-white-car-driving-down-a-dirt-road-mpvjcDJBDK0",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.38,
+      0.33,
+      0.84,
+      0.71
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "cat-sedan-2": {
     "slot": "cat-sedan",
@@ -318,14 +404,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 540,
     "title": "a dark blue sedan driving on a track",
     "author": "Keshav Zen",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-dark-blue-sedan-driving-on-a-track-DVUfqntAnjI",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.16,
+      0.32,
+      0.82,
+      0.63
+    ],
+    "changes": "colour graded, resized"
   },
   "cat-suv-1": {
     "slot": "cat-suv",
@@ -349,7 +441,13 @@
     "page": "https://unsplash.com/photos/white-suv-on-brown-field-during-daytime-B92vLgeXYrA",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.4,
+      0.44,
+      0.77,
+      0.73
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "cat-motorcycle-2": {
     "slot": "cat-motorcycle",
@@ -366,38 +464,50 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 554,
     "title": "a motorcycle parked on the side of the road",
     "author": "Wiser by the Mile",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-motorcycle-parked-on-the-side-of-the-road-FpRJgvu8tZ8",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.36,
+      0.27,
+      1,
+      0.98
+    ],
+    "changes": "colour graded, resized"
   },
   "band-bookings-1": {
     "slot": "band-bookings",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 960,
     "title": "a red car drives down a wet winding road",
     "author": "Zoshua Colah",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-red-car-drives-down-a-wet-winding-road-gglfc91xL84",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.2,
+      0.32,
+      0.72,
+      0.88
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "band-payment-1": {
     "slot": "band-payment",
@@ -412,158 +522,200 @@
     ],
     "jpg": 640,
     "width": 640,
-    "height": 480,
+    "height": 427,
     "title": "a person holding a credit card in front of a machine",
     "author": "Nathana Rebouças",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-person-holding-a-credit-card-in-front-of-a-machine-3YSDTzqnVtQ",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.27,
+      0.35,
+      0.72,
+      0.85
+    ],
+    "changes": "colour graded, resized"
   },
   "band-licence-1": {
     "slot": "band-licence",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 961,
     "title": "man driving car during daytime",
     "author": "Art Markiv",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/man-driving-car-during-daytime-zAm1sdicGXc",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.15,
+      0.05,
+      0.85,
+      1
+    ],
+    "changes": "colour graded, resized"
   },
   "band-maintenance-1": {
     "slot": "band-maintenance",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 727,
     "title": "mechanics working in automotive repair workshop",
     "author": "Mehmet Talha Onuk",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/mechanics-working-in-automotive-repair-workshop-8t6tk7LYLrE",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.05,
+      0.25,
+      0.98,
+      0.85
+    ],
+    "changes": "colour graded, resized"
   },
   "band-technician-1": {
     "slot": "band-technician",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 960,
     "title": "a bunch of tools that are on a table",
     "author": "Anton Savinov",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-bunch-of-tools-that-are-on-a-table-WdNEj127Zxc",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.3,
+      0.2,
+      0.7,
+      0.6
+    ],
+    "changes": "colour graded, resized"
   },
   "band-licence-checks-1": {
     "slot": "band-licence-checks",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 961,
     "title": "a modern office space with stylish decor",
     "author": "Deliberate Directions",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/a-modern-office-space-with-stylish-decor-cFJcDGUWnes",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.05,
+      0.4,
+      0.62,
+      0.92
+    ],
+    "changes": "colour graded, resized"
   },
   "band-clearances-2": {
     "slot": "band-clearances",
     "option": 2,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 890,
     "title": "mechanic working on blue car",
     "author": "Zoshua Colah",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/mechanic-working-on-blue-car-Dow7nNoWUEM",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.1,
+      0,
+      0.9,
+      0.95
+    ],
+    "changes": "colour graded, resized"
   },
   "band-dashboard-1": {
     "slot": "band-dashboard",
     "option": 1,
     "kind": "band",
     "widths": [
+      480,
       960,
-      1600,
-      2200
+      1440
     ],
     "webpWidths": [
-      960,
-      1600
+      480,
+      960
     ],
-    "jpg": 1600,
-    "width": 2200,
-    "height": 367,
+    "jpg": 960,
+    "width": 1440,
+    "height": 960,
     "title": "black car instrument panel cluster",
     "author": "Danny Sleeuwenhoek",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/black-car-instrument-panel-cluster-mJPheg3MyOk",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.22,
+      0.35,
+      0.68,
+      0.75
+    ],
+    "changes": "colour graded, resized"
   },
   "band-quiet-2": {
     "slot": "band-quiet",
@@ -571,21 +723,29 @@
     "kind": "quiet",
     "widths": [
       320,
-      640
+      640,
+      960
     ],
     "webpWidths": [
-      320
+      320,
+      640
     ],
     "jpg": 640,
-    "width": 640,
-    "height": 427,
+    "width": 960,
+    "height": 540,
     "title": "road",
     "author": "Clay LeConey",
     "source": "Unsplash",
     "page": "https://unsplash.com/photos/road-yBeWNMEYFN0",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.2,
+      0.55,
+      0.8,
+      1
+    ],
+    "changes": "colour graded, resized"
   },
   "model-honda-city-1": {
     "slot": "model:honda-city",
@@ -602,14 +762,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 553,
     "title": "2022 Honda City ZX i-VTEC (India) front view (cropped).jpg",
     "author": "Dairokkan9",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2022_Honda_City_ZX_i-VTEC_(India)_front_view_(cropped).jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.04,
+      0.1,
+      0.97,
+      0.92
+    ],
+    "changes": "colour graded, resized"
   },
   "model-hyundai-verna-1": {
     "slot": "model:hyundai-verna",
@@ -626,14 +792,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 554,
     "title": "HYUNDAI VERNA (HYUNDAI ACCENT) (RB,RC) China (9).jpg",
     "author": "Dinkun Chen",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:HYUNDAI_VERNA_(HYUNDAI_ACCENT)_(RB,RC)_China_(9).jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.05,
+      0.15,
+      0.94,
+      0.88
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-maruti-suzuki-dzire-1": {
     "slot": "model:maruti-suzuki-dzire",
@@ -650,14 +822,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 560,
     "title": "Maruti Suzuki Dzire VXi VVT.JPG",
     "author": "Biswarup Ganguly",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Maruti_Suzuki_Dzire_VXi_VVT.JPG",
     "licence": "CC BY 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.04,
+      0.05,
+      0.97,
+      0.95
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-mahindra-xuv700-1": {
     "slot": "model:mahindra-xuv700",
@@ -674,14 +852,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 539,
     "title": "2021 Mahindra XUV700 2.2 AX7 (India) front view.png",
     "author": "DriveSpark",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2021_Mahindra_XUV700_2.2_AX7_(India)_front_view.png",
     "licence": "CC BY 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.02,
+      0.06,
+      0.96,
+      0.9
+    ],
+    "changes": "colour graded, resized"
   },
   "model-tata-nexon-1": {
     "slot": "model:tata-nexon",
@@ -698,14 +882,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 598,
     "title": "2018 Tata Nexon XM.jpg",
     "author": "Vauxford",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2018_Tata_Nexon_XM.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.03,
+      0.03,
+      0.95,
+      0.95
+    ],
+    "changes": "colour graded, resized"
   },
   "model-hyundai-creta-1": {
     "slot": "model:hyundai-creta",
@@ -722,14 +912,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 553,
     "title": "HYUNDAI CRETA , iX25 (SU2) China (5).jpg",
     "author": "Dinkun Chen",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:HYUNDAI_CRETA_,_iX25_(SU2)_China_(5).jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.1,
+      0.12,
+      0.92,
+      0.85
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-kia-seltos-1": {
     "slot": "model:kia-seltos",
@@ -746,14 +942,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "Kia Seltos 001.jpg",
     "author": "JustAnotherCarDesigner",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Kia_Seltos_001.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0,
+      0.17,
+      0.98,
+      0.9
+    ],
+    "changes": "colour graded, resized"
   },
   "model-toyota-innova-crysta-1": {
     "slot": "model:toyota-innova-crysta",
@@ -770,14 +972,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 626,
     "title": "Toyota Innova Crysta 2.4 Z front right.jpg",
     "author": "Premnath Kudva",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Toyota_Innova_Crysta_2.4_Z_front_right.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.02,
+      0,
+      0.97,
+      0.88
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-hyundai-venue-1": {
     "slot": "model:hyundai-venue",
@@ -794,14 +1002,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 576,
     "title": "2020 Hyundai Venue Ultimate 2019-12-13 2.jpg",
     "author": "SsmIntrigue",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2020_Hyundai_Venue_Ultimate_2019-12-13_2.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.06,
+      0.07,
+      0.96,
+      0.92
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-honda-activa-6g-1": {
     "slot": "model:honda-activa-6g",
@@ -818,14 +1032,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "Honda Activa Scooter at Bakkannapalem.JPG",
     "author": "Adityamadhav83",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Honda_Activa_Scooter_at_Bakkannapalem.JPG",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.24,
+      0.18,
+      0.92,
+      0.8
+    ],
+    "changes": "colour graded, resized"
   },
   "model-tvs-jupiter-1": {
     "slot": "model:tvs-jupiter",
@@ -842,14 +1062,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "TVS Jupiter Scooter.jpg",
     "author": "SnapMeUp",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:TVS_Jupiter_Scooter.jpg",
     "licence": "CC BY 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.04,
+      0.1,
+      0.92,
+      0.9
+    ],
+    "changes": "colour graded, resized"
   },
   "model-suzuki-access-125-1": {
     "slot": "model:suzuki-access-125",
@@ -866,14 +1092,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "4th International Auto Show, Bangalore (2025) 21.jpg",
     "author": "Gpkp",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:4th_International_Auto_Show,_Bangalore_(2025)_21.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.15,
+      0.03,
+      0.75,
+      0.95
+    ],
+    "changes": "colour graded, resized"
   },
   "model-tvs-ntorq-125-1": {
     "slot": "model:tvs-ntorq-125",
@@ -890,14 +1122,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 540,
     "title": "TVS Ntroq Standard Edition vs TVS Ntroq Marvel Edition.jpg",
     "author": "Abhiraj Mohan",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:TVS_Ntroq_Standard_Edition_vs_TVS_Ntroq_Marvel_Edition.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "number plate blurred, cropped, colour graded, resized"
+    "subject": [
+      0.03,
+      0.08,
+      0.98,
+      0.96
+    ],
+    "changes": "number plate blurred, colour graded, resized"
   },
   "model-royal-enfield-classic-350-1": {
     "slot": "model:royal-enfield-classic-350",
@@ -914,14 +1152,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "Royal Enfield Classic 350 (2017 Model Year).jpg",
     "author": "Samihasib",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Royal_Enfield_Classic_350_(2017_Model_Year).jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.16,
+      0.2,
+      0.89,
+      0.8
+    ],
+    "changes": "colour graded, resized"
   },
   "model-bajaj-pulsar-150-1": {
     "slot": "model:bajaj-pulsar-150",
@@ -938,14 +1182,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "Bajaj Pulser 180 motor bike.JPG",
     "author": "බිඟුවා",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Bajaj_Pulser_180_motor_bike.JPG",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.17,
+      0.07,
+      0.84,
+      0.79
+    ],
+    "changes": "colour graded, resized"
   },
   "model-yamaha-fz-s-1": {
     "slot": "model:yamaha-fz-s",
@@ -962,14 +1212,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 676,
     "title": "2011 Yamaha Byson 150 (20201105).jpg",
     "author": "オーバードライブ83",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:2011_Yamaha_Byson_150_(20201105).jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.02,
+      0.03,
+      0.97,
+      0.96
+    ],
+    "changes": "colour graded, resized"
   },
   "model-honda-dio-1": {
     "slot": "model:honda-dio",
@@ -986,14 +1242,20 @@
     ],
     "jpg": 640,
     "width": 960,
-    "height": 640,
+    "height": 720,
     "title": "Honda Dio HET 2013.jpg",
     "author": "Rajiv6212",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Honda_Dio_HET_2013.jpg",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.17,
+      0.15,
+      0.9,
+      0.85
+    ],
+    "changes": "colour graded, resized"
   },
   "model-bajaj-platina-110-1": {
     "slot": "model:bajaj-platina-110",
@@ -1001,20 +1263,28 @@
     "kind": "vehicle",
     "widths": [
       320,
-      640
+      640,
+      960
     ],
     "webpWidths": [
-      320
+      320,
+      640
     ],
     "jpg": 640,
-    "width": 640,
-    "height": 427,
+    "width": 960,
+    "height": 432,
     "title": "Bajaj Platina 110 cc.jpg",
     "author": "Rameshpayan27",
     "source": "Wikimedia Commons",
     "page": "https://commons.wikimedia.org/wiki/File:Bajaj_Platina_110_cc.jpg",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "cropped, colour graded, resized"
+    "subject": [
+      0.2,
+      0,
+      0.82,
+      0.88
+    ],
+    "changes": "colour graded, resized"
   }
 }

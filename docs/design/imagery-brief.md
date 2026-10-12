@@ -46,18 +46,26 @@ Patterns taken:
 
 ## 2. Photo roles in VRMS
 
+Stage 4.8 (12 Oct 2026) replaced the fixed role crops: photos are stored
+at their native aspect, each with a subject box and optional focal point
+(`scripts/image-sources.json`, copied into the manifest), and every slot is
+fitted at runtime by `fitPhoto` (`src/lib/images.ts`, unit-tested): `cover`
+only when the whole subject plus a 4 % margin stays in the frame, else
+`contain`. The table below is updated to the Stage 4.8 layouts.
+
 | Role | Where | What it shows | Ratio | Treatment |
 |---|---|---|---|---|
-| Hero | Landing page, first viewport | An Indian road or street with a car or two-wheeler, natural light | Full bleed, cover, about 16:9 crop at 1440 | Deep-petrol overlay (`--primary-hover` at 75 %) under the centred agency name, so text contrast stays AA |
-| Auth panel | Sign in, register, verify (right column) | A calm road or a key-in-hand detail | Fills the panel, cover | Same petrol overlay; agency name and four facts in white |
-| Section photo | Landing "How it works" steps | One per step: phone in hand, hands on the wheel, a parked car, keys changing hands | 4:3 | Radius `--radius-xl`, no overlay |
+| Hero | Landing page, first viewport | An Indian road with a car, natural light | From 1024 px a full-bleed band at the photo's own shape, capped at the first viewport; below, the whole photo under the text | `--photo-overlay-strong`; the text on a local `--photo-scrim` panel above the car |
+| Auth panel | Sign in, register, verify (right column, from 1024 px) | A key-in-hand detail | 16:9 frame at the top of the petrol panel (subject fits) | `--photo-overlay-strong`; the agency name and facts on the solid petrol below, never on the photo |
+| Section photo | Landing "How it works" steps | One per step: phone in hand, hands on the wheel, a parked car, keys changing hands | 3:2 | Radius `--radius-xl`, no overlay |
 | Category row | Landing, the five categories in the demo fleet | A real model photo per category | 3:2 | Radius `--radius-xl` |
-| CTA band | Landing, before the final call to action | A car on an open road | Full bleed, 3:1 to 4:1 | Petrol overlay as the hero |
-| Feature-page band | Bookings, booking detail, licence, maintenance list, report a fault, job detail, technician jobs, licence checks, clearances, dashboard (`PageHeader`'s `photo`) | The page's subject (road, driver, workshop, tools, a desk) | 160 px tall, 192 px from 1024 px (stored 6:1), hidden below 640 px | Radius `--radius-xl`, no overlay; decorative (`alt=""`, `aria-hidden`) |
+| Split photo | Landing "Book online", "For branch teams" and "System status" | A car on a wet road; a workshop; dashboard gauges | The photo's own shape | Radius `--radius-xl`, no overlay; vertically centred against the text |
+| CTA band | Landing, the final call to action | A car on an open road | From 1024 px a full-bleed 3:1 band (the car fits); below, the whole photo above the text | `--photo-overlay-strong`; the text on the left over a `--photo-scrim` fade |
+| Feature-page photo | Bookings, booking detail, licence, maintenance list, report a fault, job detail, technician jobs, licence checks, clearances, dashboard (`PageHeader`'s `photo`) | The page's subject (road, driver, workshop, tools, a desk) | Beside the title, 128 px tall at its own shape, from 1280 px only (narrower screens keep the title and actions whole) | `--photo-overlay-soft`; decorative (`alt=""`, `aria-hidden`) |
 | Small side image | Payment rail, above the summary, from 1024 px | A card terminal | 4:3, rail width | Radius `--radius-xl`; decorative |
 | Quiet image | Help, 403, 404 and photo credits ("Where to go" column, 5:2, from 1024 px); "Not available yet" pages (3:1, from 640 px); empty states (3:2, 144 px wide, from 640 px, in place of the inbox icon) | An empty road | As listed | Radius `--radius-xl` (`--radius-lg` in empty states); decorative |
 | Vehicle tile | Search results | The exact model (representative) or its category | 3:2 | See section 3 |
-| Vehicle detail | Top of the vehicle page's main column | The vehicle's own photos (the first large at 3:2, the rest 4:3 thumbnails), otherwise the representative photo at 3:2 above the existing "No photographs have been added yet." | 3:2 | Radius `--radius-xl` |
+| Vehicle detail | Top of the vehicle page's main column | The vehicle's own photos (the first large at 3:2, the rest 4:3 thumbnails), otherwise the representative photo at its own shape above the existing "No photographs have been added yet." | Own shape | Radius `--radius-xl` |
 
 Pages that do **not** use photos: forms while they are being filled (no
 photo inside a form, table or queue), the profile page, and every table,
@@ -82,8 +90,10 @@ list row and dialog except vehicle tiles.
   direction is kept consistent where the source photos allow; the brief
   records each model's direction in `scripts/image-sources.json` notes and
   never mirrors a photo (mirroring reverses badges and lettering).
-- **Crop:** 3:2, the vehicle centred slightly below the middle (focus
-  0.5, 0.55), with about 8 % margin around the body.
+- **Crop (Stage 4.8):** never. Tiles are 3:2 frames; a photo is cropped
+  only where its subject box (the whole vehicle) plus 4 % still fits, and
+  otherwise shown whole (`contain`) on the `canvas-sunken` tone. The
+  vehicle page shows the representative photo at its own shape.
 - **Tile:** photo on top (3:2, radius `--radius-xl` on the top corners,
   canvas-sunken behind it while it loads); model name in Schibsted Grotesk
   (subsection size) with the year in mono; category · type as small text; a
@@ -102,29 +112,28 @@ list row and dialog except vehicle tiles.
 - **Colour grade:** every photo gets the same grade in
   `scripts/optimise-images.mjs`: saturation × 0.9 and contrast × 1.04, so
   photos from different photographers read as one set.
-- **Overlay:** text over photos uses one overlay only: the deep petrol
-  `--primary-hover` (`#0B4753`) at 75 % (`bg-primary-hover/75`). In the
-  worst case, a pure-white pixel under the overlay, white text measures
-  5.1:1, so it passes AA for body text at every width. (The lighter
-  `--primary` at 72 % was rejected: 4.0:1 in that case.)
+- **Overlay (Stage 4.8, B13):** two tint tokens only, `--photo-overlay-strong`
+  (petrol `--primary-hover` at 30 %) on covers and the auth panel and
+  `--photo-overlay-soft` (20 %) on feature-page photos, so photos stay vivid.
+  Text never relies on the tint: it sits on `--photo-scrim` (the same petrol
+  at 84 %) as a local panel (hero) or a fade from the text side (final call
+  to action), or on solid petrol (auth panel). Contrast is measured on the
+  real photo pixels in `alignment-qa.md`; the lowest is 8.35:1.
 - **Radius:** `--radius-xl` (6 px) on every photo that is not full bleed.
-- **Crops:** each photo is cropped once, in the script, to the shape it is
-  shown at (hero kept whole; panel 4:5; CTA band 3:1; feature band 6:1;
-  section and small 4:3; quiet and vehicle 3:2), around a per-photo `focus`
-  point in `scripts/image-sources.json`.
+- **Crops:** none in the script (Stage 4.8); see section 2.
 - **Formats:** AVIF at every width of the role (hero and CTA 960, 1600,
-  2400; panel 480, 800, 1200; band 960, 1600, 2200; section 400, 800;
-  small and quiet 320, 640; vehicle 320, 640, 960), WebP at all but the
+  2400; panel 480, 800, 1200; band 480, 960, 1440; section 400, 800;
+  small 320, 640; quiet and vehicle 320, 640, 960), WebP at all but the
   largest (it is only the fallback for browsers without AVIF), and one JPEG
-  (hero, CTA and band 1600; panel and section 800; the rest 640). Served
+  (hero and CTA 1600; band 960; panel and section 800; the rest 640). Served
   through `<picture>` with `srcset` and `sizes` and explicit width and
   height, lazy below the fold, the hero eager with `fetchpriority="high"`.
 - **Location:** the outputs are static files in `frontend/public/images/<id>/`
   and the manifest in `frontend/src/assets/images/manifest.json`; the
   originals stay in the git-ignored `frontend/.image-src/`.
 - **Budget:** under about 8 MB of committed images in total; each hero under
-  about 400 KB at its largest AVIF. Measured 12 Oct 2026: 43 photos, 7.61 MB
-  in all; the hero's 2400 px AVIF is 304 KB.
+  about 400 KB at its largest AVIF. Measured after Stage 4.8 (native aspect, 12 Oct 2026): 43 photos,
+  7.99 MB in all; the hero's 2400 px AVIF is 303 KB.
 - **Motion (B5, B7):** photos fade and settle from scale 1.03 to 1 once they
   have loaded (`photo-in`); the landing hero eases from scale 1.04 on load
   (`hero-zoom`); vehicle tiles stagger on first load; landing photos reveal

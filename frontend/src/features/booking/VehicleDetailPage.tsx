@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate, formatDateTime } from '@/lib/dates'
+import { RAIL_LAYOUT } from '@/lib/layout'
 import { cn } from '@/lib/utils'
 
 import {
@@ -33,8 +34,6 @@ import { PriceSummary, TermsList } from './PriceSummary'
 
 const BOOKING_FIELDS = ['terms_accepted', 'safety_notice_acknowledged', 'add_ons', 'discount_code']
 
-/** Main column and right rail (docs/design/ui-brief.md, 6.6). */
-const DETAIL_GRID = 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-20'
 
 function readPeriod(params: URLSearchParams): Period | null {
   const pickup = params.get('pickup_datetime')
@@ -75,7 +74,8 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
             id={representative.id}
             alt={representative.alt}
             sizes="(min-width: 1280px) 50vw, (min-width: 768px) 60vw, 100vw"
-            className="aspect-[3/2] rounded-xl"
+            aspect="native"
+            className="rounded-xl"
           />
           <p className="text-small text-muted-foreground">No photographs have been added yet.</p>
         </div>
@@ -264,7 +264,7 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
   const refusal = book.error instanceof ApiError && book.error.code ? book.error : null
 
   return (
-    <form onSubmit={onSubmit} noValidate className={DETAIL_GRID} aria-label="Book this vehicle">
+    <form onSubmit={onSubmit} noValidate className={RAIL_LAYOUT} aria-label="Book this vehicle">
       <div className="grid gap-8">
         <BookingRefusal error={refusal} />
         <FormAlert message={formError} />
@@ -445,7 +445,7 @@ export function VehicleDetailPage() {
           <Policies vehicle={vehicle.data} />
         </BookingForm>
       ) : (
-        <div className={DETAIL_GRID}>
+        <div className={RAIL_LAYOUT}>
           <div className="grid gap-8">
             <VehicleFacts vehicle={vehicle.data} />
             <Policies vehicle={vehicle.data} />

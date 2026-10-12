@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Wrench,
 } from 'lucide-react'
-import { type ReactNode, useEffect } from 'react'
+import { type CSSProperties, type ReactNode, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 import { CATEGORIES, representativeAlt } from '@/assets/vehicles/registry'
@@ -22,6 +22,7 @@ import { TONE_PILL } from '@/components/status-tone'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { PRODUCT_NAME, useAgency } from '@/hooks/page'
+import { PHOTOS } from '@/lib/images'
 import { stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { HELP_TOPICS } from '@/pages/help-topics'
@@ -62,10 +63,23 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 /** Page gutters, shared by every band so their edges line up (B4). */
 const GUTTER = 'px-4 sm:px-6 lg:px-8'
 
-/** Buttons over a photo and its petrol overlay: a light primary and a white outline. */
-const ON_PHOTO_PRIMARY = 'bg-surface text-foreground hover:bg-canvas active:bg-canvas'
+/**
+ * Buttons on the petrol scrim (from 1024 px, where the hero and the final
+ * call to action put their text over the photo): a light primary and a
+ * white outline. Below 1024 px the text sits on the canvas and they keep
+ * the usual look.
+ */
+const ON_PHOTO_PRIMARY = 'lg:bg-surface lg:text-foreground lg:hover:bg-canvas lg:active:bg-canvas'
 const ON_PHOTO_OUTLINE =
-  'border-primary-foreground/60 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:bg-primary-foreground/15'
+  'lg:border-primary-foreground/60 lg:bg-transparent lg:text-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground lg:active:bg-primary-foreground/15'
+
+/** Split rows (B13): a whole photo at its own shape beside text, vertically centred; one gap everywhere. */
+const SPLIT = 'grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16'
+const SPLIT_FLIPPED = 'grid items-center gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16'
+const SPLIT_PHOTO_SIZES = '(min-width: 1024px) 40vw, 100vw'
+
+/** The hero band's height-to-width ratio at its photo's own shape. */
+const HERO_RATIO = (PHOTOS['hero-1']?.height ?? 2) / (PHOTOS['hero-1']?.width ?? 3)
 
 /** A landing band: a centred heading and one line of context, then full-width content. */
 function Band({
@@ -203,49 +217,61 @@ export function HomePage() {
 
   return (
     <div>
-      {/* Hero: fills the first viewport under the 64 px top bar; the group sits
-          slightly above the mathematical centre (more padding below than above). */}
+      {/* Hero (B13). From 1024 px the photo fills the band at its own shape
+          (never taller than the first viewport) under the light petrol tint,
+          and the agency name, intro and actions sit on a local petrol scrim
+          above the vehicle. Below 1024 px they stack: the text on the canvas,
+          then the whole photo, so no text ever sits on the vehicle. */}
       <section
         className={cn(
-          'relative isolate flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center overflow-hidden pt-12 pb-[14svh] text-center text-primary-foreground',
+          'relative isolate flex flex-col items-center pt-12 pb-10 text-center lg:h-(--hero-height) lg:justify-start lg:pt-[7vh] lg:pb-0',
           GUTTER,
         )}
+        style={{ '--hero-height': `min(calc(100svh - 4rem), calc(100vw * ${HERO_RATIO}))` } as CSSProperties}
       >
-        {/* The hero photo under the petrol overlay (imagery-brief.md, 4): white
-            text on primary-hover at 75% is at least 5.1:1 anywhere on the photo. */}
-        <Photo id="hero-1" alt="" priority className="hero-zoom absolute inset-0 -z-20" imgClassName="object-[50%_72%]" />
-        <div className="absolute inset-0 -z-10 bg-primary-hover/75" />
-        <h1
-          className="enter display mx-auto max-w-[18ch] text-display break-words"
-          style={stagger(0, 90)}
-        >
-          {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
-        </h1>
-        <p className="enter mx-auto mt-6 max-w-[60ch] text-lead" style={stagger(1, 90)}>
-          Book a car or two-wheeler online for the dates you need, collect it from a branch or
-          have it delivered, and pay by card, online or in cash at the branch.
-        </p>
-        <div className="enter mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row" style={stagger(2, 90)}>
-          {signedIn ? (
-            <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
-              <Link to="/app">Go to my account</Link>
-            </Button>
-          ) : (
-            <>
+        <div className="w-full max-w-[52rem] lg:w-auto lg:rounded-xl lg:bg-photo-scrim lg:px-12 lg:py-10 lg:text-primary-foreground">
+          <h1
+            className="enter display mx-auto max-w-[18ch] text-display break-words"
+            style={stagger(0, 90)}
+          >
+            {agencyName ?? (health.isError ? 'Service unavailable' : 'Loading…')}
+          </h1>
+          <p className="enter mx-auto mt-6 max-w-[60ch] text-lead text-muted-foreground lg:text-primary-foreground" style={stagger(1, 90)}>
+            Book a car or two-wheeler online for the dates you need, collect it from a branch or
+            have it delivered, and pay by card, online or in cash at the branch.
+          </p>
+          <div className="enter mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row" style={stagger(2, 90)}>
+            {signedIn ? (
               <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
-                <Link to="/register">Create an account</Link>
+                <Link to="/app">Go to my account</Link>
               </Button>
-              <Button asChild variant="outline" className={cn('w-full sm:w-auto', ON_PHOTO_OUTLINE)}>
-                <Link to="/login">Sign in</Link>
-              </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
+                  <Link to="/register">Create an account</Link>
+                </Button>
+                <Button asChild variant="outline" className={cn('w-full sm:w-auto', ON_PHOTO_OUTLINE)}>
+                  <Link to="/login">Sign in</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="enter mt-10 w-full lg:absolute lg:inset-0 lg:-z-10 lg:mt-0" style={stagger(1, 90)}>
+          <Photo
+            id="hero-1"
+            alt=""
+            priority
+            aspect="native"
+            className="hero-zoom rounded-xl lg:size-full lg:rounded-none lg:aspect-auto"
+          />
+          <div className="absolute inset-0 hidden bg-photo-overlay-strong lg:block" />
         </div>
         {/* Scroll cue: named by the first section's heading, so it adds no new text. */}
         <a
           href="#features"
           aria-labelledby="features-heading"
-          className="enter absolute bottom-8 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-primary-foreground/50 text-primary-foreground transition-colors hover:border-primary-foreground hover:bg-primary-foreground/10"
+          className="enter mt-8 flex size-11 items-center justify-center rounded-full border text-ink-muted transition-colors hover:border-line-strong hover:text-foreground lg:absolute lg:bottom-8 lg:left-1/2 lg:mt-0 lg:-translate-x-1/2 lg:border-primary-foreground/60 lg:text-primary-foreground lg:hover:border-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground"
           style={stagger(6, 90)}
         >
           <ChevronDown className="size-5" aria-hidden="true" />
@@ -257,15 +283,20 @@ export function HomePage() {
         title="Book online, collect at the branch"
         intro="Search, book and pay online. Our staff verify your driving licence before you can book."
       >
-        <ul className="grid gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, body }, index) => (
-            <Reveal as="li" staggered key={title} className="border-t pt-6" style={stagger(index % 3, 70)}>
-              <Icon className="size-6 text-primary" aria-hidden="true" />
-              <h3 className="mt-4 text-subsection">{title}</h3>
-              <p className="mt-2 max-w-[44ch] text-muted-foreground">{body}</p>
-            </Reveal>
-          ))}
-        </ul>
+        <div className={SPLIT}>
+          <Reveal>
+            <Photo id="band-bookings-1" alt="" aspect="native" sizes={SPLIT_PHOTO_SIZES} className="rounded-xl" />
+          </Reveal>
+          <ul className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
+            {FEATURES.map(({ icon: Icon, title, body }, index) => (
+              <Reveal as="li" staggered key={title} className="border-t pt-6" style={stagger(index % 2, 70)}>
+                <Icon className="size-6 text-primary" aria-hidden="true" />
+                <h3 className="mt-4 text-subsection">{title}</h3>
+                <p className="mt-2 max-w-[44ch] text-muted-foreground">{body}</p>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
       </Band>
 
       <Band id="how-it-works" title="How it works" intro="Four steps from your account to the keys.">
@@ -276,7 +307,7 @@ export function HomePage() {
                 id={photo}
                 alt=""
                 sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 100vw"
-                className="mb-6 aspect-[4/3] rounded-xl"
+                className="mb-6 aspect-[3/2] rounded-xl"
               />
               <span aria-hidden="true" className="num-lg block border-t-2 border-foreground pt-5 text-primary">
                 {index + 1}
@@ -309,25 +340,33 @@ export function HomePage() {
         title="For branch teams"
         intro="Branch staff, technicians and administrators sign in to the same system."
       >
-        <ul className="grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {BRANCH_TEAMS.map(({ icon: Icon, title, body }, index) => (
-            <Reveal as="li" staggered key={title} className="border-t pt-6" style={stagger(index, 70)}>
-              <Icon className="size-6 text-primary" aria-hidden="true" />
-              <h3 className="mt-4 text-subsection">{title}</h3>
-              <p className="mt-2 text-muted-foreground">{body}</p>
+        <div className={SPLIT_FLIPPED}>
+          <div>
+            <ul className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
+              {BRANCH_TEAMS.map(({ icon: Icon, title, body }, index) => (
+                <Reveal as="li" staggered key={title} className="border-t pt-6" style={stagger(index % 2, 70)}>
+                  <Icon className="size-6 text-primary" aria-hidden="true" />
+                  <h3 className="mt-4 text-subsection">{title}</h3>
+                  <p className="mt-2 text-muted-foreground">{body}</p>
+                </Reveal>
+              ))}
+            </ul>
+            <Reveal className="mt-10">
+              <Button asChild variant="outline">
+                <Link to="/login">Sign in</Link>
+              </Button>
             </Reveal>
-          ))}
-        </ul>
-        <Reveal className="mt-12 flex justify-center">
-          <Button asChild variant="outline">
-            <Link to="/login">Sign in</Link>
-          </Button>
-        </Reveal>
+          </div>
+          <Reveal>
+            <Photo id="band-maintenance-1" alt="" aspect="native" sizes={SPLIT_PHOTO_SIZES} className="rounded-xl" />
+          </Reveal>
+        </div>
       </Band>
 
       <section aria-label="System status and help" className={cn('border-t py-20 lg:py-28', GUTTER)}>
         <div className="grid gap-16 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-24 xl:gap-32">
           <Reveal>
+            <Photo id="band-dashboard-1" alt="" aspect="native" sizes="(min-width: 1024px) 26rem, 100vw" className="mb-8 rounded-xl" />
             <section aria-labelledby="system-status">
               <h2 id="system-status" className="text-section">
                 System status
@@ -393,17 +432,24 @@ export function HomePage() {
       {/* Final call to action. It reuses the top bar's own labels ("Register",
           "Sign in", "My account") so the hero's actions stay the only
           "Create an account" and "Go to my account" links on the page. */}
+      {/* From 1024 px the whole car shows in a 3:1 band (its subject box fits;
+          B13) and the text sits on its left, on the page gutter, over a local
+          scrim that fades to transparent before the car. Below 1024 px the
+          photo shows whole above the centred text. */}
       <section
         aria-labelledby="start-heading"
-        className={cn('relative isolate overflow-hidden py-24 text-center text-primary-foreground lg:py-32', GUTTER)}
+        className={cn('relative isolate border-t py-20 text-center lg:flex lg:aspect-[3/1] lg:items-center lg:border-t-0 lg:py-0 lg:text-left lg:text-primary-foreground', GUTTER)}
       >
-        <Photo id="cta-band-1" alt="" className="absolute inset-0 -z-20" />
-        <div className="absolute inset-0 -z-10 bg-primary-hover/75" />
-        <Reveal className="mx-auto flex max-w-[46rem] flex-col items-center">
+        <div className="mb-10 lg:absolute lg:inset-0 lg:-z-10 lg:mb-0">
+          <Photo id="cta-band-1" alt="" aspect="native" className="rounded-xl lg:size-full lg:rounded-none lg:aspect-auto" />
+          <div className="absolute inset-0 hidden bg-photo-overlay-strong lg:block" />
+          <div className="absolute inset-0 hidden bg-linear-to-r from-photo-scrim from-30% to-transparent to-46% lg:block" />
+        </div>
+        <Reveal className="mx-auto flex max-w-[46rem] flex-col items-center lg:mx-0 lg:w-[calc(30vw-2rem)] lg:max-w-[26rem] lg:items-start">
           <h2 id="start-heading" className="display text-title">
             {signedIn ? (agencyName ?? PRODUCT_NAME) : 'Create your account'}
           </h2>
-          <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+          <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start">
             {signedIn ? (
               <Button asChild className={cn('w-full sm:w-auto', ON_PHOTO_PRIMARY)}>
                 <Link to="/app">My account</Link>

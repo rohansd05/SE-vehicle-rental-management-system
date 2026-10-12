@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils'
 
 // The sign-in, registration and verification screens share one split
 // layout (docs/design/ui-brief.md, 6.1): the form on the left, and on the
-// right a photo panel under the petrol overlay (imagery-brief.md, 4: white
-// text on primary-hover at 75% is at least 5.1:1) with four short product
-// facts. Each fact is reworded from copy the app already shows (the brief
-// lists the sources). Below 1024 px the panel is hidden and the form takes
-// the page.
+// right a petrol panel: the photo on top, whole subject in view under the
+// light petrol tint (B13), then the agency name and four short product facts
+// on the solid petrol, so no text sits on the photo. Each fact is reworded
+// from copy the app already shows (the brief lists the sources). Below
+// 1024 px the panel is hidden and the form takes the page.
 const FACTS: readonly { icon: LucideIcon; text: string }[] = [
   { icon: Car, text: 'Cars and two-wheelers, free for the dates you choose.' },
   { icon: MapPin, text: 'Collect at a branch or have it delivered.' },
@@ -42,18 +42,20 @@ export function AuthLayout({
       </div>
       <aside
         aria-hidden="true"
-        className="enter relative hidden min-h-[36rem] overflow-hidden rounded-xl bg-primary-hover text-primary-foreground lg:sticky lg:top-24 lg:flex"
+        className="enter hidden flex-col overflow-hidden rounded-xl bg-primary-hover text-primary-foreground lg:sticky lg:top-24 lg:flex"
         style={stagger(2)}
       >
-        <Photo id="auth-2" alt="" sizes="(min-width: 1280px) 40vw, 45vw" className="absolute inset-0" />
-        <div className="absolute inset-0 bg-primary-hover/75" />
-        <div className="relative flex flex-1 flex-col justify-between px-10 py-10 xl:px-14 xl:py-14">
+        <div className="relative">
+          <Photo id="auth-2" alt="" sizes="(min-width: 1280px) 40vw, 45vw" className="aspect-video" />
+          <div className="absolute inset-0 bg-photo-overlay-strong" />
+        </div>
+        <div className="flex flex-1 flex-col px-10 pt-8 pb-6 xl:px-12">
           <p className="enter display text-display-sm" style={stagger(4)}>
             {agency.name}
           </p>
-          <ul className="mt-16 grid gap-0 divide-y divide-primary-foreground/25">
+          <ul className="mt-6 grid gap-0 divide-y divide-primary-foreground/25">
             {FACTS.map(({ icon: Icon, text }, index) => (
-              <li key={text} className="enter flex items-start gap-4 py-5" style={stagger(5 + index)}>
+              <li key={text} className="enter flex items-start gap-4 py-4" style={stagger(5 + index)}>
                 <Icon className="mt-1 size-5 shrink-0 text-signal" />
                 <span className="text-lead">{text}</span>
               </li>

@@ -24,6 +24,12 @@
         0.08,
         0.05
       ]
+    ],
+    "subject": [
+      0.02,
+      0.14,
+      0.96,
+      0.86
     ]
   },
   {
@@ -51,6 +57,12 @@
         0.05,
         0.05
       ]
+    ],
+    "subject": [
+      0.03,
+      0.08,
+      0.99,
+      0.93
     ]
   },
   {
@@ -65,7 +77,13 @@
     "author": "Dairokkan9",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.06,
+      0.0,
+      0.94,
+      0.92
+    ]
   },
   {
     "id": "model-honda-city-1",
@@ -79,7 +97,13 @@
     "author": "Dairokkan9",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.04,
+      0.1,
+      0.97,
+      0.92
+    ]
   },
   {
     "id": "model-hyundai-verna-1",
@@ -100,6 +124,12 @@
         0.095,
         0.08
       ]
+    ],
+    "subject": [
+      0.05,
+      0.15,
+      0.94,
+      0.88
     ]
   },
   {
@@ -121,6 +151,12 @@
         0.065,
         0.13
       ]
+    ],
+    "subject": [
+      0.04,
+      0.05,
+      0.97,
+      0.95
     ]
   },
   {
@@ -135,7 +171,13 @@
     "author": "DriveSpark",
     "licence": "CC BY 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.02,
+      0.06,
+      0.96,
+      0.9
+    ]
   },
   {
     "id": "model-tata-nexon-1",
@@ -149,7 +191,13 @@
     "author": "Vauxford",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.03,
+      0.03,
+      0.95,
+      0.95
+    ]
   },
   {
     "id": "model-hyundai-creta-1",
@@ -170,6 +218,12 @@
         0.095,
         0.08
       ]
+    ],
+    "subject": [
+      0.1,
+      0.12,
+      0.92,
+      0.85
     ]
   },
   {
@@ -184,7 +238,13 @@
     "author": "JustAnotherCarDesigner",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.0,
+      0.17,
+      0.98,
+      0.9
+    ]
   },
   {
     "id": "model-toyota-innova-crysta-1",
@@ -205,6 +265,12 @@
         0.105,
         0.08
       ]
+    ],
+    "subject": [
+      0.02,
+      0.0,
+      0.97,
+      0.88
     ]
   },
   {
@@ -226,6 +292,12 @@
         0.1,
         0.065
       ]
+    ],
+    "subject": [
+      0.1,
+      0.12,
+      0.9,
+      0.88
     ]
   },
   {
@@ -247,6 +319,12 @@
         0.11,
         0.09
       ]
+    ],
+    "subject": [
+      0.03,
+      0.02,
+      0.95,
+      0.83
     ]
   },
   {
@@ -268,6 +346,12 @@
         0.07,
         0.09
       ]
+    ],
+    "subject": [
+      0.06,
+      0.07,
+      0.96,
+      0.92
     ]
   },
   {
@@ -282,7 +366,13 @@
     "author": "Adityamadhav83",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.24,
+      0.18,
+      0.92,
+      0.8
+    ]
   },
   {
     "id": "model-tvs-jupiter-1",
@@ -296,7 +386,13 @@
     "author": "SnapMeUp",
     "licence": "CC BY 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.04,
+      0.1,
+      0.92,
+      0.9
+    ]
   },
   {
     "id": "model-suzuki-access-125-1",
@@ -310,7 +406,13 @@
     "author": "Gpkp",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.15,
+      0.03,
+      0.75,
+      0.95
+    ]
   },
   {
     "id": "model-tvs-ntorq-125-1",
@@ -337,6 +439,12 @@
         0.085,
         0.055
       ]
+    ],
+    "subject": [
+      0.03,
+      0.08,
+      0.98,
+      0.96
     ]
   },
   {
@@ -351,7 +459,13 @@
     "author": "Samihasib",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.16,
+      0.2,
+      0.89,
+      0.8
+    ]
   },
   {
     "id": "model-bajaj-pulsar-150-1",
@@ -365,7 +479,13 @@
     "author": "බිඟුවා",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.17,
+      0.07,
+      0.84,
+      0.79
+    ]
   },
   {
     "id": "model-yamaha-fz-s-1",
@@ -379,7 +499,13 @@
     "author": "オーバードライブ83",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.02,
+      0.03,
+      0.97,
+      0.96
+    ]
   },
   {
     "id": "model-honda-dio-1",
@@ -393,7 +519,13 @@
     "author": "Rajiv6212",
     "licence": "CC BY-SA 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.17,
+      0.15,
+      0.9,
+      0.85
+    ]
   },
   {
     "id": "model-bajaj-platina-110-1",
@@ -407,7 +539,13 @@
     "author": "Rameshpayan27",
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.2,
+      0.0,
+      0.82,
+      0.88
+    ]
   },
   {
     "id": "hero-1",
@@ -428,6 +566,16 @@
         0.07,
         0.04
       ]
+    ],
+    "subject": [
+      0.4,
+      0.62,
+      0.61,
+      0.81
+    ],
+    "focus": [
+      0.5,
+      1.0
     ]
   },
   {
@@ -443,9 +591,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.48,
-      0.5
+    "subject": [
+      0.1,
+      0.28,
+      0.55,
+      0.95
     ]
   },
   {
@@ -468,6 +618,12 @@
         0.05
       ]
     ],
+    "subject": [
+      0.36,
+      0.4,
+      0.86,
+      0.82
+    ],
     "focus": [
       0.5,
       0.62
@@ -485,7 +641,13 @@
     "author": "Ibrahim Rifath",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.3,
+      0.05,
+      0.78,
+      0.78
+    ]
   },
   {
     "id": "step-licence-1",
@@ -499,7 +661,13 @@
     "author": "Erik Witsoe",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.1,
+      0.35,
+      0.65,
+      1.0
+    ]
   },
   {
     "id": "step-search-1",
@@ -521,9 +689,11 @@
         0.045
       ]
     ],
-    "focus": [
-      0.5,
-      0.55
+    "subject": [
+      0.27,
+      0.3,
+      0.68,
+      0.72
     ]
   },
   {
@@ -538,7 +708,13 @@
     "author": "angga",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.2,
+      0.28,
+      0.98,
+      0.72
+    ]
   },
   {
     "id": "cat-hatchback-2",
@@ -559,6 +735,12 @@
         0.075,
         0.05
       ]
+    ],
+    "subject": [
+      0.38,
+      0.33,
+      0.84,
+      0.71
     ]
   },
   {
@@ -573,7 +755,13 @@
     "author": "Keshav Zen",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.16,
+      0.32,
+      0.82,
+      0.63
+    ]
   },
   {
     "id": "cat-suv-1",
@@ -595,9 +783,11 @@
         0.04
       ]
     ],
-    "focus": [
-      0.5,
-      0.65
+    "subject": [
+      0.4,
+      0.44,
+      0.77,
+      0.73
     ]
   },
   {
@@ -613,9 +803,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.6,
-      0.6
+    "subject": [
+      0.36,
+      0.27,
+      1.0,
+      0.98
     ]
   },
   {
@@ -638,9 +830,11 @@
         0.055
       ]
     ],
-    "focus": [
-      0.5,
-      0.6
+    "subject": [
+      0.2,
+      0.32,
+      0.72,
+      0.88
     ]
   },
   {
@@ -655,7 +849,13 @@
     "author": "Nathana Rebouças",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.27,
+      0.35,
+      0.72,
+      0.85
+    ]
   },
   {
     "id": "band-licence-1",
@@ -670,9 +870,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.45
+    "subject": [
+      0.15,
+      0.05,
+      0.85,
+      1.0
     ]
   },
   {
@@ -688,9 +890,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.55
+    "subject": [
+      0.05,
+      0.25,
+      0.98,
+      0.85
     ]
   },
   {
@@ -706,9 +910,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.45
+    "subject": [
+      0.3,
+      0.2,
+      0.7,
+      0.6
     ]
   },
   {
@@ -724,9 +930,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.55
+    "subject": [
+      0.05,
+      0.4,
+      0.62,
+      0.92
     ]
   },
   {
@@ -742,9 +950,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.55
+    "subject": [
+      0.1,
+      0.0,
+      0.9,
+      0.95
     ]
   },
   {
@@ -760,9 +970,11 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "plates": [],
-    "focus": [
-      0.5,
-      0.5
+    "subject": [
+      0.22,
+      0.35,
+      0.68,
+      0.75
     ]
   },
   {
@@ -777,6 +989,12 @@
     "author": "Clay LeConey",
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
-    "plates": []
+    "plates": [],
+    "subject": [
+      0.2,
+      0.55,
+      0.8,
+      1.0
+    ]
   }
 ]

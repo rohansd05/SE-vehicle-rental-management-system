@@ -4,7 +4,9 @@
 // (downloaded with scripts/download-images.ps1; that folder is git-ignored),
 // then for each photo:
 //   1. blurs every number-plate box listed in `plates` (normalised x, y, w, h);
-//   2. crops it to the shape it is shown at (its role's aspect, around `focus`);
+//   2. keeps it at its native aspect: no subject is ever cropped here (B13).
+//      Each slot fits the photo at runtime from its `subject` box and
+//      optional `focus` (src/lib/images.ts, fitPhoto);
 //   3. applies the one shared colour grade, so photos from different
 //      photographers read as one set;
 //   4. writes AVIF at the role's widths, WebP at all but the largest (it is
@@ -34,18 +36,19 @@ const sources = JSON.parse(await fs.readFile(path.join(root, 'scripts/image-sour
 const only = new Set(process.argv.slice(2))
 
 /**
- * One profile per role (imagery-brief.md, 2 and 4): the shape it is shown at,
- * the widths it is served at, the single JPEG fallback width and AVIF quality.
+ * One profile per role (imagery-brief.md, 2 and 4): the widths it is served
+ * at, the single JPEG fallback width and AVIF quality. Every role keeps the
+ * photo's native aspect.
  */
 const ROLES = {
-  hero: { aspect: null, widths: [960, 1600, 2400], jpg: 1600, avif: 45 },
-  panel: { aspect: 4 / 5, widths: [480, 800, 1200], jpg: 800, avif: 48 },
-  cta: { aspect: 3, widths: [960, 1600, 2400], jpg: 1600, avif: 48 },
-  band: { aspect: 6, widths: [960, 1600, 2200], jpg: 1600, avif: 48 },
-  section: { aspect: 4 / 3, widths: [400, 800], jpg: 800, avif: 50 },
-  small: { aspect: 4 / 3, widths: [320, 640], jpg: 640, avif: 50 },
-  quiet: { aspect: 3 / 2, widths: [320, 640], jpg: 640, avif: 50 },
-  vehicle: { aspect: 3 / 2, widths: [320, 640, 960], jpg: 640, avif: 52 },
+  hero: { widths: [960, 1600, 2400], jpg: 1600, avif: 45 },
+  panel: { widths: [480, 800, 1200], jpg: 800, avif: 48 },
+  cta: { widths: [960, 1600, 2400], jpg: 1600, avif: 46 },
+  band: { widths: [480, 960, 1440], jpg: 960, avif: 48 },
+  section: { widths: [400, 800], jpg: 800, avif: 50 },
+  small: { widths: [320, 640], jpg: 640, avif: 50 },
+  quiet: { widths: [320, 640, 960], jpg: 640, avif: 50 },
+  vehicle: { widths: [320, 640, 960], jpg: 640, avif: 52 },
 }
 /** Budget per brief: the largest hero AVIF stays under about 400 KB. */
 const HERO_AVIF_BUDGET = 400 * 1024
@@ -73,19 +76,6 @@ async function blurPlates(buffer, meta, plates) {
   return sharp(buffer).composite(overlays).toBuffer()
 }
 
-/** The largest crop of `ratio` that fits, centred on `focus` (normalised) as far as the edges allow. */
-function cropTo(meta, ratio, focus) {
-  let width = meta.width
-  let height = Math.round(width / ratio)
-  if (height > meta.height) {
-    height = meta.height
-    width = Math.round(height * ratio)
-  }
-  const left = Math.min(meta.width - width, Math.max(0, Math.round(focus[0] * meta.width - width / 2)))
-  const top = Math.min(meta.height - height, Math.max(0, Math.round(focus[1] * meta.height - height / 2)))
-  return { left, top, width, height }
-}
-
 const exists = (p) => fs.access(p).then(() => true, () => false)
 const manifest = JSON.parse(await fs.readFile(manifestFile, 'utf8').catch(() => '{}'))
 let processed = 0
@@ -101,10 +91,7 @@ for (const s of sources) {
   let buffer = await sharp(file).rotate().toBuffer()
   const meta = await sharp(buffer).metadata()
   buffer = await blurPlates(buffer, meta, s.plates)
-  if (role.aspect) {
-    const focus = s.focus ?? (s.kind === 'vehicle' ? [0.5, 0.55] : [0.5, 0.5])
-    buffer = await sharp(buffer).extract(cropTo(meta, role.aspect, focus)).toBuffer()
-  }
+  if (!s.subject) throw new Error(`no subject box for ${s.id}`)
   buffer = await grade(sharp(buffer)).toBuffer()
   const final = await sharp(buffer).metadata()
   const widths = role.widths.filter((w) => w <= final.width)
@@ -139,7 +126,9 @@ for (const s of sources) {
     page: s.page,
     licence: s.licence,
     licenceUrl: s.licenceUrl,
-    changes: [s.plates?.length ? 'number plate blurred' : null, role.aspect ? 'cropped' : null, 'colour graded', 'resized']
+    subject: s.subject,
+    ...(s.focus ? { focus: s.focus } : {}),
+    changes: [s.plates?.length ? 'number plate blurred' : null, 'colour graded', 'resized']
       .filter(Boolean)
       .join(', '),
   }

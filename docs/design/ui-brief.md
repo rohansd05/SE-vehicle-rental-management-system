@@ -94,10 +94,24 @@ of this brief differs, these win.
   exact-model representative photo, then the category photo, always with
   honest "Representative image of a ..." alt text. Image-led tiles are used
   only for vehicles (`imagery-brief.md`, section 3).
+- **B13. Photos and text, measured (12 Oct 2026):** photo covers use only the
+  shared tokens (`--photo-overlay-strong` 30 % and `--photo-overlay-soft`
+  20 % petrol; text sits on `--photo-scrim`, the same petrol at 84 %, as a
+  local panel or a fade from the text side) and meet WCAG AA measured on the
+  real photo pixels. No subject is ever cropped: every photo carries a
+  subject box and optional focal point in its registry entry, and
+  `fitPhoto` crops only background, keeping the whole subject plus 4 %
+  (or the photo's own margin), or shows the photo whole. No major page
+  region is text-only where a suitable photo fits. Nothing renders below the
+  type minimums (16 px body and inputs, 14 px secondary, 13 px labels and
+  table headers, 12 px only in dense pills); mono numbers take the size of
+  their context. Images and text share container edges and centre lines
+  within 1 px. Measurements: `docs/design/alignment-qa.md`.
 
 Implementation notes for B1 to B8 are in sections 4 (type), 5 (space and
 motion) and 6.0 (shell and content width) below, which were updated to
-match.
+match. B13's are in `imagery-brief.md` (sections 2 and 4) and
+`alignment-qa.md`.
 
 ## 0. Ground rules
 
@@ -528,10 +542,18 @@ additions below, each true of the current app or SRS behaviour.
 | For branch teams / Branch staff, technicians and administrators sign in to the same system. | The roles in `ROLE_LABELS`; UI-1 (one application, menus by role). Items reuse the menu labels and descriptions. |
 | Help (section heading) | Existing page title. Topics are the help page's, unchanged. |
 
-**Photography (Stage 4.7B, 12 Oct 2026).** The hero, the four step photos
-and the CTA band are decorative (`alt=""`); the hero and the CTA band sit
-under the petrol overlay (`bg-primary-hover/75`, at least 5.1:1 for white
-text), with a white primary button and a white outline button. The slim
+**Photography (Stage 4.7B, revised in Stage 4.8, 12 Oct 2026).** Every
+landing photo is decorative (`alt=""`) except the category row. From
+1024 px the hero photo fills a band at its own shape (no taller than the
+first viewport) under `--photo-overlay-strong`, and the agency name, intro
+and actions sit on a local `--photo-scrim` panel above the vehicle; the
+final call to action is a 3:1 band whose text sits on its left, on the
+gutter, over a scrim that fades to transparent before the car. Both use a
+white primary and a white outline button there. Below 1024 px both stack:
+text on the canvas, then the whole photo. "Book online, collect at the
+branch" and "For branch teams" are split rows (a whole photo beside the
+list, sides flipped); "System status" has a framed photo above it. No new
+text was added in Stage 4.8. The slim
 footer moved into the public layout (6.2.2). New text, approved as a
 proposed addition with the photo choices:
 

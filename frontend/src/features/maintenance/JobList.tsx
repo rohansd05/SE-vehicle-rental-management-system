@@ -41,7 +41,7 @@ export function StatusFilter({
 /** Jobs as tappable cards; `basePath` is where a job's detail page lives. */
 export function JobList({ jobs, basePath }: { jobs: MaintenanceJob[]; basePath: string }) {
   return (
-    <ul className="grid gap-3">
+    <ul className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {jobs.map((job) => (
         <li key={job.job_id} className="min-w-0">
           <Link

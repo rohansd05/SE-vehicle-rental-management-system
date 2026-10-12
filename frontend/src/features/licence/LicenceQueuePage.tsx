@@ -47,7 +47,7 @@ export function LicenceQueuePage() {
             {queue.data.count} {queue.data.count === 1 ? 'licence is' : 'licences are'} waiting.
             {queue.data.next ? ` Showing the oldest ${queue.data.results.length}.` : ''}
           </p>
-          <ul className="grid gap-3">
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3">
             {queue.data.results.map((licence) => (
               <li key={licence.id}>
                 <Link

@@ -19,6 +19,7 @@ import { type BookingDetail, getBooking, holdAgain, newIdempotencyKey, payBookin
 import { BookingRefusal } from '@/features/booking/BookingRefusal'
 import { BOOKINGS_KEY, bookingKey } from '@/features/booking/keys'
 import { PriceSummary } from '@/features/booking/PriceSummary'
+import { RAIL_LAYOUT } from '@/lib/layout'
 
 /**
  * Sandbox tokens (SI-1, Testability: "a test mode in which the payment ...
@@ -184,7 +185,7 @@ export function PaymentPage() {
       ) : booking.isError ? (
         <ErrorState title="We couldn’t load this booking" error={booking.error} onRetry={() => void booking.refetch()} />
       ) : (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-20">
+        <div className={RAIL_LAYOUT}>
           <div className="max-w-2xl">
             {booking.data.status === 'Draft' ? (
               <BookingRefusal
