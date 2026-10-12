@@ -107,11 +107,35 @@ of this brief differs, these win.
   table headers, 12 px only in dense pills); mono numbers take the size of
   their context. Images and text share container edges and centre lines
   within 1 px. Measurements: `docs/design/alignment-qa.md`.
+- **B14. Image-led headers and a larger type scale (12 Oct 2026):** page
+  headers with a photo use the shared `PageHeader` frame, whose photo fills
+  the heading section (no side thumbnails): from 1024 px the title,
+  subtitle and action sit in the left half, vertically centred, and the
+  photo fills the right half to the frame's top, right and bottom edges, at
+  least 280 px and about 300 to 360 px tall at 1440 to 1536; below 1024 px
+  the photo runs full width above the text. List, queue, form, landing and
+  home pages use it; record-detail pages (booking, job, vehicle) keep the
+  plain header because their titles are references. Type floors: nothing
+  visible under 15 px at any width; body, inputs, buttons, sidebar and top
+  bar 18 px at 1440 (16 px floor); secondary text, captions and pills 15 px
+  floor, 16 px from about 1024; field labels and table headers 16 px;
+  subheadings 22 px or more at 1440; page titles 3rem or more at 1440 and
+  1536, sized from their header frame so the longest two-word title stays
+  on one line. Mono figures are sized from the measured figure height of
+  IBM Plex Mono against IBM Plex Sans (1.02 em). References, dates and
+  amounts never break inside a token. No blank area of about 200 px or more
+  without content or imagery, except where the amount of data decides it
+  (short queues) and on tall screens below short pages
+  (`alignment-qa.md`, Stage 4.9).
 
 Implementation notes for B1 to B8 are in sections 4 (type), 5 (space and
 motion) and 6.0 (shell and content width) below, which were updated to
 match. B13's are in `imagery-brief.md` (sections 2 and 4) and
-`alignment-qa.md`.
+`alignment-qa.md`. B14's tokens are in `frontend/src/index.css` (type
+scale, `--header-gap`), its layouts in `components/page.tsx`
+(`PageHeader`), `lib/layout.ts` (`RAIL_LAYOUT`, `SETTINGS_ROW`) and
+`pages/DashboardPage.tsx` (destination tiles); measurements in
+`alignment-qa.md`, Stage 4.9.
 
 ## 0. Ground rules
 
@@ -588,6 +612,13 @@ status pills inline after the title on detail pages; actions right-aligned
 on the same baseline (stack under the title below 640 px). A hairline under
 the header, 24 px before content.
 
+Stage 4.9 (B14): a page with a header photo uses the image-led frame
+instead: from 1024 px the title, the description (lead size) and the
+action sit in the left half, vertically centred, and the photo fills the
+right half; below 1024 px the photo runs full width above them. The plain
+header above stays for record-detail pages (booking, job, vehicle), the
+search page, payment, profile and the sign-in screens.
+
 ### 6.4 List and queue pages
 
 `/app/bookings`, `/app/maintenance`, `/app/jobs`, `/app/licences`,
@@ -668,6 +699,13 @@ Page header, then the role's destinations as a two-column ruled list at
 ≥1024 (icon, label, description, chevron), one column below. Planned items
 sit in a separate group after a hairline, titled with the existing "Not
 available yet" text as quiet `ink-subtle` copy, without pills.
+
+Stage 4.9 (B14): the image-led page header, then each available
+destination as an image-led tile (a 3:2 photo, then icon, label,
+description; the vehicle tiles' family), 2 x 2 from 1024 px and one column
+below. Planned destinations follow as compact rows after a hairline, each
+with the existing "Not available yet" badge. Labels and descriptions are
+unchanged.
 
 ### 6.9 Help, 403, 404, placeholders
 

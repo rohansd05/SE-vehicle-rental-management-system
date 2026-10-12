@@ -37,6 +37,8 @@ export function AuthLayout({
   return (
     <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,1fr)] lg:gap-16 xl:gap-24">
       <div className={cn('stage w-full lg:py-4', wide ? 'max-w-[40rem]' : 'max-w-[28rem]')}>
+        {/* B14: below 1024 px the panel's photo runs full width above the form. */}
+        <Photo id="auth-2" alt="" sizes="(min-width: 640px) 40rem, 100vw" className="mb-8 aspect-video rounded-xl lg:hidden" />
         <PageHeader title={title} description={description} />
         <div>{children}</div>
       </div>

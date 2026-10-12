@@ -39,7 +39,7 @@ function StatusPill({ tone, children }: { tone: Tone; children: string }) {
   return (
     <span
       className={cn(
-        'inline-flex h-6 items-center rounded-md px-2 text-xs font-medium transition-colors duration-300',
+        'inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium transition-colors duration-300',
         tone === 'ok' && TONE_PILL.available,
         tone === 'warn' && TONE_PILL.maintenance,
         tone === 'error' && TONE_PILL.unsafe,
@@ -94,7 +94,7 @@ function Band({
   children: ReactNode
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-heading`} className={cn('scroll-mt-16 border-t py-20 lg:py-28', GUTTER)}>
+    <section id={id} aria-labelledby={`${id}-heading`} className={cn('scroll-mt-20 border-t py-20 lg:py-28', GUTTER)}>
       <Reveal className="mx-auto max-w-[46rem] text-center">
         <h2 id={`${id}-heading`} className="text-title">
           {title}
@@ -227,7 +227,7 @@ export function HomePage() {
           'relative isolate flex flex-col items-center pt-12 pb-10 text-center lg:h-(--hero-height) lg:justify-start lg:pt-[7vh] lg:pb-0',
           GUTTER,
         )}
-        style={{ '--hero-height': `min(calc(100svh - 4rem), calc(100vw * ${HERO_RATIO}))` } as CSSProperties}
+        style={{ '--hero-height': `min(calc(100svh - 4.5rem), calc(100vw * ${HERO_RATIO}))` } as CSSProperties}
       >
         <div className="w-full max-w-[52rem] lg:w-auto lg:rounded-xl lg:bg-photo-scrim lg:px-12 lg:py-10 lg:text-primary-foreground">
           <h1
@@ -271,7 +271,7 @@ export function HomePage() {
         <a
           href="#features"
           aria-labelledby="features-heading"
-          className="enter mt-8 flex size-11 items-center justify-center rounded-full border text-ink-muted transition-colors hover:border-line-strong hover:text-foreground lg:absolute lg:bottom-8 lg:left-1/2 lg:mt-0 lg:-translate-x-1/2 lg:border-primary-foreground/60 lg:text-primary-foreground lg:hover:border-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground"
+          className="enter mt-8 flex size-12 items-center justify-center rounded-full border text-ink-muted transition-colors hover:border-line-strong hover:text-foreground lg:absolute lg:bottom-8 lg:left-1/2 lg:mt-0 lg:-translate-x-1/2 lg:border-primary-foreground/60 lg:text-primary-foreground lg:hover:border-primary-foreground lg:hover:bg-primary-foreground/10 lg:hover:text-primary-foreground"
           style={stagger(6, 90)}
         >
           <ChevronDown className="size-5" aria-hidden="true" />

@@ -31,15 +31,15 @@ export function PublicLayout() {
         data-scrolled={scrolled ? '' : undefined}
         className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
       >
-        <div className="flex h-16 w-full items-center gap-2 px-4 sm:px-6 lg:px-8">
+        <div className="flex h-18 w-full items-center gap-2 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             className="heading min-w-0 truncate rounded-sm text-subsection text-foreground"
           >
             {agency.name}
           </Link>
-          <nav aria-label="Account" className="ml-auto flex items-center gap-1 sm:gap-2">
-            <Button asChild variant="ghost" className="px-2.5 sm:px-3">
+          <nav aria-label="Account" className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
+            <Button asChild variant="ghost" className="px-2 sm:px-3">
               <Link to="/help" aria-label="Help">
                 <CircleHelp aria-hidden="true" />
                 <span className="hidden sm:inline">Help</span>
@@ -51,7 +51,7 @@ export function PublicLayout() {
               </Button>
             ) : (
               <>
-                <Button asChild variant="ghost" className="px-3">
+                <Button asChild variant="ghost" className="px-2.5 sm:px-3">
                   <Link to="/login">Sign in</Link>
                 </Button>
                 <Button asChild className="px-3 sm:px-4">

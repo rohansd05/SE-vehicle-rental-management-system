@@ -20,9 +20,11 @@ export function VehicleResults({
   onNext: () => void
 }) {
   return (
-    <div className="grid gap-6">
+    <div className="@container grid gap-6">
       {/* Image-led tiles (B12, imagery-brief.md 3), in a list so each vehicle stays one list item. */}
-      <ul aria-label="Available vehicles" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      {/* Columns follow the content width, not the screen (B14): one below
+          576 px of content, two from 576, three from 896, four from 1280. */}
+      <ul aria-label="Available vehicles" className="grid gap-5 @xl:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4">
         {vehicles.map((vehicle, index) => (
           <li key={vehicle.id} className="enter" style={stagger(index % 8)}>
             <VehicleTile vehicle={vehicle} href={hrefFor(vehicle)} />

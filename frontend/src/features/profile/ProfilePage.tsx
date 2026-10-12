@@ -8,6 +8,7 @@ import { ApiError } from '@/api/client'
 import { type Profile, ROLE_LABELS } from '@/api/types'
 import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
+import { Photo } from '@/components/photo'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +18,7 @@ import { useAuth } from '@/features/auth/auth-context'
 import { MOBILE_HINT, OTP_LENGTH, OTP_RESEND_COOLDOWN_SECONDS, PASSWORD_RULES } from '@/features/auth/schemas'
 import { useCountdown } from '@/hooks/countdown'
 import { applyServerErrors, describedBy } from '@/lib/form'
+import { SETTINGS_ROW, SETTINGS_LABEL } from '@/lib/layout'
 
 import {
   type DetailsValues,
@@ -42,14 +44,18 @@ export function ProfilePage() {
       ) : profile.isError ? (
         <ErrorState title="We couldn’t load your profile" error={profile.error} onRetry={() => void profile.refetch()} />
       ) : (
-        <div className="grid gap-8">
-          <DetailsCard profile={profile.data} />
-          <div className="reveal">
-            <MobileCard profile={profile.data} />
+        // B14: the forms in the main column, a whole-subject photo in a right rail from 1536 px.
+        <div className="grid items-start gap-10 2xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+          <div className="grid gap-8">
+            <DetailsCard profile={profile.data} />
+            <div className="reveal">
+              <MobileCard profile={profile.data} />
+            </div>
+            <div className="reveal">
+              <PasswordCard />
+            </div>
           </div>
-          <div className="reveal">
-            <PasswordCard />
-          </div>
+          <Photo id="step-account-1" alt="" sizes="26rem" className="enter hidden aspect-[3/2] rounded-xl 2xl:sticky 2xl:top-24 2xl:block" />
         </div>
       )}
     </section>
@@ -89,8 +95,8 @@ function DetailsCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
-      <CardHeader className="content-start">
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Your details</h2>
         </CardTitle>
@@ -217,8 +223,8 @@ function MobileCard({ profile }: { profile: Profile }) {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
-      <CardHeader className="content-start">
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Mobile number</h2>
         </CardTitle>
@@ -341,8 +347,8 @@ function PasswordCard() {
   })
 
   return (
-    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
-      <CardHeader className="content-start">
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={SETTINGS_LABEL}>
         <CardTitle>
           <h2>Password</h2>
         </CardTitle>

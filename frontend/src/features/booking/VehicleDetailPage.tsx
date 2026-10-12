@@ -155,7 +155,7 @@ function AddOnPicker({
           const quantity = chosen[addOn.id]
           return (
             <div key={addOn.id} className="flex min-h-12 flex-wrap items-center gap-x-6 gap-y-2 py-1">
-              <label htmlFor={id} className="flex min-h-10 flex-1 items-center gap-3 text-sm">
+              <label htmlFor={id} className="flex min-h-12 flex-1 items-center gap-3 text-sm">
                 <input
                   id={id}
                   type="checkbox"
@@ -280,7 +280,7 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
         </div>
 
         <div className="grid gap-1.5">
-          <label htmlFor="discount-code" className="text-small font-medium">
+          <label htmlFor="discount-code" className="text-label font-medium">
             Discount code
           </label>
           <div className="flex flex-wrap gap-2">

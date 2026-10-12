@@ -278,17 +278,19 @@
   "step-licence-1": {
     "slot": "step-licence",
     "option": 1,
-    "kind": "section",
+    "kind": "band",
     "widths": [
-      400,
-      800
+      480,
+      960,
+      1440
     ],
     "webpWidths": [
-      400
+      480,
+      960
     ],
-    "jpg": 800,
-    "width": 800,
-    "height": 536,
+    "jpg": 960,
+    "width": 1440,
+    "height": 964,
     "title": "person holding car steering wheel",
     "author": "Erik Witsoe",
     "source": "Unsplash",
@@ -590,10 +592,10 @@
     "licence": "Unsplash License",
     "licenceUrl": "https://unsplash.com/license",
     "subject": [
-      0.05,
-      0.25,
-      0.98,
-      0.85
+      0.6,
+      0.33,
+      0.99,
+      0.78
     ],
     "changes": "colour graded, resized"
   },
@@ -720,19 +722,19 @@
   "band-quiet-2": {
     "slot": "band-quiet",
     "option": 2,
-    "kind": "quiet",
+    "kind": "band",
     "widths": [
-      320,
-      640,
-      960
+      480,
+      960,
+      1440
     ],
     "webpWidths": [
-      320,
-      640
+      480,
+      960
     ],
-    "jpg": 640,
-    "width": 960,
-    "height": 540,
+    "jpg": 960,
+    "width": 1440,
+    "height": 809,
     "title": "road",
     "author": "Clay LeConey",
     "source": "Unsplash",

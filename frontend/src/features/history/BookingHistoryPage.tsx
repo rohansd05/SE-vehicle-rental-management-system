@@ -39,7 +39,7 @@ export function BookingHistoryPage() {
         }
       />
       <div className="mb-5 flex items-center gap-3">
-        <label htmlFor="booking-status-filter" className="text-small font-medium">
+        <label htmlFor="booking-status-filter" className="text-label font-medium">
           Status
         </label>
         <NativeSelect
@@ -75,21 +75,29 @@ export function BookingHistoryPage() {
             {bookings.data.results.map((booking, index) => (
               <li
                 key={booking.id}
-                className="enter grid gap-x-8 gap-y-2 border-b py-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,0.7fr)_9rem_10rem] lg:items-center xl:gap-x-12"
+                className="enter grid gap-x-10 gap-y-2 border-b py-5 xl:grid-cols-[minmax(0,1fr)_max-content_minmax(6rem,0.5fr)_max-content_minmax(10rem,max-content)] xl:items-center"
                 style={stagger(index)}
               >
                 <div className="min-w-0">
                   <Link to={`/app/bookings/${booking.id}`} className="font-medium underline-offset-4 hover:text-primary hover:underline">
                     {booking.vehicle.brand} {booking.vehicle.model}
-                    {booking.booking_reference ? ` · ${booking.booking_reference}` : ''}
+                    {/* B14: the reference never breaks inside itself. */}
+                    {booking.booking_reference ? (
+                      <>
+                        {' · '}
+                        <span className="num whitespace-nowrap">{booking.booking_reference}</span>
+                      </>
+                    ) : null}
                   </Link>
                 </div>
+                {/* B14: pickup and return on their own lines, each kept whole. */}
                 <p className="num text-muted-foreground">
-                  {formatDateTime(booking.pickup_datetime)} to {formatDateTime(booking.return_datetime)}
+                  <span className="block whitespace-nowrap">{formatDateTime(booking.pickup_datetime)}</span>{' '}
+                  <span className="block whitespace-nowrap">to {formatDateTime(booking.return_datetime)}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">{booking.pickup_branch}</p>
-                <p className="num-strong lg:text-right">{formatCurrency(booking.total_amount, currency)}</p>
-                <div className="lg:justify-self-end">
+                <p className="num-strong xl:text-right">{formatCurrency(booking.total_amount, currency)}</p>
+                <div className="xl:justify-self-end">
                   <BookingStatusBadge status={booking.status} />
                 </div>
               </li>

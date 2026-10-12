@@ -18,12 +18,14 @@ import { BookingStatusBadge } from './BookingStatusBadge'
 
 function Confirmation({ booking }: { booking: BookingDetail }) {
   return (
-    <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_minmax(0,1fr)]">
+    // B14: label above value until the column is 28rem wide; references never wrap.
+    <div className="@container">
+    <dl className="grid gap-x-6 gap-y-1 text-sm @md:grid-cols-[10rem_minmax(0,1fr)] @md:gap-y-3">
       <dt className="text-muted-foreground">Booking reference</dt>
-      <dd className="num font-medium">{booking.booking_reference}</dd>
+      <dd className="num font-medium whitespace-nowrap">{booking.booking_reference}</dd>
       {booking.pickup_code ? (
         <>
-          <dt className="text-muted-foreground sm:pt-1">Pickup code</dt>
+          <dt className="mt-2 text-muted-foreground @md:mt-0 @md:pt-1">Pickup code</dt>
           <dd>
             <span className="num-lg block tracking-[0.25em] text-foreground">
               {booking.pickup_code}
@@ -34,17 +36,18 @@ function Confirmation({ booking }: { booking: BookingDetail }) {
       ) : null}
       {booking.transaction_id ? (
         <>
-          <dt className="text-muted-foreground">Transaction</dt>
-          <dd className="num break-all">{booking.transaction_id}</dd>
+          <dt className="mt-2 text-muted-foreground @md:mt-0">Transaction</dt>
+          <dd className="num whitespace-nowrap">{booking.transaction_id}</dd>
         </>
       ) : null}
       {booking.invoice_number ? (
         <>
-          <dt className="text-muted-foreground">Invoice</dt>
-          <dd className="num">{booking.invoice_number}</dd>
+          <dt className="mt-2 text-muted-foreground @md:mt-0">Invoice</dt>
+          <dd className="num whitespace-nowrap">{booking.invoice_number}</dd>
         </>
       ) : null}
     </dl>
+    </div>
   )
 }
 
@@ -71,10 +74,7 @@ export function BookingDetailPage() {
           My bookings
         </Link>
       </Button>
-      <PageHeader
-        title={booking.data?.booking_reference ? `Booking ${booking.data.booking_reference}` : 'Booking'}
-        photo="band-bookings-1"
-      />
+      <PageHeader title={booking.data?.booking_reference ? `Booking ${booking.data.booking_reference}` : 'Booking'} />
       {booking.isPending ? (
         <LoadingState label="Loading the booking…" />
       ) : booking.isError ? (

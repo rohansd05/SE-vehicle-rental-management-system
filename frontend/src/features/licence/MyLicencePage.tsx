@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/page'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SETTINGS_ROW, SETTINGS_LABEL } from '@/lib/layout'
+import { cn } from '@/lib/utils'
 
 import { MY_LICENCE_KEY } from './keys'
 import { LicenceForm } from './LicenceForm'
@@ -32,7 +34,7 @@ export function MyLicencePage() {
     <section className="stage">
       <PageHeader
         title="Driving licence"
-        photo="band-licence-1"
+        photo="step-licence-1"
         description="A verified licence that covers the vehicle’s category is needed before you can book."
       />
       {licence.isPending ? (
@@ -48,8 +50,8 @@ export function MyLicencePage() {
           <StatusMessage message={notice} tone="success" />
           <LicenceStatusCard licence={licence.data} />
           {NEEDS_SUBMISSION.includes(licence.data.status) || updating ? (
-            <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
-              <CardHeader className="content-start">
+            <Card className={SETTINGS_ROW}>
+              <CardHeader className={SETTINGS_LABEL}>
                 <CardTitle>
                   <h2>
                     {licence.data.status === 'Not Submitted' ? 'Submit your licence' : 'Submit your licence again'}
@@ -68,7 +70,7 @@ export function MyLicencePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12 border-t pt-6">
+            <div className={cn(SETTINGS_ROW, 'border-t pt-6')}>
               <div className="hidden lg:block" aria-hidden="true" />
               <div className="flex flex-col items-start gap-2">
                 <Button

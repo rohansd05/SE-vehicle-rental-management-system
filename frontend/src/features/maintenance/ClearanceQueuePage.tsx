@@ -20,7 +20,7 @@ export function ClearanceQueuePage() {
     <section>
       <PageHeader
         title="Unsafe clearances"
-        photo="band-clearances-2"
+        photo="cta-band-1"
         description="Technicians have finished work on these Unsafe vehicles. Review the work, then clear the flag to release the vehicle."
         actions={
           <Button

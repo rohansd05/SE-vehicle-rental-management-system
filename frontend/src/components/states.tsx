@@ -1,7 +1,7 @@
 // Loading, error and empty states shared by every page (UI-8: anything
 // slower than two seconds shows progress).
 
-import { CircleAlert, Inbox, LoaderCircle } from 'lucide-react'
+import { CircleAlert, LoaderCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { Photo } from '@/components/photo'
@@ -58,12 +58,12 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="enter flex items-start gap-3 border-y py-8 sm:gap-6">
-      <Inbox className="mt-1 size-5 shrink-0 text-ink-subtle sm:hidden" aria-hidden="true" />
-      {/* The quiet photo stands in for the icon from 640 px (imagery-brief.md, 2). */}
-      <Photo id="band-quiet-2" alt="" sizes="9rem" className="hidden aspect-[3/2] w-36 shrink-0 rounded-lg sm:block" />
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <p className="font-medium text-foreground">{title}</p>
+    // B14: the quiet photo fills its share of the empty state (whole, 3:2)
+    // beside the message from 640 px, and above it on phones.
+    <div className="enter grid items-center gap-6 border-y py-8 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-10">
+      <Photo id="band-quiet-2" alt="" sizes="(min-width: 640px) 30vw, 100vw" className="aspect-[3/2] rounded-xl" />
+      <div className="flex min-w-0 flex-col items-start gap-2">
+        <p className="text-subsection font-medium text-foreground">{title}</p>
         {description ? <p className="max-w-prose text-sm text-muted-foreground">{description}</p> : null}
         {action ? <div className="mt-3">{action}</div> : null}
       </div>

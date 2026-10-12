@@ -61,7 +61,8 @@ export function ReportFaultPage() {
   const selected = choosable.find((vehicle) => String(vehicle.id) === vehicleId)
 
   return (
-    <section className="max-w-2xl">
+    // B14: the header spans the content width; the form keeps a readable measure.
+    <section>
       <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
         <Link to="/app/maintenance">
           <ArrowLeft aria-hidden="true" />
@@ -73,6 +74,7 @@ export function ReportFaultPage() {
         photo="band-maintenance-1"
         description="The job starts as Reported. The vehicle goes Under Maintenance when the job is scheduled, or at once if you flag it Unsafe."
       />
+      <div className="max-w-3xl">
       {vehicles.isPending ? (
         <LoadingState label="Loading your branch’s vehicles…" />
       ) : vehicles.isError ? (
@@ -177,6 +179,7 @@ export function ReportFaultPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </section>
   )
 }

@@ -140,3 +140,128 @@ Regions still without a photo, by rule: forms, tables, queues and
 record-work screens; the profile page; operational pages below 1280 px (the
 header photo would squeeze the title and actions). No new photos were
 downloaded: every new slot reuses one of the 43 already licensed photos.
+
+---
+
+# Stage 4.9: image-led page headers and the larger type scale (12 Oct 2026)
+
+Binding decision B14 (`ui-brief.md`). Measured in Chromium (Playwright) on
+the running dev server with the demo accounts, at 1536 x 730 (the reported
+real viewport: 1920 x 1080 at 125 %), 1440 x 900, 1280 x 800, 1024 x 768,
+768 x 1024, 390 x 844 and 320 x 640. One probe ran on every page and width:
+the computed size of every visible text node, the line boxes of every text
+node (single-word lines, references and figures broken inside a token),
+every photo's subject box against its frame, contrast on real pixels for
+text over photos, the header frame's geometry, edges against the content
+container, columns more than 200 px shorter than their neighbour, blank
+space below the content, and horizontal overflow. 245 page and width
+combinations, about 700 photo-slot checks.
+
+Pages: landing, sign in, register, verify, help, photo credits, 404; as the
+customer: home, search results, vehicle page, my bookings, booking detail,
+payment, driving licence, my profile, 403; as branch staff: home,
+maintenance, report a fault, job detail, licence checks, licence review, a
+"Not available yet" page; as the technician: home, maintenance jobs, job
+detail; as the branch manager: home, maintenance; as the administrator:
+home, unsafe clearances, licence checks.
+
+## 1. Page header frame (after)
+
+Signed-in pages (content beside the 296 px sidebar). The photo sits inside
+the frame's 1 px border, so 0.8 px is flush. The text is vertically centred
+against the photo within 0.1 px on every page and width.
+
+| Width | Frame | Photo (share) | Photo to frame edges (top, right, bottom) | Gap, text to photo | Text column |
+|---|---|---|---|---|---|
+| 1536 | 1161 x 348 | 580 x 347 (50 %) | 0.8, 0.8, 0.8 | 32 (`--header-gap`) | 516 |
+| 1440 | 1065 x 319 | 532 x 318 (50 %) | 0.8, 0.8, 0.8 | 32 | 468 |
+| 1280 | 905 x 280 | 452 x 278 (50 %) | 0.8, 0.8, 0.8 | 32 | 388 |
+| 1024 | 649 x 280 | 324 x 278 (50 %) | 0.8, 0.8, 0.8 | 32 | 268 |
+| 768 | 409 wide, photo above the text | 407 x 229 (16:9) | 0.8 top, left, right | n/a | 345 |
+| 390 | 343 wide | 342 x 228 (3:2) | 0.8 | n/a | 311 |
+| 320 | 273 wide | 271 x 181 (3:2) | 0.8 | n/a | 241 |
+
+Public pages (help, credits, 404; no sidebar): 1457 x 360 at 1536, 1361 x
+360 at 1440, 1201 x 360 at 1280, 945 x 283 at 1024, the photo 50 % each. A
+frame grows past its minimum when its text needs it (403: 420 px at 1536).
+
+Before: a 192 x 128 thumbnail at the right end of the title row, from
+1280 px only, with an empty gap of several hundred pixels between it and a
+short title.
+
+## 2. Type (after)
+
+Smallest visible text per width, over all pages: 16 px at 1536, 1440 and
+1280; 15.6 px at 1024; 15.1 px at 768; 15.0 px at 390 and 320 (secondary
+text and pills, at their floor). Body text, inputs, buttons, sidebar and
+top bar: 18 px at 1440 and 1536, 17.6 at 1280, 17 at 1024, 16 on phones.
+Field labels and table headers: 16 px everywhere. Inputs: 16 px or more
+everywhere. Page titles: 56 px at 1440 and 60 px at 1536 in plain headers;
+in image-led headers sized from the frame, 49 px at 1440 and 53 px at 1536.
+Subheadings: 23 to 24 px at 1440 and 1536. Nothing below 15 px on any page
+at any width. Buttons, inputs and selects: 48 px.
+
+Before (Stage 4.8 tokens): body 16 px, secondary 14 px, labels 14 px, pills
+and list meta 13 px, page titles 36 px, controls 44 px.
+
+Mono figures: measured in Chromium, IBM Plex Mono and IBM Plex Sans share a
+0.52 em x-height and 0.70 em caps; Plex Mono's figures are 0.71 em against
+0.72 em, so `--text-num` is 1.02 em.
+
+## 3. Fixes found by the probe (before, after)
+
+| Page, width | Before | Fix (shared component or token) | After |
+|---|---|---|---|
+| My bookings, 1536 | Reference broke as "VRMS-" / "20261011-0001"; the date range wrapped inside a date; once kept whole, the dates ran into the branch column | Reference in a no-wrap span; pickup and return as two whole lines; content-sized columns from 1280 px, stacked rows below | Whole tokens, no overlap |
+| Home and two-word titles, 1024 to 1536 | "Welcome, Demo Customer" one word per line in a 409 px column at 1440; "Maintenance jobs" and "Unsafe clearances" on two lines at 1440 and 1536 | 50/50 frame; the header title sized from the frame (`--text-header-title`, `--text-header-title-split`; measured: the longest two-word title is 8.73 em) | One line, or two lines of two or more words |
+| Booking detail, 1024 | VRMS, TXN and INV references broken across lines in a 137 px value column | Facts stack label above value until their column is 28 rem (container query); values never wrap | Whole tokens |
+| Search results, 768 | Two tiles in 409 px; "No ratings yet" one word per line | Tile columns follow the content width (container queries: two from 576 px, three from 896, four from 1280) | One column at 768 |
+| Header frame, 1024 | A fixed height clipped the 404 and credits text (photo 319 px in a 283 px frame) | A minimum height instead | The frame grows with its text |
+| Header frame, public pages at 1440 and 1536 | 384 px tall | Cap at 22.5 rem | 360 px |
+| My profile, 1280 | Form column 177 px; "Change password" wrapped | Photo rail from 1536 px; settings label column 14 rem (16 rem from 1536) | No single-word lines or overflow at 1280 (probe) |
+| Report a fault, 1536 | Header frame 672 px (the page was capped at the form's width) | The cap moved to the form | Frame 1161 px |
+| Top bar, 320 (public) | Register button 1 px past the edge | Top-bar clusters never shrink or wrap; the agency name truncates | No overflow |
+| Top bar, 390 (signed in) | Sign out cut off | Decorative initials hidden below 640 px (the screen-reader text stays) | No overflow |
+| Top bar, 768 (branch manager) | 5 px overflow | Name and role text from 1024 px | No overflow |
+| Landing, 320 | "[Agency Name]" one word per line | Display token 30 px at 320 | One line |
+| Photo credits, 320 | Title one word per line | Title floor 32 px; header padding 16 px on phones | One line |
+| Home tiles, 320 | "Maintenance jobs" one word per line | Tile padding 16 px and no chevron on phones | One line |
+| Sign in, register, verify, below 1024 | Up to 380 px blank below a short form | The auth photo runs full width above the form | Filled |
+| Sign in, 1024 and up | 353 px beside the short form | The form at the top beside the sticky photo panel (centring pushed the button to the fold at 1536 x 730) | The panel is a rail |
+| 404, 403 | A short main column beside a photo and links (up to 378 px) | Quiet photo in the image-led header; "Where to go" a full-width band | Filled |
+| Help | The rail 273 to 315 px shorter than the topics | "Where to go" a sticky rail beside the topics | Rail |
+| Photo credits | 9,962 px blank beside the rail; 96 x 72 thumbnails | A full-width grid of photo-led tiles (3:2), "Where to go" below | Filled |
+| "Not available yet" | Up to 332 px blank below | Image-led header and the "Where to go" band | Filled |
+| Driving licence, my profile | Up to 360 px beside the settings label column | The label column sticks while its content scrolls (`SETTINGS_ROW`, `SETTINGS_LABEL`) | Rail |
+| Home (customer) | Four link rows, the lower half empty | 2 x 2 image-led destination tiles from 1024 px | Filled |
+
+## 4. Subject, contrast and edges (after)
+
+- Subject visibility: every photo slot passes at all seven widths (header
+  photos, destination tiles, vehicle tiles, the vehicle page, landing,
+  auth, empty states, credits). The licence header now uses
+  `step-licence-1` (hands on the wheel), because `band-licence-1`'s driver
+  fills the photo's height and could not fill a header frame whole;
+  `band-licence-1` leads the home tile instead, at 3:2. The workshop
+  photo's subject box was narrowed to the car on its lift so it fits the
+  header frame at every width. Clearances uses the car back on the road
+  (`cta-band-1`); the bonnet-up photo (`band-clearances-2`) leads its home
+  tile.
+- Contrast: text over a photo only on the landing hero and call to action;
+  lowest 8.0:1 at 1536 and 8.3:1 at 1440, 1280 and 1024.
+- Edges: no header frame, photo, table, list, form, rail or heading outside
+  the content container on any page at any width; no horizontal overflow.
+
+## 5. Not fixed, and not checked
+
+- "Booking VRMS-20261011-0001" (the booking detail title) is two lines below
+  1024 px, each token whole: one line would need about 13.5 em, a 20 px
+  title at 320.
+- Short queues on tall screens: licence checks with one pending licence
+  leaves 206 to 279 px below the list at 1440 x 900, 1280 x 800 and
+  768 x 1024 (none at 1536 x 730). The space depends on how many licences
+  are waiting; nothing was added to fill it.
+- Not checked: 1920 px with the full probe; the booking form's add-on and
+  discount states, dialogs, the licence form in edit mode and the job
+  record-work form while editing; Safari and Firefox; reduced motion beyond
+  the CSS rule.

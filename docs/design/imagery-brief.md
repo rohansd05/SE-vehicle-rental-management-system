@@ -61,9 +61,10 @@ only when the whole subject plus a 4 % margin stays in the frame, else
 | Category row | Landing, the five categories in the demo fleet | A real model photo per category | 3:2 | Radius `--radius-xl` |
 | Split photo | Landing "Book online", "For branch teams" and "System status" | A car on a wet road; a workshop; dashboard gauges | The photo's own shape | Radius `--radius-xl`, no overlay; vertically centred against the text |
 | CTA band | Landing, the final call to action | A car on an open road | From 1024 px a full-bleed 3:1 band (the car fits); below, the whole photo above the text | `--photo-overlay-strong`; the text on the left over a `--photo-scrim` fade |
-| Feature-page photo | Bookings, booking detail, licence, maintenance list, report a fault, job detail, technician jobs, licence checks, clearances, dashboard (`PageHeader`'s `photo`) | The page's subject (road, driver, workshop, tools, a desk) | Beside the title, 128 px tall at its own shape, from 1280 px only (narrower screens keep the title and actions whole) | `--photo-overlay-soft`; decorative (`alt=""`, `aria-hidden`) |
+| Page-header photo (Stage 4.9, B14) | Home (every role), my bookings, driving licence, maintenance, report a fault, technician jobs, licence checks, clearances, help, photo credits, 403, 404, "Not available yet" (`PageHeader`'s `photo`) | Home: dashboard gauges; bookings: a car on a wet road; licence: hands on the wheel; maintenance and report: the workshop car on its lift; technician: the tool wall; licence checks: the branch desk; clearances: a car back on the road; help, credits, 403, 404 and placeholders: the empty road | The right half of the header frame from 1024 px (full frame height, at least 280 px); full width above the text below 1024 px (3:2, 16:9 from 640 px) | `--photo-overlay-soft`; decorative; the first image on the page, eager with high fetch priority |
+| Destination tile (Stage 4.9) | Home: one image-led tile per available destination | Search: a parked car; bookings: the wet-road car; licence: a driver; profile: phone in hand; licence checks: the desk; maintenance: the workshop; jobs: the tool wall; clearances: a car with its bonnet up | 3:2 | No overlay |
 | Small side image | Payment rail, above the summary, from 1024 px | A card terminal | 4:3, rail width | Radius `--radius-xl`; decorative |
-| Quiet image | Help, 403, 404 and photo credits ("Where to go" column, 5:2, from 1024 px); "Not available yet" pages (3:1, from 640 px); empty states (3:2, 144 px wide, from 640 px, in place of the inbox icon) | An empty road | As listed | Radius `--radius-xl` (`--radius-lg` in empty states); decorative |
+| Quiet image | Empty states (Stage 4.9: 3:2, two fifths of the block beside the message from 640 px, above it on phones); help, credits, 403, 404 and placeholders now carry it as their page-header photo | An empty road | 3:2 | Radius `--radius-xl`; decorative |
 | Vehicle tile | Search results | The exact model (representative) or its category | 3:2 | See section 3 |
 | Vehicle detail | Top of the vehicle page's main column | The vehicle's own photos (the first large at 3:2, the rest 4:3 thumbnails), otherwise the representative photo at its own shape above the existing "No photographs have been added yet." | Own shape | Radius `--radius-xl` |
 
@@ -123,7 +124,9 @@ list row and dialog except vehicle tiles.
 - **Crops:** none in the script (Stage 4.8); see section 2.
 - **Formats:** AVIF at every width of the role (hero and CTA 960, 1600,
   2400; panel 480, 800, 1200; band 480, 960, 1440; section 400, 800;
-  small 320, 640; quiet and vehicle 320, 640, 960), WebP at all but the
+  small 320, 640; quiet and vehicle 320, 640, 960; `step-licence-1` and
+  `band-quiet-2` moved to the band role in Stage 4.9 because they now fill
+  page headers), WebP at all but the
   largest (it is only the fallback for browsers without AVIF), and one JPEG
   (hero and CTA 1600; band 960; panel and section 800; the rest 640). Served
   through `<picture>` with `srcset` and `sizes` and explicit width and
@@ -133,7 +136,9 @@ list row and dialog except vehicle tiles.
   originals stay in the git-ignored `frontend/.image-src/`.
 - **Budget:** under about 8 MB of committed images in total; each hero under
   about 400 KB at its largest AVIF. Measured after Stage 4.8 (native aspect, 12 Oct 2026): 43 photos,
-  7.99 MB in all; the hero's 2400 px AVIF is 303 KB.
+  7.99 MB in all; the hero's 2400 px AVIF is 303 KB. After Stage 4.9: 43
+  photos, 8.12 MB; the largest AVIF of any page-header photo is 117 KB
+  (`band-technician-1`); no new photos were downloaded.
 - **Motion (B5, B7):** photos fade and settle from scale 1.03 to 1 once they
   have loaded (`photo-in`); the landing hero eases from scale 1.04 on load
   (`hero-zoom`); vehicle tiles stagger on first load; landing photos reveal

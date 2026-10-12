@@ -124,10 +124,10 @@ export function LicenceForm({
         className="grid gap-1"
         aria-describedby={errors.categories ? 'categories-error' : undefined}
       >
-        <legend className="mb-1 text-small font-medium">Categories the licence covers</legend>
+        <legend className="mb-1 text-label font-medium">Categories the licence covers</legend>
         <div className="flex flex-wrap gap-6">
           {LICENCE_CATEGORIES.map((category) => (
-            <label key={category} className="flex min-h-10 items-center gap-2 text-sm">
+            <label key={category} className="flex min-h-12 items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 value={category}

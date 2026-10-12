@@ -16,17 +16,17 @@ export function NavList({ items, onNavigate }: { items: NavItem[]; onNavigate?: 
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                'relative flex min-h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors',
+                'relative flex min-h-12 items-center gap-3 rounded-md px-3.5 text-sm transition-colors',
                 'focus-visible:-outline-offset-2',
                 isActive
-                  ? 'bg-primary-tint font-medium text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-signal'
+                  ? 'bg-primary-tint font-medium text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-signal'
                   : item.available
                     ? 'text-foreground hover:bg-hairline/70'
                     : 'text-ink-subtle hover:text-foreground',
               )
             }
           >
-            <item.icon className="size-4 shrink-0" aria-hidden="true" />
+            <item.icon className="size-5 shrink-0" aria-hidden="true" />
             <span className="flex-1 whitespace-nowrap">{item.label}</span>
             {item.available ? null : (
               <span className="text-xs font-medium text-ink-subtle">Soon</span>

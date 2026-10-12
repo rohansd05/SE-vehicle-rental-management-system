@@ -2,7 +2,6 @@ import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { navItemsFor } from '@/app/navigation'
-import { Photo } from '@/components/photo'
 import { useAuth } from '@/features/auth/auth-context'
 
 /**
@@ -11,7 +10,7 @@ import { useAuth } from '@/features/auth/auth-context'
  * available screens with their menu descriptions; signed out, the two
  * public actions. Link names are the ones the menu and home page already use.
  */
-export function WhereToGo() {
+export function WhereToGo({ layout = 'rail' }: { layout?: 'rail' | 'band' }) {
   const { user } = useAuth()
   const items = user
     ? navItemsFor(user.role)
@@ -23,13 +22,16 @@ export function WhereToGo() {
       ]
 
   return (
-    <aside aria-labelledby="where-to-go" className="lg:border-l lg:pl-10">
-      {/* The quiet photo (imagery-brief.md, 2): decorative, from 1024 px only. */}
-      <Photo id="band-quiet-2" alt="" sizes="24rem" className="mb-8 hidden aspect-[5/2] rounded-xl lg:block" />
+    // B14: beside long content it is a sticky rail; under a short page it is a
+    // full-width band, its links in two columns from 1024 px.
+    <aside
+      aria-labelledby="where-to-go"
+      className={layout === 'rail' ? 'lg:sticky lg:top-24 lg:self-start lg:border-l lg:pl-10' : 'border-t pt-8'}
+    >
       <h2 id="where-to-go" className="text-section">
         Where to go
       </h2>
-      <ul className="mt-2 divide-y">
+      <ul className={layout === 'rail' ? 'mt-2 divide-y' : 'mt-2 grid gap-x-12 lg:grid-cols-2 [&>li]:border-b'}>
         {items.map((item) => (
           <li key={item.to}>
             <Link

@@ -64,8 +64,8 @@ export function AppShell() {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <SkipLink />
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17rem] flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-6">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[18.5rem] flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="flex h-18 shrink-0 items-center border-b border-sidebar-border px-6">
           {brandLink('text-subsection')}
         </div>
         <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto">
@@ -73,19 +73,19 @@ export function AppShell() {
         </nav>
       </aside>
 
-      <div className="md:pl-[17rem]">
+      <div className="md:pl-[18.5rem]">
         <header
           data-scrolled={scrolled ? '' : undefined}
           className="sticky top-0 z-20 border-b border-transparent bg-background transition-colors duration-200 data-scrolled:border-hairline"
         >
-          <div className="flex h-16 items-center gap-2 px-3 sm:px-6 lg:px-8">
+          <div className="flex h-18 items-center gap-2 px-3 sm:px-6 lg:px-8">
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon-lg" className="-ml-1 md:hidden" aria-label="Open menu">
                   <Menu aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0">
+              <SheetContent side="left" className="w-80 gap-0 bg-sidebar p-0">
                 <SheetHeader className="border-b border-sidebar-border px-6 py-4">
                   <SheetTitle className="pr-8">{agency.name}</SheetTitle>
                   <SheetDescription>
@@ -100,20 +100,20 @@ export function AppShell() {
 
             {brandLink('text-subsection md:hidden')}
 
-            <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
               <div className="flex items-center gap-2.5 pr-1 sm:pr-2">
                 <span className="sr-only">
                   Signed in as {user.name}, {roleLabel}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-semibold text-primary"
+                  className="hidden size-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-semibold text-primary sm:flex"
                 >
                   {initials(user.name)}
                 </span>
-                <span aria-hidden="true" className="hidden text-right sm:block">
-                  <span className="block max-w-56 truncate text-sm leading-5 font-medium">{user.name}</span>
-                  <span className="block text-small leading-4 text-muted-foreground">{roleLabel}</span>
+                <span aria-hidden="true" className="hidden text-right lg:block">
+                  <span className="block max-w-56 truncate text-sm leading-6 font-medium">{user.name}</span>
+                  <span className="block text-small leading-5 text-muted-foreground">{roleLabel}</span>
                 </span>
               </div>
               <Button asChild variant="ghost" className="px-2.5 sm:px-3">

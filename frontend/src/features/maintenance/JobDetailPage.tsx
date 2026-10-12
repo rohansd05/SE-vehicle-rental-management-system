@@ -124,24 +124,25 @@ function WorkRecordCard({ job }: { job: MaintenanceJob }) {
           <Row label="Labour">{formatINR(job.labour_cost)}</Row>
         </dl>
         {job.parts.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div>
+            {/* B14: below 640 px each part becomes a stacked block, same cells and labels. */}
+            <table className="w-full text-sm max-sm:block">
               <caption className="sr-only">Parts used</caption>
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th scope="col" className="py-2 pr-2 font-normal">Part</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-normal">Qty</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-normal">Unit cost</th>
-                  <th scope="col" className="py-2 text-right font-normal">Amount</th>
+              <thead className="max-sm:sr-only">
+                <tr className="border-b text-left text-label text-muted-foreground">
+                  <th scope="col" className="w-[40%] py-2.5 pr-3 font-normal">Part</th>
+                  <th scope="col" className="w-[12%] py-2.5 pr-3 text-right font-normal">Qty</th>
+                  <th scope="col" className="w-[24%] py-2.5 pr-3 text-right font-normal">Unit cost</th>
+                  <th scope="col" className="w-[24%] py-2.5 text-right font-normal">Amount</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="max-sm:block">
                 {job.parts.map((part) => (
-                  <tr key={part.id} className="border-b">
-                    <td className="py-2 pr-2">{part.part_name}</td>
-                    <td className="py-2 pr-2 text-right">{part.quantity}</td>
-                    <td className="py-2 pr-2 text-right">{formatINR(part.unit_cost)}</td>
-                    <td className="py-2 text-right">{formatINR(part.total_cost)}</td>
+                  <tr key={part.id} className="border-b max-sm:grid max-sm:grid-cols-[auto_minmax(0,1fr)] max-sm:gap-x-4 max-sm:py-2 max-sm:[&>td]:contents max-sm:[&>td]:before:text-muted-foreground max-sm:[&>td]:before:content-[attr(data-label)]">
+                    <td data-label="Part" className="py-2.5 pr-3">{part.part_name}</td>
+                    <td data-label="Qty" className="num py-2.5 pr-3 text-right">{part.quantity}</td>
+                    <td data-label="Unit cost" className="num py-2.5 pr-3 text-right whitespace-nowrap">{formatINR(part.unit_cost)}</td>
+                    <td data-label="Amount" className="num py-2.5 text-right whitespace-nowrap">{formatINR(part.total_cost)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -319,7 +320,6 @@ export function JobDetailPage() {
   })
 
   const backTo = isTechnician ? '/app/jobs' : '/app/maintenance'
-  const bandPhoto = isTechnician ? 'band-technician-1' : 'band-maintenance-1'
   const back = (
     <Button asChild variant="ghost" className="mb-2 -ml-2 h-10">
       <Link to={backTo}>
@@ -333,7 +333,7 @@ export function JobDetailPage() {
     return (
       <section>
         {back}
-        <PageHeader title={`Job ${id}`} photo={bandPhoto} />
+        <PageHeader title={`Job ${id}`} />
         {job.isPending ? (
           <LoadingState label="Loading the job…" />
         ) : (
@@ -351,7 +351,6 @@ export function JobDetailPage() {
       {back}
       <PageHeader
         title={`Job ${data.job_id} · ${data.vehicle.registration_no}`}
-        photo={bandPhoto}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <JobStatusBadge job={data} />

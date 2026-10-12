@@ -14,7 +14,7 @@ export const NativeSelect = forwardRef<HTMLSelectElement, ComponentProps<'select
         ref={ref}
         data-slot="native-select"
         className={cn(
-          'h-11 w-full min-w-0 rounded-md border border-input bg-surface px-3 text-base text-foreground transition-colors focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:bg-muted disabled:text-ink-muted aria-invalid:border-destructive',
+          'h-12 w-full min-w-0 rounded-md border border-input bg-surface px-3.5 text-base text-foreground transition-colors focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:bg-muted disabled:text-ink-muted aria-invalid:border-destructive',
           className,
         )}
         {...props}

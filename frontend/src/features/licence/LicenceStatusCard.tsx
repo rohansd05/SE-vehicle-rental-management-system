@@ -5,6 +5,7 @@ import { TONE_PILL } from '@/components/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/dates'
 import { cn } from '@/lib/utils'
+import { SETTINGS_LABEL, SETTINGS_ROW } from '@/lib/layout'
 
 import { STATUS_TONE } from './rules'
 
@@ -23,7 +24,7 @@ export function LicenceStatusBadge({ status }: { status: Licence['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex h-6 w-fit items-center gap-1.5 rounded-md px-2 text-small font-medium whitespace-nowrap',
+        'inline-flex h-7 w-fit items-center gap-1.5 rounded-md px-2.5 text-small font-medium whitespace-nowrap',
         TONE_STYLES[tone],
       )}
     >
@@ -79,8 +80,8 @@ function Explanation({ licence }: { licence: Licence }) {
 /** The customer's licence at a glance (Appendix A licence status). */
 export function LicenceStatusCard({ licence }: { licence: Licence }) {
   return (
-    <Card className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-x-10 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-12">
-      <CardHeader className="content-start gap-3">
+    <Card className={SETTINGS_ROW}>
+      <CardHeader className={cn(SETTINGS_LABEL, 'gap-3')}>
         <CardTitle>
           <h2>Licence status</h2>
         </CardTitle>
