@@ -46,6 +46,8 @@ from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 DEMO_PASSWORD = "Demo@1234"
 IST = ZoneInfo("Asia/Kolkata")
 DEMO_EFFECTIVE_FROM = datetime(2026, 1, 1, tzinfo=IST)
+DEMO_LICENCE_VERIFIED_AT = datetime(2026, 10, 9, 11, 30, tzinfo=IST)
+ADMIN_ADDRESS = "4th floor, Maker Chambers, Nariman Point, Mumbai 400021"
 
 BRANCHES = {
     "Andheri": (
@@ -253,12 +255,27 @@ class Command(BaseCommand):
             )
             self._count("users", True)
             self._audit_create(user)
+        elif extra.get("address") and not user.address:
+            # Fills the address on demo users seeded before it was added; audited as an update.
+            before = snapshot(user)
+            user.address = extra["address"]
+            user.save(update_fields=["address"])
+            AuditLog.objects.record(
+                actor=None,
+                action="Update",
+                entity_type=entity_type(user),
+                entity_id=user.pk,
+                before=before,
+                after=snapshot(user),
+            )
         return user
 
     def _seed_accounts(self, branches: dict[str, Branch]) -> dict[str, User]:
-        admin_user = self._user(ADMIN, is_staff=True, is_superuser=True)
+        admin_user = self._user(ADMIN, is_staff=True, is_superuser=True, address=ADMIN_ADDRESS)
         _, created = Administrator.objects.get_or_create(user=admin_user)
         self._count("administrators", created)
+        andheri_address = branches["Andheri"].address
+        staff_user = self._user(STAFF, address=andheri_address)
 
         customer_user = self._user(CUSTOMER, address="12 Demo Lane, Andheri (E), Mumbai 400069")
         customer, created = Customer.objects.get_or_create(
@@ -270,15 +287,21 @@ class Command(BaseCommand):
             },
         )
         self._count("customers", created)
-        licence, created = Licence.objects.get_or_create(
+        # update_or_create so a re-run also fixes a verified licence seeded without verified_at.
+        verification = {
+            "status": Licence.Status.VERIFIED,
+            "verified_by": staff_user,
+            "verified_at": DEMO_LICENCE_VERIFIED_AT,
+        }
+        licence, created = Licence.objects.update_or_create(
             customer=customer,
-            defaults={
+            defaults=verification,
+            create_defaults={
                 "licence_number": "MH02 20150012345",
                 "issuing_authority": "RTO Mumbai (West)",
                 "issue_date": date(2015, 6, 1),
                 "expiry_date": date(2035, 5, 19),
-                "status": Licence.Status.VERIFIED,
-                "verified_by": admin_user,
+                **verification,
             },
         )
         self._count("licences", created)
@@ -286,19 +309,18 @@ class Command(BaseCommand):
             _, created = LicenceCategory.objects.get_or_create(licence=licence, category=category)
             self._count("licence categories", created)
 
-        staff_user = self._user(STAFF)
         _, created = BranchStaff.objects.get_or_create(
             user=staff_user, defaults={"branch": branches["Andheri"]}
         )
         self._count("branch staff", created)
 
-        tech_user = self._user(TECH)
+        tech_user = self._user(TECH, address=andheri_address)
         _, created = MaintenanceTechnician.objects.get_or_create(
             user=tech_user, defaults={"workshop": "Agency workshop, Andheri"}
         )
         self._count("technicians", created)
 
-        manager_user = self._user(MANAGER)
+        manager_user = self._user(MANAGER, address=andheri_address)
         _, created = BranchManager.objects.get_or_create(
             user=manager_user, defaults={"branch": branches["Andheri"]}
         )
@@ -450,7 +472,7 @@ class Command(BaseCommand):
             delete_demo_jobs()
             delete_demo_booking_data()
             self._delete_audited(Vehicle.objects.filter(registration_no__in=demo_registrations()))
-            # The licence (deleted with its customer) protects the admin who verified it.
+            # The licence (deleted with its customer) protects the staff user who verified it.
             Customer.objects.filter(user__email__in=demo_emails).delete()
             self._delete_audited(User.objects.filter(email__in=demo_emails))
             AddOn.objects.filter(name__in=[name for name, _, _ in ADD_ONS]).delete()
