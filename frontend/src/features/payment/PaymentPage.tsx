@@ -148,7 +148,7 @@ function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (con
         />
       </Field>
       <div>
-        <SubmitButton busy={pay.isPending} busyLabel="Authorising payment…">
+        <SubmitButton busy={pay.isPending} busyLabel="Authorising payment…" className="tabular-nums">
           Pay {total} and hold {deposit} deposit
         </SubmitButton>
       </div>

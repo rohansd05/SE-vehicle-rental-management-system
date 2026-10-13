@@ -95,7 +95,7 @@ export function TermsList({ terms }: { terms: QuoteTerms }) {
   const money = (amount: string) => formatCurrency(amount, currency)
   const [full, partial, late] = terms.cancellation_refunds
   return (
-    <ul className="grid list-disc gap-1.5 pl-5 text-sm marker:text-ink-subtle">
+    <ul className="grid list-disc gap-1.5 pl-5 text-sm tabular-nums marker:text-ink-subtle">
       <li>
         {terms.free_km_allowance_per_day} km free per rental day; beyond that{' '}
         {money(terms.excess_km_rate)} per km.

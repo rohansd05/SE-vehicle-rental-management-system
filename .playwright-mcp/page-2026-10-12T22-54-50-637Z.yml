@@ -1,0 +1,167 @@
+- generic [ref=e3]:
+  - link "Skip to main content" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - link "Veyora" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - navigation "Account" [ref=e8]:
+        - link "Help" [ref=e9] [cursor=pointer]:
+          - /url: /help
+        - link "Sign in" [ref=e11] [cursor=pointer]:
+          - /url: /login
+        - link "Register" [ref=e12] [cursor=pointer]:
+          - /url: /register
+  - main [active] [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - heading "Loading…" [level=1] [ref=e17]
+          - paragraph [ref=e18]: Your Ride, Your Rules
+          - paragraph [ref=e19]: Book a car or two-wheeler online for the dates you need, collect it from a branch or have it delivered, and pay by card, online or in cash at the branch.
+          - generic [ref=e20]:
+            - link "Create an account" [ref=e21] [cursor=pointer]:
+              - /url: /register
+            - link "Sign in" [ref=e22] [cursor=pointer]:
+              - /url: /login
+        - link "Book online, collect at the branch" [ref=e26] [cursor=pointer]:
+          - /url: "#features"
+      - region [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Book online, collect at the branch" [level=2] [ref=e31]
+          - paragraph [ref=e32]: Search, book and pay online. Our staff verify your driving licence before you can book.
+        - list [ref=e37]:
+          - listitem [ref=e38]:
+            - heading "Find a vehicle" [level=3] [ref=e42]
+            - paragraph [ref=e43]: Choose a pickup branch and your rental period. Only vehicles free for the whole period are shown.
+          - listitem [ref=e44]:
+            - heading "Licence checked by staff" [level=3] [ref=e49]
+            - paragraph [ref=e50]: Upload clear photos of the front and back of your licence. Our staff verify it before you can book.
+          - listitem [ref=e51]:
+            - heading "Card, online or cash" [level=3] [ref=e54]
+            - paragraph [ref=e55]: Pay by card, online or in cash at the branch. The refundable security deposit is held separately and is not part of the total.
+          - listitem [ref=e56]:
+            - heading "Invoices to download" [level=3] [ref=e61]
+            - paragraph [ref=e62]: Once you have paid, your booking shows its invoice, ready to download.
+          - listitem [ref=e63]:
+            - heading "Unsafe vehicles are never offered" [level=3] [ref=e67]
+            - paragraph [ref=e68]: Vehicles under maintenance or flagged Unsafe leave search and booking until they are cleared.
+          - listitem [ref=e69]:
+            - heading "Your booking history" [level=3] [ref=e72]
+            - paragraph [ref=e73]: Every booking you have made, the most recent pickup first.
+      - region [ref=e74]:
+        - generic [ref=e75]:
+          - heading "How it works" [level=2] [ref=e76]
+          - paragraph [ref=e77]: Four steps from your account to the keys.
+        - list [ref=e79]:
+          - listitem [ref=e80]:
+            - generic [aria-hidden] [ref=e82]: "1"
+            - heading "Create your account" [level=3] [ref=e83]
+            - paragraph [ref=e84]: We'll send a code to your mobile number to confirm it's yours.
+          - listitem [ref=e85]:
+            - generic [aria-hidden] [ref=e87]: "2"
+            - heading "Submit your licence" [level=3] [ref=e88]
+            - paragraph [ref=e89]: Enter the details exactly as printed and add clear photos of both sides. Our staff verify it before you can book.
+          - listitem [ref=e90]:
+            - generic [aria-hidden] [ref=e92]: "3"
+            - heading "Search and hold" [level=3] [ref=e93]
+            - paragraph [ref=e94]: Choose a pickup branch and your rental period. We hold the vehicle for you for 15 minutes while you pay.
+          - listitem [ref=e95]:
+            - generic [aria-hidden] [ref=e97]: "4"
+            - heading "Pay and collect" [level=3] [ref=e98]
+            - paragraph [ref=e99]: Pay by card, online or in cash at the branch, then show your pickup code at the branch to collect the vehicle, or have it delivered.
+      - region [ref=e100]:
+        - heading "Cars and two-wheelers" [level=2] [ref=e102]
+        - list [ref=e104]:
+          - listitem [ref=e105]:
+            - img "Representative image of a Hatchback" [ref=e107]
+            - heading "Hatchback" [level=3] [ref=e108]
+          - listitem [ref=e109]:
+            - img "Representative image of a Sedan" [ref=e111]
+            - heading "Sedan" [level=3] [ref=e112]
+          - listitem [ref=e113]:
+            - img "Representative image of an SUV" [ref=e115]
+            - heading "SUV" [level=3] [ref=e116]
+          - listitem [ref=e117]:
+            - img "Representative image of a Scooter" [ref=e119]
+            - heading "Scooter" [level=3] [ref=e120]
+          - listitem [ref=e121]:
+            - img "Representative image of a Motorcycle" [ref=e123]
+            - heading "Motorcycle" [level=3] [ref=e124]
+      - region [ref=e125]:
+        - generic [ref=e126]:
+          - heading "For branch teams" [level=2] [ref=e127]
+          - paragraph [ref=e128]: Branch staff, technicians and administrators sign in to the same system.
+        - generic [ref=e131]:
+          - list [ref=e132]:
+            - listitem [ref=e133]:
+              - heading "Licence checks" [level=3] [ref=e137]
+              - paragraph [ref=e138]: Verify the driving licences customers have submitted.
+            - listitem [ref=e139]:
+              - heading "Maintenance" [level=3] [ref=e142]
+              - paragraph [ref=e143]: Report faults, assign technicians and follow your branch’s jobs.
+            - listitem [ref=e144]:
+              - heading "Maintenance jobs" [level=3] [ref=e149]
+              - paragraph [ref=e150]: The jobs assigned to you, and the work and parts you record.
+            - listitem [ref=e151]:
+              - heading "Unsafe clearances" [level=3] [ref=e154]
+              - paragraph [ref=e155]: Review completed work on Unsafe vehicles and clear the flag (BR-16).
+          - link "Sign in" [ref=e157] [cursor=pointer]:
+            - /url: /login
+      - region "System status and help" [ref=e160]:
+        - generic [ref=e161]:
+          - region [ref=e164]:
+            - heading "System status" [level=2] [ref=e165]
+            - paragraph [ref=e166]: Veyora
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - term [ref=e169]: Backend
+                - definition [ref=e170]:
+                  - generic [ref=e171]: Checking…
+              - generic [ref=e172]:
+                - term [ref=e173]: Database
+                - definition [ref=e174]:
+                  - generic [ref=e175]: —
+              - generic [ref=e176]:
+                - term [ref=e177]: Currency
+                - definition [ref=e178]: —
+            - button "Checking…" [disabled]
+          - region [ref=e179]:
+            - heading "Help" [level=2] [ref=e181]
+            - list [ref=e182]:
+              - listitem [ref=e183]:
+                - link "Signing in After five failed attempts in a row your account is locked for 15 minutes, and we e-mail the registered address. For your security you are signed out after 30 minutes without activity." [ref=e184] [cursor=pointer]:
+                  - /url: /help#signing-in
+                  - generic [ref=e185]:
+                    - generic [ref=e186]: Signing in
+                    - generic [ref=e187]: After five failed attempts in a row your account is locked for 15 minutes, and we e-mail the registered address. For your security you are signed out after 30 minutes without activity.
+              - listitem [ref=e190]:
+                - link "Verification codes Codes are sent by SMS and are valid for 10 minutes. You can request a new one after a minute; requesting a new code stops the previous one from working." [ref=e191] [cursor=pointer]:
+                  - /url: /help#verification-codes
+                  - generic [ref=e192]:
+                    - generic [ref=e193]: Verification codes
+                    - generic [ref=e194]: Codes are sent by SMS and are valid for 10 minutes. You can request a new one after a minute; requesting a new code stops the previous one from working.
+              - listitem [ref=e197]:
+                - link "Driving licence Upload clear photos of the front and back of your licence (JPG or PNG, up to 5 MB each). Our staff verify it before you can book." [ref=e198] [cursor=pointer]:
+                  - /url: /help#driving-licence
+                  - generic [ref=e199]:
+                    - generic [ref=e200]: Driving licence
+                    - generic [ref=e201]: Upload clear photos of the front and back of your licence (JPG or PNG, up to 5 MB each). Our staff verify it before you can book.
+      - region [ref=e204]:
+        - generic [ref=e209]:
+          - heading "Create your account" [level=2] [ref=e210]
+          - paragraph [ref=e211]: Your Ride, Your Rules
+          - generic [ref=e212]:
+            - link "Register" [ref=e213] [cursor=pointer]:
+              - /url: /register
+            - link "Sign in" [ref=e214] [cursor=pointer]:
+              - /url: /login
+  - contentinfo [ref=e215]:
+    - generic [ref=e216]:
+      - paragraph [ref=e217]: Veyora
+      - paragraph [ref=e218]: Your Ride, Your Rules
+    - navigation "Footer" [ref=e219]:
+      - link "Help" [ref=e220] [cursor=pointer]:
+        - /url: /help
+      - link "Photo credits" [ref=e221] [cursor=pointer]:
+        - /url: /credits
