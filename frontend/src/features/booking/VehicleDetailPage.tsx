@@ -155,7 +155,7 @@ function AddOnPicker({
           const quantity = chosen[addOn.id]
           return (
             <div key={addOn.id} className="flex min-h-12 flex-wrap items-center gap-x-6 gap-y-2 py-1">
-              <label htmlFor={id} className="flex min-h-12 flex-1 items-center gap-3 text-sm">
+              <label htmlFor={id} className="flex min-h-12 flex-1 items-center gap-3 text-sm tabular-nums">
                 <input
                   id={id}
                   type="checkbox"

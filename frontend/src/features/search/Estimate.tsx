@@ -29,7 +29,7 @@ export function Estimate({ vehicle }: { vehicle: AvailableVehicle }) {
       <p className="text-small text-muted-foreground">
         Includes tax. Add-ons, discounts and usage-based charges are not included.
       </p>
-      <p className="text-small text-muted-foreground">
+      <p className="text-small text-muted-foreground tabular-nums">
         Refundable security deposit {formatCurrency(estimate.security_deposit, currency)}, held
         separately.
       </p>

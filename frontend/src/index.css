@@ -464,7 +464,12 @@
     }
     body {
         @apply bg-background text-sm text-foreground;
-        /* Amounts inside sentences ("₹150.00 per hour") keep the body face but line up like the mono ones. */
+    }
+
+    /* Figures in table cells and description-list values line up. Not a body
+       default: Schibsted Grotesk's tnum also widens , : . in headings. */
+    td,
+    dd {
         font-variant-numeric: tabular-nums;
     }
 
