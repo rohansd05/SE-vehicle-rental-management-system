@@ -125,11 +125,14 @@ def test_create_then_pay(client, customer, car, pickup, return_):
 def test_the_invoice_downloads_as_a_pdf(client, customer, car, pickup, return_):
     booking_id = create(client, car, pickup, return_).json()["id"]
     invoice_number = pay(client, booking_id).json()["invoice_number"]
-    response = client.get(reverse("bookings:booking-invoice", args=[booking_id]))
+    url = reverse("bookings:booking-invoice", args=[booking_id])
+    response = client.get(url, HTTP_ACCEPT="*/*")  # what the frontend download sends
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
     assert response["Content-Disposition"] == f'attachment; filename="{invoice_number}.pdf"'
     assert response.content.startswith(b"%PDF")
+    stranger = authenticated_client(eligible_customer().user)
+    assert stranger.get(url, HTTP_ACCEPT="*/*").status_code == 404
 
 
 def test_a_held_booking_has_no_invoice_yet(client, car, pickup, return_):

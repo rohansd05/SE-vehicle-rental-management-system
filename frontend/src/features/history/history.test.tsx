@@ -101,6 +101,8 @@ describe('booking detail and invoice (History.Download)', () => {
     server.use(
       http.get(`${API}/bookings/:id/invoice/`, ({ request }) => {
         authorization = request.headers.get('Authorization')
+        // DRF answers 406 when Accept names only application/pdf (no renderer for it).
+        if (request.headers.get('Accept') === 'application/pdf') return new HttpResponse(null, { status: 406 })
         return new HttpResponse('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf' } })
       }),
     )

@@ -101,7 +101,8 @@ export function newIdempotencyKey(): string {
  * (D21) and hand it to the browser as a download.
  */
 export async function downloadInvoice(bookingId: number, invoiceNumber: string): Promise<void> {
-  const headers = new Headers({ Accept: 'application/pdf' })
+  // DRF negotiates against its JSON renderers before the view runs, so Accept: application/pdf is a 406.
+  const headers = new Headers({ Accept: '*/*' })
   const token = getAccessToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(new URL(`/api/v1/bookings/${bookingId}/invoice/`, window.location.origin), {
