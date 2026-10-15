@@ -103,7 +103,8 @@ model intact.
 ## D7 — Currency and agency name
 
 **Decision.** The currency is INR. The agency name comes only from the
-`AGENCY_NAME` setting, whose default is the placeholder `"[Agency Name]"`.
+`AGENCY_NAME` setting, whose default is `"Veyora"`, with the tagline "Your
+Ride, Your Rules" (D24).
 The name is never hardcoded in the backend or the frontend; the frontend
 reads it, with the currency, from `GET /api/v1/health/`.
 

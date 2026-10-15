@@ -8,7 +8,7 @@ import { getHealth } from '@/api/health'
 export const PRODUCT_NAME = 'Veyora'
 /** The product tagline (D24), shown in italics by the shared Tagline component. */
 export const TAGLINE = 'Your Ride, Your Rules'
-/** The backend's default AGENCY_NAME is a placeholder in square brackets: treated as "not set" (D24). */
+/** The backend's default AGENCY_NAME is "Veyora"; a placeholder in square brackets is still treated as "not set" (D24). */
 const isPlaceholder = (name: string) => /^\[.*\]$/.test(name.trim())
 
 /** The brand name comes from the health endpoint (D7, AGENCY_NAME), with Veyora as the fallback (D24). */
