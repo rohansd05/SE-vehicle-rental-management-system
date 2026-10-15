@@ -102,7 +102,8 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
   `OnlinePayment` (a `channel` field, Phase 1; `upi_id` kept). No separate
   wallet class.
 - **D7 Currency and name:** currency is INR. The agency name comes only
-  from settings `AGENCY_NAME` (default placeholder `"[Agency Name]"`).
+  from settings `AGENCY_NAME` (default `"Veyora"`, tagline "Your Ride, Your
+  Rules", D24).
   Never hardcode the name in the backend or the frontend.
 - **D8 Mobile:** a responsive PWA meets OE-2 for Release 1.0.
 - **D9 Scope:** every feature in the SRS and Experiments 1-7, deployed by
@@ -154,11 +155,12 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
 - Coding agents (Claude Code, Antigravity or any other) must never run git or gh commands of any kind. Rohan and Nidhi do all version control by hand.
 - Every agent session works in stages and stops after each stage so a human can review and commit.
 
-## Ownership until 13 Oct 2026
-- Rohan, Book Vehicle module: apps/bookings, apps/payments, apps/pricing, apps/fleet (except fleet/services/status.py), frontend features search, booking, payment, history.
-- Nidhi, Close Maintenance Job module: apps/maintenance, apps/fleet/services/status.py (the shared vehicle status service), frontend technician and maintenance features.
-- Shared files (frontend router, navigation, seed_demo, generated API types): one-line additions only. After merging, regenerate API types with `npm run api:types` instead of merging that file by hand.
-- From 11 Oct 2026 Nidhi Dhyani does all remaining work across the repo.
+## Ownership from 16 Oct 2026
+Schedule and module detail: `docs/roadmap.md`.
+- Rohan Dhumal: apps/payments, integrations/payment_gateway, apps/bookings, apps/pricing, apps/reports, apps/notifications (booking templates), apps/fleet except fleet/services/status.py, and frontend features search, booking, payment, history, reports, refunds, rating. Modules R1 Payments completion (UC 13), R2 Modify/Cancel/Extend (UC 4), R3 Reports and booking notifications (UC 14), R4 Catalogue, rating, doorstep delivery (UC 2, 6).
+- Nidhi Rajkamal Dhyani: apps/rentals, apps/maintenance, apps/fleet/services/status.py, apps/core admin screens, deployment files, and frontend features handover, return, maintenance, admin console (fleet, tariffs, users, audit), PWA. Modules N1 Handover (UC 7), N2 Return and settlement (UC 8), N3 Admin console and maintenance completion (UC 11, 12), N4 Deployment and PWA.
+- Rule: only the owner adds migrations to an app. Cross-module calls go through the owner's services.py functions.
+- Shared files (router/urls, navigation.ts, AppRoutes.tsx, seed_demo, settings, business_rules.py) take small additive changes only; never reformat or reorder them. API types (schema.d.ts, openapi.yaml) are regenerated with npm run api:schema and npm run api:types, never merged by hand; after a merge conflict in them, take either side and regenerate.
 
 
 ## Things to never do
