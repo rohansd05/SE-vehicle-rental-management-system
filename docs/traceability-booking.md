@@ -51,7 +51,7 @@ because the customer sees the price before paying (proposal BK1):
 | `Vehicle.update_status()` | `B:fleet/services/status.py` (Module 2); its transition table decides which statuses are bookable (`availability.bookable_statuses()`) | Section 1, message 6 | `test_bookable_statuses_come_from_the_status_service` |
 | `Branch` (branch_id, branch_name, serviceable_areas) | `B:fleet/models.py`; `GET /api/v1/fleet/branches/` | The pickup branch of a search and a booking | `test_branches_are_listed_by_name`, `test_a_vehicle_of_another_branch_is_not_found` |
 | `Tariff` (hourly_rate, daily_rate, security_deposit, effective_from; `calculate_price()`) | `B:pricing/models.py`, `B:pricing/services.py` | Section 1, message 4. PR3: the weekly rate is not applied; PR4: the deposit is BR-3's, not the tariff field | `test_the_weekly_rate_is_never_applied`, `test_the_deposit_is_br3s_amount_for_the_vehicle_type`, `TestTariffImmutability` (BR-13) |
-| `Payment` (transaction_id, amount, status, timestamp; `authorize()`), `CardPayment` (card_token, card_brand) | `B:payments/models.py`, `B:payments/services.py` `authorize()` | Section 1, message 5. `capture()` and `refund()` (SI-1.2, SI-1.3) belong to Return Vehicle and are not built | Section 1, message 5 |
+| `Payment` (transaction_id, amount, status, timestamp; `authorize()`), `CardPayment` (card_token, card_brand) | `B:payments/models.py`, `B:payments/services.py` `authorize()` | Section 1, message 5. `capture()` and `refund()` (SI-1.2, SI-1.3) are built in Module R1 (`docs/traceability-payments.md`) | Section 1, message 5 |
 | `Invoice` (invoice_number, issue_date, tax_amount, total_amount; `generate_invoice()`) | `B:payments/models.py` (append-only), `issue_invoice()`, `pdf.py` | Section 1, message 7 | Section 1, message 7 |
 | Composition Booking ◆ Invoice | `Invoice.booking` OneToOne, PROTECT | One invoice per booking | `test_the_same_key_never_charges_twice` (one invoice after a repeat) |
 | Association Booking–Payment (1:1..*) | `Payment.booking` FK | Rental and deposit rows, plus declined attempts | `test_a_declined_payment_keeps_the_hold_and_can_be_retried` |
@@ -93,9 +93,9 @@ invoice at confirmation, notifications, cash and delivery not built), the SA-1 n
 ## 5. Not built in Module 1
 
 Book.Done.Customer / Book.Done.Branch notifications (blocked by
-`apps/notifications/tests/test_delivery.py`, see Stage 3 summary); cash at the branch (BR-9);
+`apps/notifications/tests/test_delivery.py`, see Stage 3 summary); cash at the branch (BR-9, built in Module R1);
 doorstep delivery (Book.Deliver.Location; the add-on is refused online); Book.Modify, Book.Cancel,
-Book.Extend; capture and refund (SI-1.2, SI-1.3); History.View date-range filter; nearest
+Book.Extend; capture and refund (SI-1.2, SI-1.3, built in Module R1); History.View date-range filter; nearest
 alternatives when nothing is free (SRS 3.2.2); the Search.Filter filters beyond category.
 
 ## 6. Demo data

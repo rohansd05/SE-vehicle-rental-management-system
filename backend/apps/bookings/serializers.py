@@ -4,6 +4,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.fleet.models import Vehicle
+from apps.payments.models import OnlinePayment, RefundRequest
+from apps.payments.serializers import RefundSerializer
 from apps.pricing.serializers import AddOnRequestSerializer, QuoteSerializer
 
 from .lifecycle import booking_quote
@@ -29,11 +31,26 @@ class CreateBookingSerializer(serializers.Serializer):
 
 
 class PayBookingSerializer(serializers.Serializer):
-    """Pay.Authorize with a gateway token (CO-2: never card details); SE-9 re-authentication."""
+    """Pay.Method and Pay.Authorize with a gateway token (CO-2: never card details); SE-9.
 
+    card: a token from the hosted fields. online: a D6 channel (UPI, net
+    banking, wallet) and its token. cash: BR-9, paid at the branch on
+    collection; no token.
+    """
+
+    method = serializers.ChoiceField(choices=["card", "online", "cash"], default="card")
     payment_token = serializers.CharField(
         max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
         help_text="Token from the gateway's hosted fields. Sandbox: tok_visa, tok_decline.",
+    )
+    channel = serializers.ChoiceField(
+        choices=OnlinePayment.Channel.choices, required=False, allow_blank=True, default=""
+    )
+    upi_id = serializers.RegexField(
+        r"^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$", required=False, allow_blank=True, default=""
     )
     idempotency_key = serializers.RegexField(
         r"^[A-Za-z0-9_-]{8,40}$",
@@ -42,6 +59,23 @@ class PayBookingSerializer(serializers.Serializer):
     password = serializers.CharField(
         write_only=True, trim_whitespace=False, help_text="SE-9: re-authentication before payment."
     )
+
+    def validate(self, attrs):
+        if attrs["method"] != "cash" and not attrs["payment_token"]:
+            raise serializers.ValidationError({"payment_token": ["This field is required."]})
+        if attrs["method"] == "online" and not attrs["channel"]:
+            raise serializers.ValidationError({"channel": ["Choose UPI, net banking or a wallet."]})
+        return attrs
+
+
+class RecordCashSerializer(serializers.Serializer):
+    """BR-9: the cash a named branch staff member received at collection; SE-9."""
+
+    amount_received = serializers.DecimalField(
+        max_digits=12, decimal_places=2, help_text="Must equal the rental plus the deposit."
+    )
+    idempotency_key = serializers.RegexField(r"^[A-Za-z0-9_-]{8,40}$")
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
 class BookingVehicleSerializer(serializers.ModelSerializer):
@@ -83,6 +117,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "pickup_datetime",
             "return_datetime",
             "hold_expires_at",
+            "cash_on_collection",
             "confirmed_at",
             "pickup_code",
             "add_ons",
@@ -119,9 +154,10 @@ class BookingDetailSerializer(BookingSerializer):
 
     price = serializers.SerializerMethodField()
     transaction_id = serializers.SerializerMethodField()
+    refunds = serializers.SerializerMethodField()
 
     class Meta(BookingSerializer.Meta):
-        fields = [*BookingSerializer.Meta.fields, "price", "transaction_id"]
+        fields = [*BookingSerializer.Meta.fields, "price", "transaction_id", "refunds"]
         read_only_fields = fields
 
     @extend_schema_field(QuoteSerializer)
@@ -132,6 +168,30 @@ class BookingDetailSerializer(BookingSerializer):
     def get_transaction_id(self, booking: Booking) -> str | None:
         payment = booking.payments.filter(status="Succeeded", purpose="Security Deposit").first()
         return payment.transaction_id if payment else None
+
+    @extend_schema_field(RefundSerializer(many=True))
+    def get_refunds(self, booking: Booking) -> list:
+        """Pay.Refund: every refund of the booking with its status (History.View)."""
+        refunds = RefundRequest.objects.filter(original_payment__booking=booking).select_related(
+            "original_payment__booking__customer__user", "requested_by", "decided_by", "refund"
+        )
+        return RefundSerializer(refunds, many=True).data
+
+
+class CashDueBookingSerializer(BookingSerializer):
+    """BR-9: a booking waiting for cash at collection, as its branch staff see it."""
+
+    customer_name = serializers.CharField(source="customer.user.name", read_only=True)
+    customer_mobile = serializers.CharField(source="customer.user.mobile_no", read_only=True)
+    amount_due = serializers.SerializerMethodField()
+
+    class Meta(BookingSerializer.Meta):
+        fields = [*BookingSerializer.Meta.fields, "customer_name", "customer_mobile", "amount_due"]
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
+    def get_amount_due(self, booking: Booking) -> str:
+        return f"{booking.total_amount + booking.security_deposit:.2f}"
 
 
 class BookingErrorSerializer(serializers.Serializer):

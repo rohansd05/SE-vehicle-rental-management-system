@@ -185,6 +185,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/{id}/cash/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record the cash received and confirm the booking (BR-9, Book.Done)
+         * @description Only Branch Staff of the pickup branch: the CashPayment names them. SE-9: their password is required. `amount_received` must equal the rental plus the deposit. The booking is confirmed in the same single transaction as a card payment. 409 `invalid_state`, `hold_expired`, `price_changed` or `discount_unavailable`. The same idempotency key never records the cash twice.
+         */
+        post: operations["api_v1_bookings_cash_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bookings/{id}/hold/": {
         parameters: {
             query?: never;
@@ -235,10 +255,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Pay for a held booking and confirm it (Pay.Authorize, Book.Done)
-         * @description SE-9: the customer's password is required. One gateway authorisation for the rental and the deposit. Success: Confirmed, with booking reference, pickup code, transaction id and invoice. 402 `payment_declined`: the hold is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`. Repeating the same idempotency key never charges twice (Pay.Idempotent).
+         * Pay for a held booking and confirm it (Pay.Method, Pay.Authorize, Book.Done)
+         * @description SE-9: the customer's password is required. `method` card or online (UPI, net banking, wallet; D6): one gateway authorisation for the rental and the deposit; success is Confirmed, with booking reference, pickup code, transaction id and invoice. `method` cash (BR-9): the booking stays Pending Payment, held for the collection, until branch staff record the cash. 402 `payment_declined`: the hold is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`. Repeating the same idempotency key never charges twice (Pay.Idempotent).
          */
         post: operations["api_v1_bookings_pay_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/awaiting-cash/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bookings waiting for cash at collection (BR-9)
+         * @description BR-9: the cash desk's list of collections to be paid in cash.
+         */
+        get: operations["api_v1_bookings_awaiting_cash_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -736,6 +776,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments/{id}/refund/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund a payment to its original instrument (Pay.Refund)
+         * @description Above REFUND_AUTO_APPROVAL_LIMIT the refund waits as Pending Approval for an Administrator (UC 13); otherwise it is issued at once. A cash refund is paid out by the branch staff member who asks for it. The same idempotency key returns the first refund (Pay.Idempotent).
+         */
+        post: operations["api_v1_payments_refund_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/bookings/{id}/capture/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Capture a booking's payment with its final charges (SI-1.2)
+         * @description Records each charge line and captures the uncaptured rental and deposit authorisation. Once per booking: the same key returns the first result; another key is 409 `already_captured`. 409 `not_paid`; 402 `capture_failed`.
+         */
+        post: operations["api_v1_payments_bookings_capture_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/due/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My outstanding due (Pay.Dues)
+         * @description Pay.Dues, BR-4: see the outstanding due and clear it on-line at any time.
+         */
+        get: operations["api_v1_payments_due_retrieve"];
+        put?: never;
+        /**
+         * Pay the whole outstanding due on-line (Pay.Dues)
+         * @description SE-9: the password is required. Card or an on-line channel (UPI, net banking, wallet; D6). On success the due is zero and booking is allowed again at once (BR-4). 402 `payment_declined`; 409 `no_due`. The same idempotency key never charges twice.
+         */
+        post: operations["api_v1_payments_due_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/refunds/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List refunds, oldest request first (UC 13)
+         * @description UC 13 step 1: the refunds waiting for approval (Administrator), and refunds in scope.
+         */
+        get: operations["api_v1_payments_refunds_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/refunds/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve a refund and issue it (UC 13)
+         * @description SE-9: the password is required. 409 `not_pending`; 402 `capture_failed`.
+         */
+        post: operations["api_v1_payments_refunds_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/refunds/{id}/pay-out/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record an approved cash refund as paid out (Pay.Refund)
+         * @description Pay.Refund: a named branch staff member pays an approved cash refund out.
+         */
+        post: operations["api_v1_payments_refunds_pay_out_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/refunds/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject a refund with a reason (UC 13)
+         * @description UC 13 extension 2a: reject with a reason; the customer is notified.
+         */
+        post: operations["api_v1_payments_refunds_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/webhook/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive a signed gateway notification (SI-1.4)
+         * @description Body: JSON with `id`, `type` (e.g. refund.processed, refund.failed) and `transaction_id`. A repeated `id` changes nothing (Pay.Idempotent). 403 `invalid_signature`.
+         */
+        post: operations["api_v1_payments_webhook_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pricing/add-ons/": {
         parameters: {
             query?: never;
@@ -900,6 +1104,8 @@ export interface components {
          * @enum {string}
          */
         BillingUnitEnum: "day" | "hour";
+        /** @enum {unknown} */
+        BlankEnum: "";
         /** @description A booking as its customer, branch staff or an Administrator sees it (History.Privacy). */
         Booking: {
             readonly id: number;
@@ -914,6 +1120,7 @@ export interface components {
             readonly return_datetime: string;
             /** Format: date-time */
             readonly hold_expires_at: string | null;
+            readonly cash_on_collection: boolean;
             /** Format: date-time */
             readonly confirmed_at: string | null;
             readonly pickup_code: string;
@@ -955,6 +1162,7 @@ export interface components {
             readonly return_datetime: string;
             /** Format: date-time */
             readonly hold_expires_at: string | null;
+            readonly cash_on_collection: boolean;
             /** Format: date-time */
             readonly confirmed_at: string | null;
             readonly pickup_code: string;
@@ -976,6 +1184,7 @@ export interface components {
             readonly created_at: string;
             readonly price: components["schemas"]["Quote"];
             readonly transaction_id: string | null;
+            readonly refunds: components["schemas"]["Refund"][];
         };
         /** @description A refusal with a stable code, e.g. licence_not_verified, vehicle_unavailable. */
         BookingError: {
@@ -1028,12 +1237,70 @@ export interface components {
             /** Format: decimal */
             refund_percent: string;
         };
+        Capture: {
+            lines?: components["schemas"]["ChargeLine"][];
+            /** @description Pay.Idempotent: one key per attempt; a repeat never charges or refunds twice. */
+            idempotency_key: string;
+            /** @description SE-9: re-authentication before a payment or a refund. */
+            password: string;
+        };
+        /** @description BR-9: a booking waiting for cash at collection, as its branch staff see it. */
+        CashDueBooking: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly pickup_branch: string;
+            readonly pickup_branch_id: number;
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            /** Format: date-time */
+            readonly hold_expires_at: string | null;
+            readonly cash_on_collection: boolean;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly pickup_code: string;
+            readonly add_ons: components["schemas"]["BookingAddOnLine"][];
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @default  */
+            readonly discount_code: string;
+            /** Format: decimal */
+            readonly discount_amount: string;
+            /** Format: date-time */
+            readonly terms_accepted_at: string | null;
+            /** Format: date-time */
+            readonly safety_notice_acknowledged_at: string | null;
+            readonly invoice_number: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly customer_name: string;
+            readonly customer_mobile: string;
+            /** Format: decimal */
+            readonly amount_due: string;
+        };
         /**
          * @description * `Car` - Car
          *     * `Two-Wheeler` - Two-Wheeler
          * @enum {string}
          */
         CategoriesEnum: "Car" | "Two-Wheeler";
+        /**
+         * @description * `UPI` - UPI
+         *     * `Net Banking` - Net Banking
+         *     * `Wallet` - Wallet
+         * @enum {string}
+         */
+        ChannelEnum: "UPI" | "Net Banking" | "Wallet";
+        ChargeLine: {
+            description: string;
+            /** Format: decimal */
+            amount: string;
+        };
         ConditionPhotoOut: {
             caption: string;
             readonly url: string | null;
@@ -1097,6 +1364,12 @@ export interface components {
         DatabaseEnum: "ok" | "unreachable";
         Detail: {
             detail: string;
+        };
+        /** @description Pay.Dues, BR-4: what the customer owes; above zero, no new booking is accepted. */
+        Due: {
+            /** Format: decimal */
+            outstanding_due: string;
+            transaction_id?: string;
         };
         Email: {
             /** Format: email */
@@ -1212,6 +1485,15 @@ export interface components {
          * @enum {string}
          */
         JobTypeEnum: "Preventive" | "Corrective" | "Inspection" | "Cleaning" | "Documentation";
+        LedgerEntryResult: {
+            id: number;
+            entry_type: string;
+            /** Format: decimal */
+            amount: string;
+            method: string;
+            gateway_reference: string;
+            note: string;
+        };
         /** @description A licence as its owner, branch staff and administrators see it. */
         Licence: {
             readonly id: number;
@@ -1374,6 +1656,10 @@ export interface components {
             /** Format: date */
             date: string | null;
         };
+        NotificationResult: {
+            event_id: string;
+            duplicate: boolean;
+        };
         OTPCode: {
             code: string;
         };
@@ -1422,6 +1708,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["BranchBooking"][];
         };
+        PaginatedCashDueBookingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["CashDueBooking"][];
+        };
         PaginatedLicenceReviewList: {
             /** @example 123 */
             count: number;
@@ -1452,6 +1753,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["MaintenanceJob"][];
         };
+        PaginatedRefundList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Refund"][];
+        };
         PartInput: {
             part_name: string;
             /** Format: decimal */
@@ -1478,13 +1794,62 @@ export interface components {
             mobile_no?: string;
             address?: string;
         };
-        /** @description Pay.Authorize with a gateway token (CO-2: never card details); SE-9 re-authentication. */
+        /**
+         * @description Pay.Method and Pay.Authorize with a gateway token (CO-2: never card details); SE-9.
+         *
+         *     card: a token from the hosted fields. online: a D6 channel (UPI, net
+         *     banking, wallet) and its token. cash: BR-9, paid at the branch on
+         *     collection; no token.
+         */
         PayBooking: {
-            /** @description Token from the gateway's hosted fields. Sandbox: tok_visa, tok_decline. */
+            /** @default card */
+            method: components["schemas"]["PayBookingMethodEnum"];
+            /**
+             * @description Token from the gateway's hosted fields. Sandbox: tok_visa, tok_decline.
+             * @default
+             */
             payment_token: string;
+            /** @default  */
+            channel: components["schemas"]["ChannelEnum"] | components["schemas"]["BlankEnum"];
+            /** @default  */
+            upi_id: string;
             /** @description Pay.Idempotent: one key per payment attempt; repeating it never charges twice. */
             idempotency_key: string;
             /** @description SE-9: re-authentication before payment. */
+            password: string;
+        };
+        /**
+         * @description * `card` - card
+         *     * `online` - online
+         *     * `cash` - cash
+         * @enum {string}
+         */
+        PayBookingMethodEnum: "card" | "online" | "cash";
+        /** @description Pay.Method: a card token, or an on-line channel (D6) with its token from the hosted page. */
+        PayDue: {
+            /** @default card */
+            method: components["schemas"]["PayDueMethodEnum"];
+            /** @description From the gateway's hosted fields or page. Sandbox: tok_decline declines. */
+            payment_token: string;
+            /** @default  */
+            channel: components["schemas"]["ChannelEnum"] | components["schemas"]["BlankEnum"];
+            /** @default  */
+            upi_id: string;
+            /** @description Pay.Idempotent: one key per attempt; a repeat never charges or refunds twice. */
+            idempotency_key: string;
+            /** @description SE-9: re-authentication before a payment or a refund. */
+            password: string;
+        };
+        /**
+         * @description * `card` - card
+         *     * `online` - online
+         * @enum {string}
+         */
+        PayDueMethodEnum: "card" | "online";
+        PayOutCashRefund: {
+            /** @description Pay.Refund: the customer has acknowledged the cash. Must be true. */
+            customer_acknowledged: boolean;
+            /** @description SE-9: re-authentication before a payment or a refund. */
             password: string;
         };
         Profile: {
@@ -1564,6 +1929,20 @@ export interface components {
             /** Format: decimal */
             no_show_retained_percent: string;
         };
+        Reauthenticated: {
+            /** @description SE-9: re-authentication before a payment or a refund. */
+            password: string;
+        };
+        /** @description BR-9: the cash a named branch staff member received at collection; SE-9. */
+        RecordCash: {
+            /**
+             * Format: decimal
+             * @description Must equal the rental plus the deposit.
+             */
+            amount_received: string;
+            idempotency_key: string;
+            password: string;
+        };
         /** @description Maint.Record. */
         RecordWork: {
             /** Format: date */
@@ -1576,6 +1955,51 @@ export interface components {
             downtime_hours: string;
             parts: components["schemas"]["PartInput"][];
         };
+        /** @description A refund request as the Administrator queue (UC 13), staff and the customer see it. */
+        Refund: {
+            readonly id: number;
+            readonly booking_id: number;
+            readonly booking_reference: string;
+            readonly customer_name: string;
+            readonly purpose: string;
+            readonly method: string;
+            readonly original_transaction_id: string;
+            /** Format: decimal */
+            readonly amount: string;
+            readonly reason: string;
+            readonly status: components["schemas"]["RefundStatusEnum"];
+            /** @default  */
+            readonly requested_by_name: string;
+            /** Format: date-time */
+            readonly requested_at: string;
+            /** @default  */
+            readonly decided_by_name: string;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            readonly rejection_reason: string;
+            readonly failure_reason: string;
+            /** Format: date */
+            readonly refund_due_by: string | null;
+            readonly refund_transaction_id: string | null;
+        };
+        RefundCreate: {
+            /** Format: decimal */
+            amount: string;
+            reason: string;
+            /** @description Pay.Idempotent: one key per attempt; a repeat never charges or refunds twice. */
+            idempotency_key: string;
+            /** @description SE-9: re-authentication before a payment or a refund. */
+            password: string;
+        };
+        /**
+         * @description * `Pending Approval` - Pending Approval
+         *     * `Approved` - Approved
+         *     * `Issued` - Issued
+         *     * `Rejected` - Rejected
+         *     * `Failed` - Failed
+         * @enum {string}
+         */
+        RefundStatusEnum: "Pending Approval" | "Approved" | "Issued" | "Rejected" | "Failed";
         Refusal: {
             code: string;
             message: string;
@@ -1596,6 +2020,11 @@ export interface components {
             /** Format: email */
             email: string;
             detail: string;
+        };
+        RejectRefund: {
+            reason: string;
+            /** @description SE-9: re-authentication before a payment or a refund. */
+            password: string;
         };
         /** @description Maint.Create; Maint.Unsafe (flag_unsafe). */
         ReportJob: {
@@ -2028,6 +2457,49 @@ export interface operations {
             };
         };
     };
+    api_v1_bookings_cash_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordCash"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecordCash"];
+                "multipart/form-data": components["schemas"]["RecordCash"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
     api_v1_bookings_hold_create: {
         parameters: {
             query?: never;
@@ -2132,6 +2604,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_awaiting_cash_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCashDueBookingList"];
                 };
             };
         };
@@ -2890,6 +3384,383 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_payments_refund_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["RefundCreate"];
+                "multipart/form-data": components["schemas"]["RefundCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_bookings_capture_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Capture"];
+                "application/x-www-form-urlencoded": components["schemas"]["Capture"];
+                "multipart/form-data": components["schemas"]["Capture"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerEntryResult"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_due_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Due"];
+                };
+            };
+        };
+    };
+    api_v1_payments_due_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayDue"];
+                "application/x-www-form-urlencoded": components["schemas"]["PayDue"];
+                "multipart/form-data": components["schemas"]["PayDue"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Due"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_refunds_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                status?: "Approved" | "Failed" | "Issued" | "Pending Approval" | "Rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedRefundList"];
+                };
+            };
+        };
+    };
+    api_v1_payments_refunds_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reauthenticated"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reauthenticated"];
+                "multipart/form-data": components["schemas"]["Reauthenticated"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_refunds_pay_out_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayOutCashRefund"];
+                "application/x-www-form-urlencoded": components["schemas"]["PayOutCashRefund"];
+                "multipart/form-data": components["schemas"]["PayOutCashRefund"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_refunds_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRefund"];
+                "application/x-www-form-urlencoded": components["schemas"]["RejectRefund"];
+                "multipart/form-data": components["schemas"]["RejectRefund"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_payments_webhook_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
                 };
             };
         };

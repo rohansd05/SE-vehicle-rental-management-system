@@ -11,12 +11,14 @@ from apps.core.admin import AuditedModelAdmin, ReadOnlyModelAdmin, ReadOnlyTabul
 from .models import (
     CardPayment,
     CashPayment,
+    GatewayNotification,
     Invoice,
     InvoiceAdjustment,
     InvoiceLine,
     LedgerEntry,
     OnlinePayment,
     Payment,
+    RefundRequest,
 )
 
 PAYMENT_LIST_DISPLAY = (
@@ -102,3 +104,20 @@ class LedgerEntryAdmin(ReadOnlyModelAdmin):
     list_filter = ("entry_type", "method")
     search_fields = ("booking__booking_reference", "gateway_reference")
     date_hierarchy = "timestamp"
+
+
+@admin.register(RefundRequest)
+class RefundRequestAdmin(ReadOnlyModelAdmin):
+    """UC 13: refunds change status only through the payments services, which audit them."""
+
+    list_display = ("id", "original_payment", "amount", "status", "requested_at", "decided_by")
+    list_filter = ("status",)
+    search_fields = ("original_payment__booking__booking_reference", "idempotency_key")
+    date_hierarchy = "requested_at"
+
+
+@admin.register(GatewayNotification)
+class GatewayNotificationAdmin(ReadOnlyModelAdmin):
+    list_display = ("received_at", "event_id", "event_type", "gateway_reference")
+    list_filter = ("event_type",)
+    search_fields = ("event_id", "gateway_reference")

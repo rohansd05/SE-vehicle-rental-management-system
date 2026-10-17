@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  Banknote,
   Building2,
   CalendarDays,
   Car,
@@ -9,6 +10,7 @@ import {
   IdCard,
   type LucideIcon,
   ScrollText,
+  ReceiptText,
   Search,
   ShieldCheck,
   Tags,
@@ -90,6 +92,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     description: "Today's collections and returns at your branch.",
   },
   {
+    to: '/app/cash',
+    label: 'Cash desk',
+    icon: Banknote,
+    roles: ['BRANCH_STAFF'],
+    available: true,
+    description: 'Record cash paid at collection and pay out approved cash refunds.',
+  },
+  {
     to: '/app/jobs',
     label: 'Maintenance jobs',
     icon: Wrench,
@@ -98,6 +108,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     description: 'The jobs assigned to you, and the work and parts you record.',
   },
   ...MAINTENANCE_NAV_ITEMS,
+  {
+    to: '/app/refunds',
+    label: 'Refunds',
+    icon: ReceiptText,
+    roles: ['ADMINISTRATOR'],
+    available: true,
+    description: 'Approve or reject refunds above the automatic approval limit.',
+  },
   {
     to: '/app/fleet',
     label: 'Fleet',

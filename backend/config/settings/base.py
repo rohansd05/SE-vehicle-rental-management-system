@@ -250,6 +250,8 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 PAYMENT_GATEWAY_BACKEND = env("PAYMENT_GATEWAY_BACKEND", default="mock")
 PAYMENT_GATEWAY_KEY_ID = env("PAYMENT_GATEWAY_KEY_ID", default="")
 PAYMENT_GATEWAY_KEY_SECRET = env("PAYMENT_GATEWAY_KEY_SECRET", default="")
+# SI-1.4: signs gateway notifications. The default is for the sandbox gateway only.
+PAYMENT_WEBHOOK_SECRET = env("PAYMENT_WEBHOOK_SECRET", default="sandbox-webhook-secret")
 
 NOTIFICATION_BACKEND = env("NOTIFICATION_BACKEND", default="mock")
 SMS_ACCOUNT_SID = env("SMS_ACCOUNT_SID", default="")

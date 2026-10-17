@@ -13,6 +13,7 @@ import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
 import { MyLicencePage } from '@/features/licence/MyLicencePage'
 import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { paymentRoutes } from '@/features/refunds/routes'
 import { searchRoutes } from '@/features/search/routes'
 import { CreditsPage } from '@/pages/CreditsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
@@ -98,6 +99,7 @@ export function AppRoutes() {
         {searchRoutes()}
         {bookingRoutes()}
         {handoverRoutes()}
+        {paymentRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}

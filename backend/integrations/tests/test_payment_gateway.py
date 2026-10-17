@@ -1,4 +1,4 @@
-"""Mock payment gateway and factory."""
+"""Mock payment gateway and factory (SI-1.1 to SI-1.4)."""
 
 from decimal import Decimal
 
@@ -27,7 +27,7 @@ def test_factory_rejects_unknown_backend(settings):
 def test_authorize_capture_refund_happy_path(gateway):
     auth = gateway.authorize(Decimal("5000.00"), "INR", "tok_ok", "k1")
     assert auth.success
-    assert auth.transaction_id == "mock_txn_000001"
+    assert auth.transaction_id.startswith("mock_txn_")
 
     capture = gateway.capture(auth.transaction_id, Decimal("5000.00"), "k2")
     assert capture.success
@@ -35,6 +35,7 @@ def test_authorize_capture_refund_happy_path(gateway):
     refund = gateway.refund(auth.transaction_id, Decimal("1200.50"), "k3")
     assert refund.success
     assert refund.amount == Decimal("1200.50")
+    assert refund.transaction_id.startswith("rfnd_")  # SI-1.3: the reference to store
 
 
 def test_decline_token_is_declined(gateway):
@@ -46,8 +47,8 @@ def test_same_idempotency_key_returns_same_response(gateway):
     first = gateway.authorize(Decimal("100.00"), "INR", "tok_ok", "same")
     second = gateway.authorize(Decimal("100.00"), "INR", "tok_ok", "same")
     assert first == second
-    assert gateway.authorize(Decimal("1.00"), "INR", "tok_ok", "other").transaction_id == (
-        "mock_txn_000002"
+    assert gateway.authorize(Decimal("1.00"), "INR", "tok_ok", "other").transaction_id != (
+        first.transaction_id
     )
 
     gateway.capture(first.transaction_id, Decimal("100.00"), "cap")
@@ -56,13 +57,28 @@ def test_same_idempotency_key_returns_same_response(gateway):
     assert gateway.refund(first.transaction_id, Decimal("100.00"), "ref").success
 
 
+def test_every_instance_shares_the_gateway_state():
+    auth = MockPaymentGateway().authorize(Decimal("100.00"), "INR", "tok_ok", "shared")
+    assert MockPaymentGateway().capture(auth.transaction_id, Decimal("100.00"), "c").success
+    assert not MockPaymentGateway().capture(auth.transaction_id, Decimal("0.01"), "c2").success
+
+
 def test_capture_and_refund_limits(gateway):
     auth = gateway.authorize(Decimal("100.00"), "INR", "tok_ok", "a")
     assert not gateway.capture(auth.transaction_id, Decimal("100.01"), "c1").success
-    assert not gateway.capture("mock_txn_999999", Decimal("1.00"), "c2").success
+    assert not gateway.capture("other_txn_1", Decimal("1.00"), "c2").success
     assert gateway.capture(auth.transaction_id, Decimal("60.00"), "c3").success
     assert not gateway.refund(auth.transaction_id, Decimal("60.01"), "r1").success
-    assert not gateway.refund("mock_txn_999999", Decimal("1.00"), "r2").success
+    assert not gateway.refund("other_txn_1", Decimal("1.00"), "r2").success
+
+
+def test_a_transaction_from_another_process_is_accepted_within_what_it_captures(gateway):
+    """seed_demo and a restarted server authorise in another process."""
+    elsewhere = "mock_txn_0123456789ab"
+    assert not gateway.refund(elsewhere, Decimal("10.00"), "r0").success  # nothing captured yet
+    assert gateway.capture(elsewhere, Decimal("10.00"), "c").success
+    assert gateway.refund(elsewhere, Decimal("10.00"), "r").success
+    assert not gateway.refund(elsewhere, Decimal("0.01"), "r2").success
 
 
 def test_amounts_must_be_positive_decimals(gateway):
@@ -70,3 +86,10 @@ def test_amounts_must_be_positive_decimals(gateway):
         gateway.authorize(100.0, "INR", "tok_ok", "f")  # type: ignore[arg-type]
     with pytest.raises(ValueError):
         gateway.authorize(Decimal("0"), "INR", "tok_ok", "z")
+
+
+def test_a_notification_is_accepted_only_with_its_signature(gateway):
+    body = b'{"id": "evt_1"}'
+    assert gateway.verify_notification(body, MockPaymentGateway.sign(body))
+    assert not gateway.verify_notification(body + b" ", MockPaymentGateway.sign(body))
+    assert not gateway.verify_notification(body, "")

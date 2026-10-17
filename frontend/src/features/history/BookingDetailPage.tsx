@@ -7,7 +7,9 @@ import { PageHeader } from '@/components/page'
 import { StickyRail } from '@/components/sticky-rail'
 import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { formatDateTime } from '@/lib/dates'
+import { useAgency } from '@/hooks/page'
+import { formatCurrency } from '@/lib/currency'
+import { formatDate, formatDateTime } from '@/lib/dates'
 
 import { type BookingDetail, downloadInvoice, getBooking } from '@/features/booking/api'
 import { bookingKey } from '@/features/booking/keys'
@@ -15,6 +17,68 @@ import { PriceSummary } from '@/features/booking/PriceSummary'
 import { RAIL_LAYOUT } from '@/lib/layout'
 
 import { BookingStatusBadge } from './BookingStatusBadge'
+
+type Refund = BookingDetail['refunds'][number]
+
+/** Pay.Refund, UC 13: where each refund stands, in the customer's words. */
+function refundState(refund: Refund): string {
+  switch (refund.status) {
+    case 'Pending Approval':
+      return 'Waiting for approval.'
+    case 'Approved':
+      return 'Approved; collect it in cash at the branch.'
+    case 'Issued':
+      return refund.refund_due_by
+        ? `Issued to your original payment method; it reaches you by ${formatDate(refund.refund_due_by)}.`
+        : 'Issued to your original payment method.'
+    case 'Rejected':
+      return `Not approved: ${refund.rejection_reason}`
+    default:
+      return 'The payment provider could not complete it; our staff will contact you.'
+  }
+}
+
+function Refunds({ refunds }: { refunds: Refund[] }) {
+  const { currency } = useAgency()
+  return (
+    <div className="reveal grid gap-3 border-t pt-6">
+      <h2 className="text-section">Refunds</h2>
+      <ul className="divide-y border-y">
+        {refunds.map((refund) => (
+          <li key={refund.id} className="grid gap-1 py-3 text-sm">
+            <span>
+              <span className="num-strong whitespace-nowrap">{formatCurrency(refund.amount, currency)}</span> of the{' '}
+              {refund.purpose.toLowerCase()}: {refund.reason}
+            </span>
+            <span className="text-muted-foreground">{refundState(refund)}</span>
+            {refund.refund_transaction_id ? (
+              <span className="num whitespace-nowrap text-muted-foreground">{refund.refund_transaction_id}</span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/** BR-9: cash at collection; the booking waits for the branch to record the payment. */
+function CashNote({ booking }: { booking: BookingDetail }) {
+  const { currency } = useAgency()
+  return (
+    <StatusMessage
+      message={
+        <>
+          You chose to pay in cash when you collect the vehicle. Bring{' '}
+          <span className="num whitespace-nowrap">{formatCurrency(booking.price.total_payable, currency)}</span> for the
+          rental and <span className="num whitespace-nowrap">{formatCurrency(booking.price.security_deposit, currency)}</span>{' '}
+          for the refundable deposit to {booking.pickup_branch}. The booking is confirmed when the branch records your
+          payment; the vehicle is held for you until{' '}
+          <span className="num whitespace-nowrap">{formatDateTime(booking.hold_expires_at)}</span>.
+        </>
+      }
+    />
+  )
+}
 
 function Confirmation({ booking }: { booking: BookingDetail }) {
   return (
@@ -101,6 +165,9 @@ export function BookingDetailPage() {
                 {booking.data.pickup_branch}.
               </p>
             </div>
+            {booking.data.status === 'Pending Payment' && booking.data.cash_on_collection ? (
+              <CashNote booking={booking.data} />
+            ) : null}
             {booking.data.booking_reference ? (
               <div className="reveal border-t pt-6">
                 <Confirmation booking={booking.data} />
@@ -130,6 +197,7 @@ export function BookingDetailPage() {
                 </div>
               </div>
             ) : null}
+            {booking.data.refunds.length ? <Refunds refunds={booking.data.refunds} /> : null}
           </div>
           <StickyRail>
             <div className="lg:pt-1">

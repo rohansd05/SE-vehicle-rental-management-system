@@ -51,3 +51,13 @@ def latest_code(outbox):
         raise AssertionError(f"No SMS was sent to {destination}")
 
     return _read
+
+
+@pytest.fixture(autouse=True)
+def _reset_payment_gateway():
+    """The mock gateway's state is shared per process, like a real gateway's: forget it per test."""
+    from integrations.payment_gateway.mock import MockPaymentGateway
+
+    MockPaymentGateway.reset()
+    yield
+    MockPaymentGateway.reset()

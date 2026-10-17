@@ -47,8 +47,13 @@ class Payment(TimeStampedModel):
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.INITIATED)
     timestamp = models.DateTimeField(default=timezone.now)
     # Booking–Payment association (Exp 3: a booking is settled by 1..* payments).
+    # Only a payment that clears a due (Pay.Dues) has no booking.
     booking = models.ForeignKey(
-        "bookings.Booking", on_delete=models.PROTECT, related_name="payments"
+        "bookings.Booking",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="payments",
     )
     transaction_type = models.CharField(max_length=16, choices=TransactionType.choices)
     purpose = models.CharField(max_length=32, choices=Purpose.choices)
@@ -72,10 +77,25 @@ class Payment(TimeStampedModel):
         ordering = ["-timestamp"]
         constraints = [
             models.CheckConstraint(condition=Q(amount__gt=0), name="payments_amount_positive"),
+            models.CheckConstraint(
+                condition=Q(booking__isnull=False) | Q(purpose="Due"),
+                name="payments_booking_unless_due",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.transaction_id} {self.transaction_type} {self.amount} ({self.status})"
+
+    @property
+    def method(self) -> str:
+        """Pay.Ledger "method": Card, Online or Cash; a capture or refund takes its original's."""
+        if isinstance(self, CashPayment) or hasattr(self, "cashpayment"):
+            return "Cash"
+        if isinstance(self, OnlinePayment) or hasattr(self, "onlinepayment"):
+            return "Online"
+        if not isinstance(self, CardPayment) and self.original_payment_id:
+            return self.original_payment.method
+        return "Card"
 
 
 class CardPayment(Payment):
@@ -264,10 +284,107 @@ class LedgerEntry(AppendOnlyModel):
     )
     note = models.CharField(max_length=255, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
+    # Pay.Idempotent: set on the entry that marks a capture_charges() run.
+    idempotency_key = models.CharField(max_length=80, blank=True)
 
     class Meta:
         ordering = ["booking", "timestamp", "id"]
         verbose_name_plural = "ledger entries"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["idempotency_key"],
+                condition=~Q(idempotency_key=""),
+                name="payments_ledger_idempotency_key_unique",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.booking}: {self.entry_type} {self.amount}"
+
+
+# ─── Refunds (Pay.Refund, UC 13 Approve Refund) ──────────────────────────
+
+
+class RefundRequest(TimeStampedModel):
+    """A refund of one payment, to its original instrument (Pay.Refund, BR-14).
+
+    Exp 2 UC 13: a refund above REFUND_AUTO_APPROVAL_LIMIT waits as Pending
+    Approval until an Administrator approves (the refund is issued and the
+    approver recorded) or rejects it (the reason is recorded and the customer
+    told). A cash refund is Approved until a named branch staff member pays
+    it out. Status changes go through payments.services and are audited.
+    """
+
+    class Status(models.TextChoices):
+        PENDING_APPROVAL = "Pending Approval", "Pending Approval"
+        APPROVED = "Approved", "Approved"  # cash only: waiting to be paid out at the branch
+        ISSUED = "Issued", "Issued"
+        REJECTED = "Rejected", "Rejected"
+        FAILED = "Failed", "Failed"  # the gateway refused it
+
+    original_payment = models.ForeignKey(
+        Payment, on_delete=models.PROTECT, related_name="refund_requests"
+    )
+    amount = _money()
+    reason = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=Status.choices)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="refunds_requested",
+    )
+    requested_at = models.DateTimeField(default=timezone.now)
+    # UC 13: the Administrator who approved or rejected it.
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="refunds_decided",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+    failure_reason = models.CharField(max_length=255, blank=True)
+    # The Refund payment row once issued (gateway reference, SI-1.3; or the cash refund).
+    refund = models.OneToOneField(
+        Payment,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="refund_request",
+    )
+    refund_due_by = models.DateField(null=True, blank=True)  # BR-14, deposit refunds
+    idempotency_key = models.CharField(max_length=80, unique=True)  # Pay.Idempotent
+
+    class Meta:
+        ordering = ["requested_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0), name="payments_refund_amount_positive"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Refund {self.pk} of {self.amount} ({self.status})"
+
+
+class GatewayNotification(AppendOnlyModel):
+    """SI-1.4: every signed gateway notification, stored once by its event id.
+
+    A repeated notification finds its event id here and changes nothing
+    (Pay.Idempotent). Append-only, like the ledger.
+    """
+
+    event_id = models.CharField(max_length=100, unique=True)
+    event_type = models.CharField(max_length=64)
+    gateway_reference = models.CharField(max_length=128, blank=True)
+    payload = models.JSONField()
+    received_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-received_at"]
+
+    def __str__(self) -> str:
+        return f"{self.event_id} {self.event_type}"

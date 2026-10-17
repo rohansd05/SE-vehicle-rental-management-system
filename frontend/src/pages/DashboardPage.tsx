@@ -1,4 +1,5 @@
-import { ChevronRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ChevronRight, CircleAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { type Role, ROLE_LABELS } from '@/api/types'
@@ -6,7 +7,12 @@ import { type NavItem, navItemsFor } from '@/app/navigation'
 import { PageHeader } from '@/components/page'
 import { Photo } from '@/components/photo'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useSignedInUser } from '@/features/auth/auth-context'
+import { getDue } from '@/features/payment/api'
+import { DUE_KEY } from '@/features/payment/keys'
+import { useAgency } from '@/hooks/page'
+import { formatCurrency } from '@/lib/currency'
 import { stagger } from '@/lib/motion'
 
 /**
@@ -80,6 +86,27 @@ function DestinationRow({ item }: { item: NavItem }) {
   )
 }
 
+/** Pay.Dues: "shall display it on the customer's home screen" (BR-4 blocks booking until paid). */
+function DueNotice() {
+  const { currency } = useAgency()
+  const due = useQuery({ queryKey: DUE_KEY, queryFn: getDue })
+  if (!due.data || !(Number(due.data.outstanding_due) > 0)) return null
+  return (
+    <div className="enter mb-6 flex flex-wrap items-start gap-x-4 gap-y-3 rounded-md border-l-2 border-l-signal bg-signal-tint px-4 py-3">
+      <CircleAlert className="mt-1 size-4.5 shrink-0 text-signal-ink" aria-hidden="true" />
+      <p className="min-w-0 flex-1 text-sm">
+        You have an outstanding due of{' '}
+        <strong className="num-strong whitespace-nowrap">{formatCurrency(due.data.outstanding_due, currency)}</strong>. New
+        bookings are paused until it is paid.
+      </p>
+      {/* Default size: with size="sm", cn() reads its text-small as a colour and drops text-primary-foreground. */}
+      <Button asChild>
+        <Link to="/app/due">Pay your due</Link>
+      </Button>
+    </div>
+  )
+}
+
 /** The signed-in home page: what this role can do, and what is coming. */
 export function DashboardPage() {
   const user = useSignedInUser()
@@ -94,6 +121,7 @@ export function DashboardPage() {
         description={`Signed in as ${ROLE_LABELS[user.role]}.`}
         photo={HOME_PHOTO[user.role]}
       />
+      {user.role === 'CUSTOMER' ? <DueNotice /> : null}
       {tiles.length ? (
         <ul className="grid gap-6 lg:grid-cols-2">
           {tiles.map((item, index) => (
