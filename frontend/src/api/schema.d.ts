@@ -185,6 +185,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The refund if this booking is cancelled now (Book.Cancel, BR-8)
+         * @description Book.Cancel and Book.Cancel.Release (Exp 3 Booking.cancel_booking()).
+         */
+        get: operations["api_v1_bookings_cancel_retrieve"];
+        put?: never;
+        /**
+         * Cancel a booking before collection (Book.Cancel, Book.Cancel.Release)
+         * @description SE-9: the password is required. `expected_refund` is the total refund the customer was shown; 409 `refund_changed` if BR-8 now gives another amount. The vehicle is released, the booking Cancelled, the rental share (BR-8) and the whole deposit refunded through the payments service (a refund above the automatic approval limit waits for an Administrator, UC 13), and the customer and the branch notified. An unpaid cash-at-collection booking is cancelled with no refund. 409 `invalid_state` for an Active or other booking.
+         */
+        post: operations["api_v1_bookings_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bookings/{id}/cash/": {
         parameters: {
             query?: never;
@@ -199,6 +223,46 @@ export interface paths {
          * @description Only Branch Staff of the pickup branch: the CashPayment names them. SE-9: their password is required. `amount_received` must equal the rental plus the deposit. The booking is confirmed in the same single transaction as a card payment. 409 `invalid_state`, `hold_expired`, `price_changed` or `discount_unavailable`. The same idempotency key never records the cash twice.
          */
         post: operations["api_v1_bookings_cash_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/extend/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Extend an active rental (Book.Extend)
+         * @description SE-9: the password is required. Only an Active booking, when no booking of the vehicle conflicts (409 `vehicle_unavailable`) and the whole rental stays within 30 days (BR-5, 400). The extra charge is authorised before the new return time takes effect (402 `payment_declined` changes nothing); 409 `price_changed` if it differs from `expected_charge`.
+         */
+        post: operations["api_v1_bookings_extend_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/extend/quote/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Price an extension of an active rental (Book.Extend, BR-5)
+         * @description Book.Extend: the extra charge for a later return; nothing is saved.
+         */
+        post: operations["api_v1_bookings_extend_quote_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -239,6 +303,46 @@ export interface paths {
         get: operations["api_v1_bookings_invoice_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/modify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Modify a confirmed booking (Book.Modify, Book.Modify.Price)
+         * @description SE-9: the password is required. `expected_charge` and `expected_refund` are the amounts the customer was shown; 409 `price_changed` otherwise. An extra charge is authorised at once by card or on-line (402 `payment_declined` changes nothing); an excess is refunded under BR-8. 409 `vehicle_unavailable`, `modification_cutoff` or `invalid_state`. The same idempotency key never charges or refunds twice (Pay.Idempotent).
+         */
+        post: operations["api_v1_bookings_modify_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/modify/quote/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Price a change of period, branch or add-ons (Book.Modify, Book.Modify.Price)
+         * @description Rechecks BR-5 and the licence (BR-2) and reprices at the booking's own tariff (BR-13). `extra_charge` is charged at once; `refund_amount` is the excess refunded under BR-8. When the vehicle is not free, `vehicle_free` is false and `alternatives` lists vehicles of the same category at the same tariff (UC 4 extension 3a). 409 `modification_cutoff` less than 12 hours before pickup.
+         */
+        post: operations["api_v1_bookings_modify_quote_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,8 +1333,32 @@ export interface components {
             readonly customer_mobile: string;
             readonly vehicle: components["schemas"]["BookingVehicle"];
         };
+        CancelBooking: {
+            /**
+             * Format: decimal
+             * @description The total refund the customer was shown.
+             */
+            expected_refund: string;
+            password: string;
+        };
         CancelJob: {
             reason: string;
+        };
+        /** @description Book.Cancel: the refund computed per BR-8, shown before the customer confirms. */
+        CancellationQuote: {
+            notice_hours: number;
+            /** Format: decimal */
+            refund_percent: string;
+            /** Format: decimal */
+            rental_amount: string;
+            /** Format: decimal */
+            rental_refund: string;
+            /** Format: decimal */
+            deposit_refund: string;
+            /** Format: decimal */
+            total_refund: string;
+            /** @description UC 13: part of the refund is above the automatic approval limit. */
+            awaits_approval: boolean;
         };
         CancellationRefund: {
             notice_hours_at_least: number;
@@ -1384,6 +1512,45 @@ export interface components {
             /** Format: decimal */
             security_deposit: string;
         };
+        /**
+         * @description Pay.Method for an extra charge (card or on-line, D6); SE-9. A token is needed only
+         *     when the change costs more; the server says so (`payment_required`).
+         */
+        ExtendBooking: {
+            /** Format: date-time */
+            return_datetime: string;
+            /** @default card */
+            method: components["schemas"]["ExtraChargeMethodEnum"];
+            /** @default  */
+            payment_token: string;
+            /** @default  */
+            channel: components["schemas"]["ChannelEnum"] | components["schemas"]["BlankEnum"];
+            /** @default  */
+            upi_id: string;
+            idempotency_key: string;
+            password: string;
+            /** Format: decimal */
+            expected_charge: string;
+        };
+        ExtensionQuote: {
+            price: components["schemas"]["Quote"];
+            /** Format: date-time */
+            return_datetime: string;
+            /** Format: decimal */
+            previous_total: string;
+            /** Format: decimal */
+            extra_charge: string;
+        };
+        ExtensionRequest: {
+            /** Format: date-time */
+            return_datetime: string;
+        };
+        /**
+         * @description * `card` - card
+         *     * `online` - online
+         * @enum {string}
+         */
+        ExtraChargeMethodEnum: "card" | "online";
         /**
          * @description * `Petrol` - Petrol
          *     * `Diesel` - Diesel
@@ -1650,6 +1817,62 @@ export interface components {
          * @enum {string}
          */
         MaintenanceVehicleStatusEnum: "Available" | "On Rent" | "Under Maintenance" | "Unsafe" | "Retired";
+        ModificationQuote: {
+            price: components["schemas"]["Quote"];
+            vehicle: components["schemas"]["BookingVehicle"];
+            vehicle_free: boolean;
+            alternatives: components["schemas"]["BookingVehicle"][];
+            /** Format: decimal */
+            previous_total: string;
+            /** Format: decimal */
+            new_total: string;
+            /** Format: decimal */
+            extra_charge: string;
+            /** Format: decimal */
+            refund_percent: string;
+            /** Format: decimal */
+            refund_amount: string;
+        };
+        /**
+         * @description Book.Modify: the new period, pickup branch and add-ons; `vehicle` takes the
+         *     alternative offered when the booked vehicle is not free (UC 4 extension 3a).
+         */
+        ModificationRequest: {
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            pickup_branch: number;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            vehicle?: number | null;
+        };
+        /**
+         * @description Book.Modify: the new period, pickup branch and add-ons; `vehicle` takes the
+         *     alternative offered when the booked vehicle is not free (UC 4 extension 3a).
+         */
+        ModifyBooking: {
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            pickup_branch: number;
+            add_ons?: components["schemas"]["AddOnRequest"][];
+            vehicle?: number | null;
+            /** @default card */
+            method: components["schemas"]["ExtraChargeMethodEnum"];
+            /** @default  */
+            payment_token: string;
+            /** @default  */
+            channel: components["schemas"]["ChannelEnum"] | components["schemas"]["BlankEnum"];
+            /** @default  */
+            upi_id: string;
+            idempotency_key: string;
+            password: string;
+            /** Format: decimal */
+            expected_charge: string;
+            /** Format: decimal */
+            expected_refund: string;
+        };
         /** @description BR-15: whichever comes first. */
         NextServiceDue: {
             odometer: number | null;
@@ -1828,7 +2051,7 @@ export interface components {
         /** @description Pay.Method: a card token, or an on-line channel (D6) with its token from the hosted page. */
         PayDue: {
             /** @default card */
-            method: components["schemas"]["PayDueMethodEnum"];
+            method: components["schemas"]["ExtraChargeMethodEnum"];
             /** @description From the gateway's hosted fields or page. Sandbox: tok_decline declines. */
             payment_token: string;
             /** @default  */
@@ -1840,12 +2063,6 @@ export interface components {
             /** @description SE-9: re-authentication before a payment or a refund. */
             password: string;
         };
-        /**
-         * @description * `card` - card
-         *     * `online` - online
-         * @enum {string}
-         */
-        PayDueMethodEnum: "card" | "online";
         PayOutCashRefund: {
             /** @description Pay.Refund: the customer has acknowledged the cash. Must be true. */
             customer_acknowledged: boolean;
@@ -2368,6 +2585,9 @@ export interface operations {
             query?: {
                 /** @description A page number within the paginated result set. */
                 page?: number;
+                pickup_from?: string;
+                pickup_to?: string;
+                reference?: string;
                 /**
                  * @description * `Draft` - Draft
                  *     * `Pending Payment` - Pending Payment
@@ -2378,6 +2598,11 @@ export interface operations {
                  *     * `No-show` - No-show
                  */
                 status?: "Active" | "Cancelled" | "Completed" | "Confirmed" | "Draft" | "No-show" | "Pending Payment";
+                /**
+                 * @description * `Car` - Car
+                 *     * `Two-Wheeler` - Two-Wheeler
+                 */
+                vehicle_type?: "Car" | "Two-Wheeler";
             };
             header?: never;
             path?: never;
@@ -2457,6 +2682,78 @@ export interface operations {
             };
         };
     };
+    api_v1_bookings_cancel_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancellationQuote"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["CancelBooking"];
+                "multipart/form-data": components["schemas"]["CancelBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
     api_v1_bookings_cash_create: {
         parameters: {
             query?: never;
@@ -2488,6 +2785,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_extend_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExtendBooking"];
+                "multipart/form-data": components["schemas"]["ExtendBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_extend_quote_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtensionRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExtensionRequest"];
+                "multipart/form-data": components["schemas"]["ExtensionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtensionQuote"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
                 };
             };
             409: {
@@ -2554,6 +2945,100 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_v1_bookings_modify_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModifyBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["ModifyBooking"];
+                "multipart/form-data": components["schemas"]["ModifyBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_modify_quote_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModificationRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ModificationRequest"];
+                "multipart/form-data": components["schemas"]["ModificationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModificationQuote"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
             };
         };
     };

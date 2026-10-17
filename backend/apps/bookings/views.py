@@ -7,6 +7,7 @@ only their own bookings, Branch Staff and Branch Managers their branch's,
 an Administrator all. A booking outside the caller's scope is a 404.
 """
 
+import django_filters
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.serializers import DetailSerializer
+from apps.core.choices import VehicleType
 from apps.core.permissions import (
     IsAdministrator,
     IsBranchManager,
@@ -29,16 +31,25 @@ from apps.core.permissions import (
 from apps.fleet.services.availability import RentalPeriodError
 from apps.payments.pdf import render_invoice_pdf
 from apps.payments.reauth import require_password
+from apps.payments.services import PaymentError
 
-from . import lifecycle
+from . import lifecycle, services
 from .eligibility import NotEligibleError
 from .models import Booking
 from .serializers import (
     BookingDetailSerializer,
     BookingErrorSerializer,
     BookingSerializer,
+    CancelBookingSerializer,
+    CancellationQuoteSerializer,
     CashDueBookingSerializer,
     CreateBookingSerializer,
+    ExtendBookingSerializer,
+    ExtensionQuoteSerializer,
+    ExtensionRequestSerializer,
+    ModificationQuoteSerializer,
+    ModificationRequestSerializer,
+    ModifyBookingSerializer,
     PayBookingSerializer,
     RecordCashSerializer,
 )
@@ -69,11 +80,11 @@ def refusal(exc: Exception) -> Response:
         raise ValidationError({exc.field: [str(exc)]}) from exc
     if isinstance(exc, NotEligibleError):
         return Response({"detail": str(exc), "code": exc.code}, status=status.HTTP_400_BAD_REQUEST)
-    assert isinstance(exc, lifecycle.BookingError)
+    assert isinstance(exc, lifecycle.BookingError | PaymentError)
     return Response({"detail": str(exc), "code": exc.code}, status=exc.status)
 
 
-REFUSALS = (RentalPeriodError, NotEligibleError, lifecycle.BookingError)
+REFUSALS = (RentalPeriodError, NotEligibleError, lifecycle.BookingError, PaymentError)
 
 
 def _detail(booking, request, code=status.HTTP_200_OK) -> Response:
@@ -83,12 +94,28 @@ def _detail(booking, request, code=status.HTTP_200_OK) -> Response:
     )
 
 
+class BookingFilter(django_filters.FilterSet):
+    """History.View: "filter them by date range, status and vehicle type or search them
+    by booking reference". The date range applies to the pickup date (local, CO-6)."""
+
+    pickup_from = django_filters.DateFilter(field_name="pickup_datetime", lookup_expr="date__gte")
+    pickup_to = django_filters.DateFilter(field_name="pickup_datetime", lookup_expr="date__lte")
+    vehicle_type = django_filters.ChoiceFilter(
+        field_name="vehicle__category__vehicle_type", choices=VehicleType.choices
+    )
+    reference = django_filters.CharFilter(field_name="booking_reference", lookup_expr="icontains")
+
+    class Meta:
+        model = Booking
+        fields = ["status"]
+
+
 class BookingListCreateView(ListCreateAPIView):
     """History.View (GET, newest pickup first) and Book.Create (POST, customers only)."""
 
     permission_classes = [IsCustomer | (STAFF & ReadOnly)]
     serializer_class = BookingSerializer
-    filterset_fields = ["status"]
+    filterset_class = BookingFilter
 
     def get_queryset(self):
         return scoped_bookings(self.request.user)
@@ -354,3 +381,235 @@ class BookingInvoiceView(APIView):
         response = HttpResponse(render_invoice_pdf(invoice), content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{invoice.invoice_number}.pdf"'
         return response
+
+
+# ─── Module R2: Modify / Cancel Booking (Exp 2 UC 4) and Book.Extend ──────
+# The customer only (UC 4 actor; Book.Extend "permit the customer"), on their
+# own booking. Every action that moves money asks for the password (SE-9) and
+# takes the amounts the customer was shown.
+
+
+def _own_booking(request, pk: int) -> Booking:
+    return get_object_or_404(Booking, pk=pk, customer=request.user.customer)
+
+
+def _payment(data) -> dict:
+    return {field: data[field] for field in ("method", "payment_token", "channel", "upi_id")}
+
+
+def _modification(data) -> services.Modification:
+    return services.Modification(
+        pickup=data["pickup_datetime"],
+        return_=data["return_datetime"],
+        branch=data["pickup_branch"],
+        add_ons=[(line["add_on"], line["quantity"]) for line in data["add_ons"]],
+        vehicle=data["vehicle"],
+    )
+
+
+class BookingCancelView(APIView):
+    """Book.Cancel and Book.Cancel.Release (Exp 3 Booking.cancel_booking())."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="The refund if this booking is cancelled now (Book.Cancel, BR-8)",
+        responses={200: CancellationQuoteSerializer, 409: BookingErrorSerializer},
+    )
+    def get(self, request, pk: int):
+        _own_booking(request, pk)
+        try:
+            quote = services.cancellation_quote(request.user.customer, pk)
+        except REFUSALS as exc:
+            return refusal(exc)
+        return Response(CancellationQuoteSerializer(quote).data)
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Cancel a booking before collection (Book.Cancel, Book.Cancel.Release)",
+        description=(
+            "SE-9: the password is required. `expected_refund` is the total refund the "
+            "customer was shown; 409 `refund_changed` if BR-8 now gives another amount. "
+            "The vehicle is released, the booking Cancelled, the rental share (BR-8) and the "
+            "whole deposit refunded through the payments service (a refund above the "
+            "automatic approval limit waits for an Administrator, UC 13), and the customer "
+            "and the branch notified. An unpaid cash-at-collection booking is cancelled "
+            "with no refund. 409 `invalid_state` for an Active or other booking."
+        ),
+        request=CancelBookingSerializer,
+        responses={
+            200: BookingDetailSerializer,
+            400: DetailSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        _own_booking(request, pk)
+        serializer = CancelBookingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        require_password(request, data["password"], entity_label="bookings.Booking", entity_id=pk)
+        try:
+            booking = services.cancel_booking(
+                request.user.customer,
+                pk,
+                expected_refund=data["expected_refund"],
+                request=request,
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return _detail(booking, request)
+
+
+class BookingModifyQuoteView(APIView):
+    """Exp 2 UC 4 step 3: availability and the new price; nothing is saved."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Price a change of period, branch or add-ons (Book.Modify, Book.Modify.Price)",
+        description=(
+            "Rechecks BR-5 and the licence (BR-2) and reprices at the booking's own tariff "
+            "(BR-13). `extra_charge` is charged at once; `refund_amount` is the excess "
+            "refunded under BR-8. When the vehicle is not free, `vehicle_free` is false and "
+            "`alternatives` lists vehicles of the same category at the same tariff (UC 4 "
+            "extension 3a). 409 `modification_cutoff` less than 12 hours before pickup."
+        ),
+        request=ModificationRequestSerializer,
+        responses={
+            200: ModificationQuoteSerializer,
+            400: BookingErrorSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        _own_booking(request, pk)
+        serializer = ModificationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            quote = services.modification_quote(
+                request.user.customer, pk, _modification(serializer.validated_data)
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return Response(ModificationQuoteSerializer(quote).data)
+
+
+class BookingModifyView(APIView):
+    """Book.Modify and Book.Modify.Price (Exp 3 Booking.modify_booking())."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Modify a confirmed booking (Book.Modify, Book.Modify.Price)",
+        description=(
+            "SE-9: the password is required. `expected_charge` and `expected_refund` are the "
+            "amounts the customer was shown; 409 `price_changed` otherwise. An extra charge "
+            "is authorised at once by card or on-line (402 `payment_declined` changes "
+            "nothing); an excess is refunded under BR-8. 409 `vehicle_unavailable`, "
+            "`modification_cutoff` or `invalid_state`. The same idempotency key never "
+            "charges or refunds twice (Pay.Idempotent)."
+        ),
+        request=ModifyBookingSerializer,
+        responses={
+            200: BookingDetailSerializer,
+            400: DetailSerializer,
+            402: BookingErrorSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        _own_booking(request, pk)
+        serializer = ModifyBookingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        require_password(request, data["password"], entity_label="bookings.Booking", entity_id=pk)
+        try:
+            booking = services.modify_booking(
+                request.user.customer,
+                pk,
+                _modification(data),
+                expected_charge=data["expected_charge"],
+                expected_refund=data["expected_refund"],
+                idempotency_key=data["idempotency_key"],
+                payment=_payment(data),
+                request=request,
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return _detail(booking, request)
+
+
+class BookingExtendQuoteView(APIView):
+    """Book.Extend: the extra charge for a later return; nothing is saved."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Price an extension of an active rental (Book.Extend, BR-5)",
+        request=ExtensionRequestSerializer,
+        responses={
+            200: ExtensionQuoteSerializer,
+            400: BookingErrorSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        _own_booking(request, pk)
+        serializer = ExtensionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            quote = services.extension_quote(
+                request.user.customer, pk, serializer.validated_data["return_datetime"]
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return Response(ExtensionQuoteSerializer(quote).data)
+
+
+class BookingExtendView(APIView):
+    """Book.Extend (Exp 3 Booking.extend_booking())."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Extend an active rental (Book.Extend)",
+        description=(
+            "SE-9: the password is required. Only an Active booking, when no booking of the "
+            "vehicle conflicts (409 `vehicle_unavailable`) and the whole rental stays within "
+            "30 days (BR-5, 400). The extra charge is authorised before the new return time "
+            "takes effect (402 `payment_declined` changes nothing); 409 `price_changed` if it "
+            "differs from `expected_charge`."
+        ),
+        request=ExtendBookingSerializer,
+        responses={
+            200: BookingDetailSerializer,
+            400: DetailSerializer,
+            402: BookingErrorSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        _own_booking(request, pk)
+        serializer = ExtendBookingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        require_password(request, data["password"], entity_label="bookings.Booking", entity_id=pk)
+        try:
+            booking = services.extend_booking(
+                request.user.customer,
+                pk,
+                data["return_datetime"],
+                expected_charge=data["expected_charge"],
+                idempotency_key=data["idempotency_key"],
+                payment=_payment(data),
+                request=request,
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return _detail(booking, request)

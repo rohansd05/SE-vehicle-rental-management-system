@@ -3,7 +3,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.fleet.models import Vehicle
+from apps.fleet.models import Branch, Vehicle
 from apps.payments.models import OnlinePayment, RefundRequest
 from apps.payments.serializers import RefundSerializer
 from apps.pricing.serializers import AddOnRequestSerializer, QuoteSerializer
@@ -199,3 +199,98 @@ class BookingErrorSerializer(serializers.Serializer):
 
     detail = serializers.CharField()
     code = serializers.CharField()
+
+
+# ─── Module R2: modify, cancel, extend (UC 4; Book.Modify, Book.Cancel, Book.Extend) ─
+
+
+class CancellationQuoteSerializer(serializers.Serializer):
+    """Book.Cancel: the refund computed per BR-8, shown before the customer confirms."""
+
+    notice_hours = serializers.IntegerField()
+    refund_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    rental_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    rental_refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+    deposit_refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+    awaits_approval = serializers.BooleanField(
+        help_text="UC 13: part of the refund is above the automatic approval limit."
+    )
+
+
+class CancelBookingSerializer(serializers.Serializer):
+    expected_refund = serializers.DecimalField(
+        max_digits=12, decimal_places=2, help_text="The total refund the customer was shown."
+    )
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
+class ExtraPaymentSerializer(serializers.Serializer):
+    """Pay.Method for an extra charge (card or on-line, D6); SE-9. A token is needed only
+    when the change costs more; the server says so (`payment_required`)."""
+
+    method = serializers.ChoiceField(choices=["card", "online"], default="card")
+    payment_token = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    channel = serializers.ChoiceField(
+        choices=OnlinePayment.Channel.choices, required=False, allow_blank=True, default=""
+    )
+    upi_id = serializers.RegexField(
+        r"^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$", required=False, allow_blank=True, default=""
+    )
+    idempotency_key = serializers.RegexField(r"^[A-Za-z0-9_-]{8,40}$")
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        if attrs["method"] == "online" and attrs["payment_token"] and not attrs["channel"]:
+            raise serializers.ValidationError({"channel": ["Choose UPI, net banking or a wallet."]})
+        return attrs
+
+
+class ModificationRequestSerializer(serializers.Serializer):
+    """Book.Modify: the new period, pickup branch and add-ons; `vehicle` takes the
+    alternative offered when the booked vehicle is not free (UC 4 extension 3a)."""
+
+    pickup_datetime = serializers.DateTimeField()
+    return_datetime = serializers.DateTimeField()
+    pickup_branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    add_ons = AddOnRequestSerializer(many=True, required=False, default=list)
+    vehicle = serializers.PrimaryKeyRelatedField(
+        queryset=Vehicle.objects.select_related("category"),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+
+
+class ModifyBookingSerializer(ModificationRequestSerializer, ExtraPaymentSerializer):
+    expected_charge = serializers.DecimalField(max_digits=12, decimal_places=2)
+    expected_refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class ModificationQuoteSerializer(serializers.Serializer):
+    price = QuoteSerializer()
+    vehicle = BookingVehicleSerializer()
+    vehicle_free = serializers.BooleanField()
+    alternatives = BookingVehicleSerializer(many=True)
+    previous_total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    new_total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    extra_charge = serializers.DecimalField(max_digits=12, decimal_places=2)
+    refund_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    refund_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class ExtensionRequestSerializer(serializers.Serializer):
+    return_datetime = serializers.DateTimeField()
+
+
+class ExtendBookingSerializer(ExtensionRequestSerializer, ExtraPaymentSerializer):
+    expected_charge = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class ExtensionQuoteSerializer(serializers.Serializer):
+    price = QuoteSerializer()
+    return_datetime = serializers.DateTimeField()
+    previous_total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    extra_charge = serializers.DecimalField(max_digits=12, decimal_places=2)
