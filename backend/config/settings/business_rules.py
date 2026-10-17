@@ -107,3 +107,7 @@ HANDOVER_REQUIRED_DOCUMENTS = (
 # image limits above (D20).
 CONDITION_IMAGE_EXTENSIONS = LICENCE_IMAGE_EXTENSIONS
 CONDITION_IMAGE_MAX_BYTES = LICENCE_IMAGE_MAX_BYTES
+
+# UC 13 Approve Refund: a refund above this amount waits for an Administrator.
+# Proposed (the SRS names an "automatic approval threshold" but gives no value).
+REFUND_AUTO_APPROVAL_LIMIT = Decimal("5000.00")
