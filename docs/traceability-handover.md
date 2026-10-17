@@ -83,8 +83,19 @@ Paths are relative to the repository root. `B:` = `backend/apps/`,
 `B:rentals/seed.py` (called by `seed_demo`): car MH02DH3001 at Andheri with all
 four SA-3 documents; handover@vrms.test (password Demo@1234), a customer
 with a verified car licence; and that customer's paid, Confirmed one-week
-booking collected from 07:00 IST today, pickup code 246810, with a child seat
-to issue. customer@vrms.test keeps an empty history for the Book Vehicle demo. Tests: `test_one_paid_confirmed_booking_today_at_andheri_with_nothing_blocking_it`,
+booking collected from five minutes before `seed_demo` runs (shown in IST),
+pickup code 246810, with a child seat to issue. customer@vrms.test keeps an
+empty history for the Book Vehicle demo.
+
+The pickup used to be fixed at 07:00 IST. Handover is refused before the
+pickup time, and R2's no-show task (Celery Beat, every minute) marks a
+booking not collected two hours after its pickup No-show, so with Beat
+running the demo booking was a No-show by 09:00. Now it can be handed over
+as soon as the seed has run, for the next 1 hour 55 minutes; after that,
+running `seed_demo` again adds a fresh booking (a No-show no longer holds the
+car). Tests: `test_one_paid_confirmed_booking_today_at_andheri_with_nothing_blocking_it`,
+`test_beat_no_longer_spoils_the_handover_demo`,
+`test_after_a_no_show_the_next_seed_adds_a_fresh_booking`,
 `test_it_appears_in_todays_collections_and_by_its_pickup_code`,
 `test_seeding_again_the_same_day_adds_nothing`,
 `test_a_later_day_gets_a_booking_once_the_last_one_is_over`,
