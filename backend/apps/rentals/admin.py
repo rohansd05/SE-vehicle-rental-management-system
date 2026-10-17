@@ -11,6 +11,9 @@ class ConditionPhotoInline(admin.TabularInline):
     model = ConditionPhoto
     extra = 0
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 def _is_signed(report) -> bool:
     return report is not None and report.is_signed_in_db
@@ -34,6 +37,9 @@ class ConditionReportAdmin(AuditedModelAdmin):
     raw_id_fields = ("booking", "recorded_by", "odometer_override_by")
     inlines = [ConditionPhotoInline]
 
+    def has_add_permission(self, request):
+        return False  # only the handover (and return) flow creates a report, after its checks
+
     def has_change_permission(self, request, obj=None):
         return not _is_signed(obj) and super().has_change_permission(request, obj)
 
@@ -45,6 +51,9 @@ class ConditionReportAdmin(AuditedModelAdmin):
 class ConditionPhotoAdmin(AuditedModelAdmin):
     list_display = ("report", "caption", "uploaded_at")
     search_fields = ("report__booking__booking_reference",)
+
+    def has_add_permission(self, request):
+        return False
 
     def has_change_permission(self, request, obj=None):
         report = obj.report if obj is not None else None

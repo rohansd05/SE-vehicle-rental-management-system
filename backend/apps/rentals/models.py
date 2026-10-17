@@ -81,6 +81,10 @@ class ConditionReport(TimeStampedModel):
         instance._stored_signature = instance.__dict__.get("signature") or ""
         return instance
 
+    def refresh_from_db(self, *args, **kwargs):
+        super().refresh_from_db(*args, **kwargs)
+        self._stored_signature = self.signature.name if self.signature else ""
+
     def save(self, *args, **kwargs):
         if not self._state.adding and self.is_signed_in_db:
             raise ImmutableRecordError(
