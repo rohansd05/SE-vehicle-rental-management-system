@@ -1,4 +1,6 @@
-"""Rentals API serializers (Handover Vehicle, SRS 3.3; Exp 2 use case 7)."""
+"""Rentals API serializers (SRS 3.3: Handover Vehicle, Exp 2 use case 7; Return Vehicle, 8)."""
+
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -10,6 +12,7 @@ from apps.bookings.models import Booking
 from apps.bookings.serializers import BookingVehicleSerializer
 from apps.core.files import signed_file_url
 from apps.core.validators import validate_image_upload
+from apps.maintenance.models import MaintenanceJob
 from apps.pricing.serializers import QuoteTermsSerializer
 from apps.pricing.services import quote_terms
 
@@ -191,6 +194,17 @@ class HandoverRefusedSerializer(serializers.Serializer):
 # ─── Input ────────────────────────────────────────────────────────────────
 
 
+def _json_list(value, item_serializer, limit: int) -> list[dict]:
+    """A JSON list in a form field (or a JSON body), each item checked by `item_serializer`."""
+    if not isinstance(value, list):
+        raise serializers.ValidationError("Send a JSON list.")
+    if len(value) > limit:
+        raise serializers.ValidationError(f"Send at most {limit} items.")
+    items = item_serializer(data=value, many=True)
+    items.is_valid(raise_exception=True)
+    return [dict(item) for item in items.validated_data]
+
+
 def _image(upload):
     try:
         validate_image_upload(
@@ -228,20 +242,11 @@ class HandoverSerializer(serializers.Serializer):
     )
     signature = serializers.FileField(validators=[_image])
 
-    def _list(self, value, item_serializer, limit: int):
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Send a JSON list.")
-        if len(value) > limit:
-            raise serializers.ValidationError(f"Send at most {limit} items.")
-        items = item_serializer(data=value, many=True)
-        items.is_valid(raise_exception=True)
-        return [dict(item) for item in items.validated_data]
-
     def validate_accessories(self, value):
-        return self._list(value, AccessorySerializer, 30)
+        return _json_list(value, AccessorySerializer, 30)
 
     def validate_damage_marks(self, value):
-        return self._list(value, DamageMarkSerializer, 50)
+        return _json_list(value, DamageMarkSerializer, 50)
 
     def validate_extra_photos(self, value):
         if len(value) > 12:
@@ -260,4 +265,272 @@ class HandoverSerializer(serializers.Serializer):
             "damage_marks": data["damage_marks"],
             "photos": sides + extras,
             "signature": data["signature"],
+        }
+
+
+# ═══ Module N2: Return Vehicle (SRS 3.3 Return.*; Exp 2 use case 8) ═════
+
+MONEY = {"max_digits": 12, "decimal_places": 2}
+
+
+class ReturnChargeSerializer(serializers.Serializer):
+    """Return.Charges: one separate item of the settlement."""
+
+    kind = serializers.ChoiceField(
+        choices=["late_return", "excess_km", "fuel_shortfall", "accessory", "damage", "tax"]
+    )
+    description = serializers.CharField()
+    amount = serializers.DecimalField(**MONEY)
+    justification = serializers.CharField(allow_blank=True)
+
+
+class PaidChargeSerializer(serializers.Serializer):
+    """A rental charge paid before the return (Pay.Ledger), e.g. an extension (Book.Extend)."""
+
+    description = serializers.CharField(source="note")
+    amount = serializers.DecimalField(**MONEY)
+
+
+class SettlementFiguresSerializer(serializers.Serializer):
+    """Return.Settle: the charges against the deposit, its refund (BR-14) and any due."""
+
+    lines = ReturnChargeSerializer(many=True)
+    total = serializers.DecimalField(**MONEY)
+    deposit = serializers.DecimalField(**MONEY)
+    deposit_used = serializers.DecimalField(**MONEY)
+    refund = serializers.DecimalField(**MONEY)
+    due = serializers.DecimalField(**MONEY)
+
+
+class ReturnQuoteSerializer(SettlementFiguresSerializer):
+    """UC 8 step 3: the itemised settlement for the customer to acknowledge."""
+
+    distance = serializers.IntegerField()
+    free_km = serializers.IntegerField()
+    accessories_returned = AccessorySerializer(many=True)
+    override_required = serializers.BooleanField()  # Return.Odometer
+    plausibility_limit_km = serializers.IntegerField()
+
+    @classmethod
+    def of(cls, quote: services.ReturnQuote) -> dict:
+        settlement = quote.settlement
+        return cls(
+            {
+                "lines": [vars(line) for line in settlement.lines],
+                "total": settlement.total,
+                "deposit": settlement.deposit,
+                "deposit_used": settlement.deposit_used,
+                "refund": settlement.refund,
+                "due": settlement.due,
+                "distance": settlement.distance,
+                "free_km": settlement.free_km,
+                "accessories_returned": quote.accessories_returned,
+                "override_required": quote.override_required,
+                "plausibility_limit_km": quote.plausibility_limit,
+            }
+        ).data
+
+
+class SettlementRecordSerializer(SettlementFiguresSerializer):
+    """Return.Complete: the signed settlement and where its money went."""
+
+    refund_status = serializers.CharField(allow_blank=True)  # RefundRequest.Status (UC 13)
+    refund_paid_out_by = serializers.CharField(allow_blank=True)  # a cash refund (Pay.Refund)
+    maintenance_job = serializers.IntegerField(allow_null=True)  # Return.Flag
+
+
+class ReturnVehicleSerializer(HandoverVehicleSerializer):
+    class Meta(HandoverVehicleSerializer.Meta):
+        fields = [*HandoverVehicleSerializer.Meta.fields, "fuel_type", "fuel_capacity"]
+        read_only_fields = fields
+
+
+class ReturnDetailSerializer(BranchBookingSerializer):
+    """UC 8 step 1: the booking, its handover report (Return.Checklist: the photos are shown
+    side by side), what is already paid and, once returned, the signed settlement."""
+
+    vehicle = ReturnVehicleSerializer(read_only=True)
+    refusals = serializers.SerializerMethodField()
+    can_return = serializers.SerializerMethodField()
+    photo_sides = serializers.SerializerMethodField()
+    terms = serializers.SerializerMethodField()
+    handover_report = serializers.SerializerMethodField()
+    return_report = serializers.SerializerMethodField()
+    rental_paid = serializers.SerializerMethodField()
+    deposit_method = serializers.SerializerMethodField()
+    settlement = serializers.SerializerMethodField()
+
+    class Meta(BranchBookingSerializer.Meta):
+        fields = [
+            *BranchBookingSerializer.Meta.fields,
+            "handed_over_at",
+            "returned_at",
+            "distance_travelled",
+            "total_amount",
+            "security_deposit",
+            "refusals",
+            "can_return",
+            "photo_sides",
+            "terms",
+            "handover_report",
+            "return_report",
+            "rental_paid",
+            "deposit_method",
+            "settlement",
+        ]
+        read_only_fields = fields
+
+    def _report(self, booking, report_type):
+        if getattr(self, "_reports_of", None) != booking.pk:
+            self._reports_of = booking.pk
+            reports = booking.condition_reports.select_related("recorded_by__user")
+            self._reports = {r.report_type: r for r in reports.prefetch_related("photos")}
+        return self._reports.get(report_type)
+
+    @extend_schema_field(RefusalSerializer(many=True))
+    def get_refusals(self, booking):
+        return [{"code": r.code, "message": r.message} for r in services.return_refusals(booking)]
+
+    def get_can_return(self, booking) -> bool:
+        return not services.return_refusals(booking)
+
+    def get_photo_sides(self, booking) -> list[str]:
+        return list(settings.HANDOVER_PHOTO_SIDES)
+
+    @extend_schema_field(QuoteTermsSerializer)
+    def get_terms(self, booking):
+        """BR-10 to BR-12 as the customer accepted them (Book.Quote.Terms)."""
+        return QuoteTermsSerializer(quote_terms(booking.tariff)).data
+
+    @extend_schema_field(ConditionReportSerializer(allow_null=True))
+    def get_handover_report(self, booking):
+        report = self._report(booking, ConditionReport.ReportType.HANDOVER)
+        return ConditionReportSerializer(report, context=self.context).data if report else None
+
+    @extend_schema_field(ConditionReportSerializer(allow_null=True))
+    def get_return_report(self, booking):
+        report = self._report(booking, ConditionReport.ReportType.RETURN)
+        return ConditionReportSerializer(report, context=self.context).data if report else None
+
+    @extend_schema_field(PaidChargeSerializer(many=True))
+    def get_rental_paid(self, booking):
+        return PaidChargeSerializer(services.rental_paid(booking), many=True).data
+
+    def get_deposit_method(self, booking) -> str | None:
+        """Pay.Refund: a cash deposit is refunded in cash by the staff member who settles."""
+        deposit = services.deposit_payment(booking)
+        return deposit.method if deposit else None
+
+    @extend_schema_field(SettlementRecordSerializer(allow_null=True))
+    def get_settlement(self, booking):
+        report = self._report(booking, ConditionReport.ReportType.RETURN)
+        if report is None:
+            return None
+        return SettlementRecordSerializer(services.settlement_record(booking, report)).data
+
+
+class ReturnRefusedSerializer(HandoverRefusedSerializer):
+    pass
+
+
+class MissingAccessorySerializer(AccessorySerializer):
+    """An accessory issued at handover and not returned, at the cost the staff enter."""
+
+    cost = serializers.DecimalField(**MONEY, min_value=Decimal("0.00"))
+
+
+class DamageChargeSerializer(serializers.Serializer):
+    """Return.Charges: "any damage charge entered by the staff member with a justification"."""
+
+    description = serializers.CharField(max_length=150)
+    amount = serializers.DecimalField(**MONEY, min_value=Decimal("0.01"))
+    justification = serializers.CharField(max_length=500)
+
+
+class ReturnReadingsSerializer(serializers.Serializer):
+    """Return.Checklist readings and the staff's charges: a JSON body for a quote, form
+    fields (the lists as JSON) when the return is completed."""
+
+    odometer_reading = serializers.IntegerField(min_value=0)
+    fuel_level = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=100
+    )
+    returned_at = serializers.DateTimeField()  # "the actual return time"
+    missing_accessories = serializers.JSONField(required=False, default=list)
+    damage_charges = serializers.JSONField(required=False, default=list)
+
+    def validate_missing_accessories(self, value):
+        return _json_list(value, MissingAccessorySerializer, 30)
+
+    def validate_damage_charges(self, value):
+        return _json_list(value, DamageChargeSerializer, 20)
+
+    def to_readings(self) -> services.ReturnReadings:
+        data = self.validated_data
+        return services.ReturnReadings(
+            odometer_reading=data["odometer_reading"],
+            fuel_level=data["fuel_level"],
+            returned_at=data["returned_at"],
+            missing_accessories=data["missing_accessories"],
+            damage_charges=data["damage_charges"],
+        )
+
+
+class ReturnSerializer(ReturnReadingsSerializer, HandoverSerializer):
+    """Return.Checklist, Return.Settle, Return.Flag and Return.Odometer, as multipart/form-data.
+
+    The readings and charges as for a quote; one photo of each side (photo_front,
+    photo_rear, photo_left, photo_right) and optional extra_photos; damage_marks
+    (new damage, a JSON list); `signature`, the customer's acknowledgement of the
+    settlement (Exp 5); `expected_total`, the total they acknowledged. To flag the
+    vehicle (Return.Flag): flag_problem, flag_severity and flag_unfit. Above the
+    plausibility limit (Return.Odometer): override_email and override_password of a
+    Branch Manager of the branch or an Administrator, and override_reason.
+    """
+
+    accessories = None  # derived: those issued at handover less missing_accessories
+    expected_total = serializers.DecimalField(**MONEY)
+    flag_problem = serializers.CharField(
+        required=False, allow_blank=True, max_length=1000, default=""
+    )
+    flag_severity = serializers.ChoiceField(choices=MaintenanceJob.Severity.choices, required=False)
+    flag_unfit = serializers.BooleanField(required=False)
+    override_email = serializers.EmailField(required=False, allow_blank=True, default="")
+    override_password = serializers.CharField(
+        required=False, allow_blank=True, default="", write_only=True, trim_whitespace=False
+    )
+    override_reason = serializers.CharField(
+        required=False, allow_blank=True, max_length=500, default=""
+    )
+
+    def validate(self, data):
+        if data["flag_problem"].strip():
+            errors = {}
+            if not data.get("flag_severity"):
+                errors["flag_severity"] = ["Choose the severity of the problem."]
+            if "flag_unfit" not in self.initial_data:
+                errors["flag_unfit"] = ["Say whether the vehicle is fit for use."]
+            if errors:
+                raise serializers.ValidationError(errors)
+        return data
+
+    def to_return(self) -> dict:
+        """The keyword arguments of services.return_vehicle()."""
+        data = self.validated_data
+        sides = [(side, data[f"photo_{side.lower()}"]) for side in settings.HANDOVER_PHOTO_SIDES]
+        flag = None
+        if data["flag_problem"].strip():
+            flag = services.Flag(data["flag_problem"], data["flag_severity"], data["flag_unfit"])
+        return {
+            "readings": self.to_readings(),
+            "expected_total": data["expected_total"],
+            "damage_marks": data["damage_marks"],
+            "photos": sides + [("Extra", photo) for photo in data["extra_photos"]],
+            "signature": data["signature"],
+            "flag": flag,
+            "override": {
+                "email": data["override_email"],
+                "password": data["override_password"],
+                "reason": data["override_reason"],
+            },
         }
