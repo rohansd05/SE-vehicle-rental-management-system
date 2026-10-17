@@ -776,6 +776,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rentals/branch-bookings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Collections at your branch, or find a booking
+         * @description Confirmed bookings collected at the caller's branch, earliest first: `when=today` (default) or `when=upcoming`. With `q`, finds a Confirmed booking on any date by its booking reference, its pickup code or the customer's mobile number; `when` is then ignored. The pickup code itself is never returned.
+         */
+        get: operations["api_v1_rentals_branch_bookings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/handovers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A booking's handover checklist (UC 7 steps 1 and 2, Handover.Refuse)
+         * @description The booking, the customer's licence, the accessories to issue (BR-7), the photo sides required and the rental terms to sign. `refusals` lists every condition that blocks the handover (licence, statutory documents, Unsafe vehicle, payment); `can_hand_over` is true when there are none. Once handed over, `report` holds the signed condition report.
+         */
+        get: operations["api_v1_rentals_handovers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/handovers/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record, sign and complete a handover (BranchStaff.handover_vehicle())
+         * @description Handover.Checklist, Handover.Sign and Handover.Activate in one transaction: the condition report with one photo of each side and the customer's signature is stored and can never be altered, the booking becomes Active with the handover time, the vehicle goes On Rent, everything is audited and a copy is e-mailed to the customer. If a condition is not met the answer is 409 with `refusals`.
+         */
+        post: operations["api_v1_rentals_handovers_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -784,6 +844,10 @@ export interface components {
         AccessToken: {
             access: string;
             user: components["schemas"]["UserSummary"];
+        };
+        Accessory: {
+            name: string;
+            quantity: number;
         };
         AddOn: {
             readonly id: number;
@@ -942,6 +1006,20 @@ export interface components {
             branch_name: string;
             address: string;
         };
+        /** @description One collection in the branch list (Book.Done.Store: staff never see the pickup code). */
+        BranchBooking: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            readonly pickup_branch: string;
+            readonly customer_name: string;
+            readonly customer_mobile: string;
+            readonly vehicle: components["schemas"]["BookingVehicle"];
+        };
         CancelJob: {
             reason: string;
         };
@@ -956,6 +1034,29 @@ export interface components {
          * @enum {string}
          */
         CategoriesEnum: "Car" | "Two-Wheeler";
+        ConditionPhotoOut: {
+            caption: string;
+            readonly url: string | null;
+        };
+        /** @description The signed report (Handover.Sign), with signed, expiring links (SI-3). */
+        ConditionReport: {
+            readonly report_type: components["schemas"]["ReportTypeEnum"];
+            readonly odometer_reading: number;
+            /**
+             * Format: decimal
+             * @description Percent of a full tank or battery.
+             */
+            readonly fuel_level: string;
+            readonly accessories: components["schemas"]["Accessory"][];
+            readonly damage_marks: components["schemas"]["DamageMark"][];
+            readonly photos: components["schemas"]["ConditionPhotoOut"][];
+            readonly signature_url: string | null;
+            /** Format: date-time */
+            readonly signed_at: string | null;
+            readonly recorded_by: string;
+            /** Format: date-time */
+            readonly recorded_at: string;
+        };
         ConflictBooking: {
             booking_reference: string;
             /** Format: date-time */
@@ -980,6 +1081,13 @@ export interface components {
              * @default false
              */
             safety_notice_acknowledged: boolean;
+        };
+        /** @description A mark on the vehicle diagram: x and y in percent of its width and height. */
+        DamageMark: {
+            x: number;
+            y: number;
+            /** @default  */
+            note: string;
         };
         /**
          * @description * `ok` - ok
@@ -1011,6 +1119,78 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: "Petrol" | "Diesel" | "CNG" | "Electric";
+        /**
+         * @description Handover.Checklist and Handover.Sign, sent as multipart/form-data.
+         *
+         *     `accessories` and `damage_marks` are JSON arrays in their form fields.
+         *     One photo of each side is required (photo_front, photo_rear, photo_left,
+         *     photo_right: the four sides of HANDOVER_PHOTO_SIDES); extra_photos are
+         *     optional. `signature` is the customer's signature drawn on the branch
+         *     device, as a PNG.
+         */
+        Handover: {
+            odometer_reading: number;
+            /** Format: decimal */
+            fuel_level: string;
+            accessories?: unknown;
+            damage_marks?: unknown;
+            /** Format: uri */
+            photo_front: string;
+            /** Format: uri */
+            photo_rear: string;
+            /** Format: uri */
+            photo_left: string;
+            /** Format: uri */
+            photo_right: string;
+            extra_photos?: string[];
+            /** Format: uri */
+            signature: string;
+        };
+        /** @description UC 7 steps 1 and 2: the booking, the verified licence and the handover checklist. */
+        HandoverDetail: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            readonly pickup_branch: string;
+            readonly customer_name: string;
+            readonly customer_mobile: string;
+            readonly vehicle: components["schemas"]["HandoverVehicle"];
+            /** Format: date-time */
+            readonly handed_over_at: string | null;
+            readonly licence: components["schemas"]["HandoverLicence"] | null;
+            readonly refusals: components["schemas"]["Refusal"][];
+            readonly can_hand_over: boolean;
+            readonly accessories: components["schemas"]["Accessory"][];
+            readonly photo_sides: string[];
+            readonly terms: components["schemas"]["QuoteTerms"];
+            readonly report: components["schemas"]["ConditionReport"] | null;
+        };
+        HandoverLicence: {
+            readonly licence_number: string;
+            readonly status: components["schemas"]["LicenceStatusEnum"];
+            /** Format: date */
+            readonly expiry_date: string | null;
+            readonly categories: string[];
+        };
+        HandoverRefused: {
+            detail: string;
+            code: string;
+            refusals: components["schemas"]["Refusal"][];
+        };
+        HandoverVehicle: {
+            readonly id: number;
+            readonly brand: string;
+            readonly model: string;
+            readonly registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly status: components["schemas"]["MaintenanceVehicleStatusEnum"];
+            readonly odometer: number;
+        };
         Health: {
             status: components["schemas"]["HealthStatusEnum"];
             database: components["schemas"]["DatabaseEnum"];
@@ -1227,6 +1407,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Booking"][];
         };
+        PaginatedBranchBookingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["BranchBooking"][];
+        };
         PaginatedLicenceReviewList: {
             /** @example 123 */
             count: number;
@@ -1381,6 +1576,10 @@ export interface components {
             downtime_hours: string;
             parts: components["schemas"]["PartInput"][];
         };
+        Refusal: {
+            code: string;
+            message: string;
+        };
         Register: {
             /** Format: email */
             email: string;
@@ -1407,6 +1606,12 @@ export interface components {
             /** @default false */
             flag_unsafe: boolean;
         };
+        /**
+         * @description * `Handover` - Handover
+         *     * `Return` - Return
+         * @enum {string}
+         */
+        ReportTypeEnum: "Handover" | "Return";
         /**
          * @description * `CUSTOMER` - Customer
          *     * `BRANCH_STAFF` - Branch Staff
@@ -2731,6 +2936,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Quote"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_branch_bookings_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                q?: string;
+                when?: "today" | "upcoming";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBranchBookingList"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_handovers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoverDetail"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_handovers_complete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Handover"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoverDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            /** @description Handover.Refuse */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoverRefused"];
                 };
             };
         };

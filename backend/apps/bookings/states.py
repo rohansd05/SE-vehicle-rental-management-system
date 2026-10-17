@@ -11,6 +11,8 @@ Every status change of a booking goes through transition(), which saves the
 new status and writes an audit entry (SE-10).
 """
 
+from django.utils import timezone
+
 from apps.core.audit import record_audit
 
 from .models import Booking
@@ -69,3 +71,20 @@ def transition(
         request=request,
     )
     return booking
+
+
+def activate_booking(booking: Booking, by, *, request=None) -> Booking:
+    """Handover.Activate: Confirmed -> Active, recording the actual handover time.
+
+    Called by apps/rentals inside its handover transaction, which holds the
+    booking row lock (Module N1).
+    """
+    booking.handed_over_at = timezone.now()
+    return transition(
+        booking,
+        Status.ACTIVE,
+        actor=by,
+        reason="Vehicle handed over and the condition report signed (Handover.Activate).",
+        request=request,
+        update_fields=("handed_over_at",),
+    )

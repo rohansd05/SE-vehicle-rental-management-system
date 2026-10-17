@@ -6,3 +6,8 @@ class RentalsConfig(AppConfig):
     name = "apps.rentals"
     label = "rentals"
     verbose_name = "Rentals"
+
+    def ready(self) -> None:
+        from .notification_templates import register
+
+        register()

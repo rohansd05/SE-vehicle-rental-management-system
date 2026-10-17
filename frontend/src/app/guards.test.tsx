@@ -32,6 +32,9 @@ beforeEach(() => {
     http.get(`${API}/licences/`, () =>
       HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
     ),
+    http.get(`${API}/rentals/branch-bookings/`, () =>
+      HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
+    ),
   )
 })
 

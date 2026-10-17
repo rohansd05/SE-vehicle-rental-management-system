@@ -1441,6 +1441,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
           description: ''
+  /api/v1/rentals/branch-bookings/:
+    get:
+      operationId: api_v1_rentals_branch_bookings_list
+      description: 'Confirmed bookings collected at the caller''s branch, earliest
+        first: `when=today` (default) or `when=upcoming`. With `q`, finds a Confirmed
+        booking on any date by its booking reference, its pickup code or the customer''s
+        mobile number; `when` is then ignored. The pickup code itself is never returned.'
+      summary: Collections at your branch, or find a booking
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: when
+        schema:
+          type: string
+          enum:
+          - today
+          - upcoming
+      tags:
+      - Handover
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBranchBookingList'
+          description: ''
+  /api/v1/rentals/handovers/{id}/:
+    get:
+      operationId: api_v1_rentals_handovers_retrieve
+      description: The booking, the customer's licence, the accessories to issue (BR-7),
+        the photo sides required and the rental terms to sign. `refusals` lists every
+        condition that blocks the handover (licence, statutory documents, Unsafe vehicle,
+        payment); `can_hand_over` is true when there are none. Once handed over, `report`
+        holds the signed condition report.
+      summary: A booking's handover checklist (UC 7 steps 1 and 2, Handover.Refuse)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Handover
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoverDetail'
+          description: ''
+  /api/v1/rentals/handovers/{id}/complete/:
+    post:
+      operationId: api_v1_rentals_handovers_complete_create
+      description: 'Handover.Checklist, Handover.Sign and Handover.Activate in one
+        transaction: the condition report with one photo of each side and the customer''s
+        signature is stored and can never be altered, the booking becomes Active with
+        the handover time, the vehicle goes On Rent, everything is audited and a copy
+        is e-mailed to the customer. If a condition is not met the answer is 409 with
+        `refusals`.'
+      summary: Record, sign and complete a handover (BranchStaff.handover_vehicle())
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Handover
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Handover'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoverDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoverRefused'
+          description: Handover.Refuse
 components:
   schemas:
     AccessToken:
@@ -1455,6 +1563,19 @@ components:
       required:
       - access
       - user
+    Accessory:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+      required:
+      - name
+      - quantity
     AddOn:
       type: object
       properties:
@@ -1922,6 +2043,52 @@ components:
       - address
       - branch_id
       - branch_name
+    BranchBooking:
+      type: object
+      description: 'One collection in the branch list (Book.Done.Store: staff never
+        see the pickup code).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_mobile:
+          type: string
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/BookingVehicle'
+          readOnly: true
+      required:
+      - booking_reference
+      - customer_mobile
+      - customer_name
+      - id
+      - pickup_branch
+      - pickup_datetime
+      - return_datetime
+      - status
+      - vehicle
     CancelJob:
       type: object
       properties:
@@ -1950,6 +2117,78 @@ components:
       description: |-
         * `Car` - Car
         * `Two-Wheeler` - Two-Wheeler
+    ConditionPhotoOut:
+      type: object
+      properties:
+        caption:
+          type: string
+        url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - caption
+      - url
+    ConditionReport:
+      type: object
+      description: The signed report (Handover.Sign), with signed, expiring links
+        (SI-3).
+      properties:
+        report_type:
+          allOf:
+          - $ref: '#/components/schemas/ReportTypeEnum'
+          readOnly: true
+        odometer_reading:
+          type: integer
+          readOnly: true
+        fuel_level:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Percent of a full tank or battery.
+        accessories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Accessory'
+          readOnly: true
+        damage_marks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DamageMark'
+          readOnly: true
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConditionPhotoOut'
+          readOnly: true
+        signature_url:
+          type: string
+          nullable: true
+          readOnly: true
+        signed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        recorded_by:
+          type: string
+          readOnly: true
+        recorded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accessories
+      - damage_marks
+      - fuel_level
+      - odometer_reading
+      - photos
+      - recorded_at
+      - recorded_by
+      - report_type
+      - signature_url
+      - signed_at
     ConflictBooking:
       type: object
       properties:
@@ -1998,6 +2237,26 @@ components:
       - return_datetime
       - terms_accepted
       - vehicle
+    DamageMark:
+      type: object
+      description: 'A mark on the vehicle diagram: x and y in percent of its width
+        and height.'
+      properties:
+        x:
+          type: integer
+          maximum: 100
+          minimum: 0
+        y:
+          type: integer
+          maximum: 100
+          minimum: 0
+        note:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - x
+      - y
     DatabaseEnum:
       enum:
       - ok
@@ -2055,6 +2314,222 @@ components:
         * `Diesel` - Diesel
         * `CNG` - CNG
         * `Electric` - Electric
+    Handover:
+      type: object
+      description: |-
+        Handover.Checklist and Handover.Sign, sent as multipart/form-data.
+
+        `accessories` and `damage_marks` are JSON arrays in their form fields.
+        One photo of each side is required (photo_front, photo_rear, photo_left,
+        photo_right: the four sides of HANDOVER_PHOTO_SIDES); extra_photos are
+        optional. `signature` is the customer's signature drawn on the branch
+        device, as a PNG.
+      properties:
+        odometer_reading:
+          type: integer
+          minimum: 0
+        fuel_level:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        accessories: {}
+        damage_marks: {}
+        photo_front:
+          type: string
+          format: uri
+        photo_rear:
+          type: string
+          format: uri
+        photo_left:
+          type: string
+          format: uri
+        photo_right:
+          type: string
+          format: uri
+        extra_photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        signature:
+          type: string
+          format: uri
+      required:
+      - fuel_level
+      - odometer_reading
+      - photo_front
+      - photo_left
+      - photo_rear
+      - photo_right
+      - signature
+    HandoverDetail:
+      type: object
+      description: 'UC 7 steps 1 and 2: the booking, the verified licence and the
+        handover checklist.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_mobile:
+          type: string
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/HandoverVehicle'
+          readOnly: true
+        handed_over_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        licence:
+          allOf:
+          - $ref: '#/components/schemas/HandoverLicence'
+          nullable: true
+          readOnly: true
+        refusals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refusal'
+          readOnly: true
+        can_hand_over:
+          type: boolean
+          readOnly: true
+        accessories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Accessory'
+          readOnly: true
+        photo_sides:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        terms:
+          allOf:
+          - $ref: '#/components/schemas/QuoteTerms'
+          readOnly: true
+        report:
+          allOf:
+          - $ref: '#/components/schemas/ConditionReport'
+          nullable: true
+          readOnly: true
+      required:
+      - accessories
+      - booking_reference
+      - can_hand_over
+      - customer_mobile
+      - customer_name
+      - handed_over_at
+      - id
+      - licence
+      - photo_sides
+      - pickup_branch
+      - pickup_datetime
+      - refusals
+      - report
+      - return_datetime
+      - status
+      - terms
+      - vehicle
+    HandoverLicence:
+      type: object
+      properties:
+        licence_number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LicenceStatusEnum'
+          readOnly: true
+        expiry_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        categories:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - categories
+      - expiry_date
+      - licence_number
+      - status
+    HandoverRefused:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        refusals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refusal'
+      required:
+      - code
+      - detail
+      - refusals
+    HandoverVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        model:
+          type: string
+          readOnly: true
+        registration_no:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicleStatusEnum'
+          readOnly: true
+        odometer:
+          type: integer
+          readOnly: true
+      required:
+      - brand
+      - category
+      - id
+      - model
+      - odometer
+      - registration_no
+      - status
+      - vehicle_type
     Health:
       type: object
       properties:
@@ -2617,6 +3092,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Booking'
+    PaginatedBranchBookingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchBooking'
     PaginatedLicenceReviewList:
       type: object
       required:
@@ -3001,6 +3499,16 @@ components:
       - parts
       - service_date
       - work_description
+    Refusal:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+      - code
+      - message
     Register:
       type: object
       properties:
@@ -3071,6 +3579,14 @@ components:
       - reported_problem
       - severity
       - vehicle
+    ReportTypeEnum:
+      enum:
+      - Handover
+      - Return
+      type: string
+      description: |-
+        * `Handover` - Handover
+        * `Return` - Return
     RoleEnum:
       enum:
       - CUSTOMER

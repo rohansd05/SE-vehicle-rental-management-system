@@ -42,6 +42,7 @@ from apps.fleet.models import (
 )
 from apps.maintenance.seed import delete_demo_jobs, seed_demo_jobs
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
+from apps.rentals.seed import delete_demo_handover_data, seed_demo_handover_data
 
 DEMO_PASSWORD = "Demo@1234"
 IST = ZoneInfo("Asia/Kolkata")
@@ -224,6 +225,7 @@ class Command(BaseCommand):
         self._seed_vehicles(branches, categories)
         seed_demo_jobs(self._count)
         seed_demo_booking_data(self._count)
+        seed_demo_handover_data(self._count)
 
     def _seed_branches(self) -> dict[str, Branch]:
         branches = {}
@@ -467,6 +469,7 @@ class Command(BaseCommand):
         """Remove only what _seed() creates. Other data is never touched."""
         demo_emails = [account.email for account in DEMO_ACCOUNTS]
         try:
+            delete_demo_handover_data()  # its booking protects a demo tariff
             self._delete_audited(Tariff.objects.filter(vehicle_category__name__in=CATEGORIES))
             FuelPrice.objects.filter(effective_from=DEMO_EFFECTIVE_FROM).delete()
             delete_demo_jobs()
