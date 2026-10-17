@@ -45,6 +45,8 @@ export const defaultHandlers = [
   healthHandler,
   http.post(`${API}/auth/refresh/`, sessionEnded), // no session to restore
   http.post(`${API}/auth/logout/`, () => new HttpResponse(null, { status: 204 })),
+  // The customer home page asks for the outstanding due (Pay.Dues); none by default.
+  http.get(`${API}/payments/due/`, () => HttpResponse.json({ outstanding_due: '0.00' })),
 ]
 
 export const server = setupServer(...defaultHandlers)
