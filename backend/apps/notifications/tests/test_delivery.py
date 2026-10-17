@@ -8,6 +8,7 @@ from django.test import override_settings
 from apps.accounts.models import OneTimePassword
 from apps.accounts.services import issue_otp
 from apps.accounts.tests.factories import UserFactory
+from apps.bookings.notification_templates import SAMPLE_CONTEXT as BOOKINGS_SAMPLE_CONTEXT
 from apps.maintenance.notification_templates import SAMPLE_CONTEXT
 from apps.notifications.models import Notification
 from apps.notifications.services import queue_email
@@ -45,6 +46,7 @@ def test_every_template_renders():
         "due_by": "",
         **SAMPLE_CONTEXT,
         **RENTALS_SAMPLE_CONTEXT,
+        **BOOKINGS_SAMPLE_CONTEXT,
     }
     for name, version in TEMPLATES:
         subject, body = render(name, version, context)
