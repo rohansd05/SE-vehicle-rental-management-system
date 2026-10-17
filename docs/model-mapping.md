@@ -313,6 +313,13 @@ choosing something. Each needs a yes/no or a correction from the team.
 | P15 | Technician optional on a job | `MaintenanceJob.technician` (nullable) | A job is reported before it is assigned |
 | P16 | Invoice tax registration source | `settings.AGENCY_TAX_REGISTRATION` (env) | Copied onto each invoice at issue |
 | P17 | Field lengths | all `max_length` values | Chosen for Indian formats (e.g. registration 16, mobile 15) |
+| P18 | Handover photo sides | `HANDOVER_PHOTO_SIDES` (business_rules.py) | One photo each of Front, Rear, Left and Right, so "at least four covering all sides" (Handover.Checklist) is checkable |
+| P19 | Condition photo and signature images | `CONDITION_IMAGE_EXTENSIONS`, `CONDITION_IMAGE_MAX_BYTES` | The licence image limits (D20): JPG or PNG, 5 MB |
+| P20 | Handover before the pickup time | `rentals.services.handover_refusals()`, code `pickup_not_arrived` | Refused until the pickup time (Exp 2 UC 7 precondition "the pickup time has arrived") |
+| P21 | Damage diagram | `DamageMark` (x, y in percent, note); `VehicleDiagram.tsx` | A top view in nine areas; a mark stores its area's centre and a note |
+| P22 | Handover input caps | `rentals.serializers.HandoverSerializer` | At most 30 accessories, 50 damage marks and 12 extra photos (input limits, not business rules) |
+| P23 | Accessories to issue | `rentals.services.expected_accessories()` | BR-7's free helmet on a two-wheeler, then every booked add-on (named driver and delivery included); staff tick what is issued |
+| P24 | "Paid" for a handover | `rentals.services._is_paid()` | A Succeeded Security Deposit payment; to be replaced by R1's payments service (cash bookings) |
 
 Proposed values for authentication, OTPs and licence uploads (Phase 1B)
 are listed in `docs/decisions.md`, D20 (A1–A16).
