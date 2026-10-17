@@ -2349,6 +2349,168 @@ paths:
               schema:
                 $ref: '#/components/schemas/HandoverRefused'
           description: Handover.Refuse
+  /api/v1/rentals/returns/:
+    get:
+      operationId: api_v1_rentals_returns_list
+      description: Active bookings collected at the caller's branch and due back today
+        or overdue, earliest return first. With `q`, finds an Active booking on any
+        date by its booking reference or the customer's mobile number.
+      summary: Returns due at your branch, or find a rental in progress
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - Return
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBranchBookingList'
+          description: ''
+  /api/v1/rentals/returns/{id}/:
+    get:
+      operationId: api_v1_rentals_returns_retrieve
+      description: The booking, its handover condition report (whose photos are shown
+        beside the return photos, Return.Checklist), the BR-10 to BR-12 terms, the
+        rental already paid (extensions included, never charged again) and how the
+        deposit was paid. `refusals` says why a booking cannot be returned (only an
+        Active one can). Once returned, `return_report` and `settlement` hold the
+        signed settlement, its refund status (Pending Approval above the approval
+        limit) and any due.
+      summary: A booking's return checklist (UC 8 step 1)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Return
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnDetail'
+          description: ''
+  /api/v1/rentals/returns/{id}/complete/:
+    post:
+      operationId: api_v1_rentals_returns_complete_create
+      description: 'Exp 4 sequence 2 in one transaction: the return condition report
+        with one photo of each side, signed by the customer to acknowledge the settlement;
+        the charges deducted from the deposit and put on the invoice as a debit note;
+        the balance refunded (BR-14) or the excess recorded as a due (Pay.Dues); the
+        vehicle''s odometer updated; a maintenance job raised if the vehicle is flagged
+        (Return.Flag); the booking Completed and the vehicle Available, or Under Maintenance
+        if flagged unfit. If the charges differ from `expected_total` the answer is
+        409 `settlement_changed`. Sending it again for a returned booking returns
+        the same result and moves no money.'
+      summary: Record, settle and complete a return (BranchStaff.return_vehicle())
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Return
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Return'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRefused'
+          description: Not an Active booking
+  /api/v1/rentals/returns/{id}/quote/:
+    post:
+      operationId: api_v1_rentals_returns_quote_create
+      description: 'From the return readings and the charges the staff member enters:
+        the late return (BR-10), excess kilometres (BR-11), fuel or charge shortfall
+        (BR-12), accessories not returned, damage and tax as separate lines, then
+        what is deducted from the deposit, refunded (BR-14) or left as a due. Nothing
+        is saved. `override_required` is true when the distance needs a supervisor''s
+        approval (Return.Odometer). A reading below the handover reading is 400.'
+      summary: Compute the itemised settlement (UC 8 step 3, Return.Charges)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Return
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnReadings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReturnReadings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReturnReadings'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnQuote'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRefused'
+          description: Not an Active booking
 components:
   schemas:
     AccessToken:
@@ -3698,6 +3860,22 @@ components:
         * `Inspection` - Inspection
         * `Cleaning` - Cleaning
         * `Documentation` - Documentation
+    KindEnum:
+      enum:
+      - late_return
+      - excess_km
+      - fuel_shortfall
+      - accessory
+      - damage
+      - tax
+      type: string
+      description: |-
+        * `late_return` - late_return
+        * `excess_km` - excess_km
+        * `fuel_shortfall` - fuel_shortfall
+        * `accessory` - accessory
+        * `damage` - damage
+        * `tax` - tax
     LedgerEntryResult:
       type: object
       properties:
@@ -4499,6 +4677,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Refund'
+    PaidCharge:
+      type: object
+      description: A rental charge paid before the return (Pay.Ledger), e.g. an extension
+        (Book.Extend).
+      properties:
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - description
     PartInput:
       type: object
       properties:
@@ -5171,6 +5363,371 @@ components:
       description: |-
         * `Handover` - Handover
         * `Return` - Return
+    Return:
+      type: object
+      description: |-
+        Return.Checklist, Return.Settle, Return.Flag and Return.Odometer, as multipart/form-data.
+
+        The readings and charges as for a quote; one photo of each side (photo_front,
+        photo_rear, photo_left, photo_right) and optional extra_photos; damage_marks
+        (new damage, a JSON list); `signature`, the customer's acknowledgement of the
+        settlement (Exp 5); `expected_total`, the total they acknowledged. To flag the
+        vehicle (Return.Flag): flag_problem, flag_severity and flag_unfit. Above the
+        plausibility limit (Return.Odometer): override_email and override_password of a
+        Branch Manager of the branch or an Administrator, and override_reason.
+      properties:
+        odometer_reading:
+          type: integer
+          minimum: 0
+        fuel_level:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        returned_at:
+          type: string
+          format: date-time
+        missing_accessories: {}
+        damage_charges: {}
+        damage_marks: {}
+        photo_front:
+          type: string
+          format: uri
+        photo_rear:
+          type: string
+          format: uri
+        photo_left:
+          type: string
+          format: uri
+        photo_right:
+          type: string
+          format: uri
+        extra_photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        signature:
+          type: string
+          format: uri
+        expected_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        flag_problem:
+          type: string
+          default: ''
+          maxLength: 1000
+        flag_severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        flag_unfit:
+          type: boolean
+        override_email:
+          type: string
+          format: email
+          default: ''
+        override_password:
+          type: string
+          writeOnly: true
+          default: ''
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - expected_total
+      - fuel_level
+      - odometer_reading
+      - photo_front
+      - photo_left
+      - photo_rear
+      - photo_right
+      - returned_at
+      - signature
+    ReturnCharge:
+      type: object
+      description: 'Return.Charges: one separate item of the settlement.'
+      properties:
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        justification:
+          type: string
+      required:
+      - amount
+      - description
+      - justification
+      - kind
+    ReturnDetail:
+      type: object
+      description: |-
+        UC 8 step 1: the booking, its handover report (Return.Checklist: the photos are shown
+        side by side), what is already paid and, once returned, the signed settlement.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_mobile:
+          type: string
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/ReturnVehicle'
+          readOnly: true
+        handed_over_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        returned_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        distance_travelled:
+          type: integer
+          readOnly: true
+          nullable: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        refusals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refusal'
+          readOnly: true
+        can_return:
+          type: boolean
+          readOnly: true
+        photo_sides:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        terms:
+          allOf:
+          - $ref: '#/components/schemas/QuoteTerms'
+          readOnly: true
+        handover_report:
+          allOf:
+          - $ref: '#/components/schemas/ConditionReport'
+          nullable: true
+          readOnly: true
+        return_report:
+          allOf:
+          - $ref: '#/components/schemas/ConditionReport'
+          nullable: true
+          readOnly: true
+        rental_paid:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaidCharge'
+          readOnly: true
+        deposit_method:
+          type: string
+          nullable: true
+          description: 'Pay.Refund: a cash deposit is refunded in cash by the staff
+            member who settles.'
+          readOnly: true
+        settlement:
+          allOf:
+          - $ref: '#/components/schemas/SettlementRecord'
+          nullable: true
+          readOnly: true
+      required:
+      - booking_reference
+      - can_return
+      - customer_mobile
+      - customer_name
+      - deposit_method
+      - distance_travelled
+      - handed_over_at
+      - handover_report
+      - id
+      - photo_sides
+      - pickup_branch
+      - pickup_datetime
+      - refusals
+      - rental_paid
+      - return_datetime
+      - return_report
+      - returned_at
+      - security_deposit
+      - settlement
+      - status
+      - terms
+      - total_amount
+      - vehicle
+    ReturnQuote:
+      type: object
+      description: 'UC 8 step 3: the itemised settlement for the customer to acknowledge.'
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnCharge'
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        deposit_used:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        distance:
+          type: integer
+        free_km:
+          type: integer
+        accessories_returned:
+          type: array
+          items:
+            $ref: '#/components/schemas/Accessory'
+        override_required:
+          type: boolean
+        plausibility_limit_km:
+          type: integer
+      required:
+      - accessories_returned
+      - deposit
+      - deposit_used
+      - distance
+      - due
+      - free_km
+      - lines
+      - override_required
+      - plausibility_limit_km
+      - refund
+      - total
+    ReturnReadings:
+      type: object
+      description: |-
+        Return.Checklist readings and the staff's charges: a JSON body for a quote, form
+        fields (the lists as JSON) when the return is completed.
+      properties:
+        odometer_reading:
+          type: integer
+          minimum: 0
+        fuel_level:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        returned_at:
+          type: string
+          format: date-time
+        missing_accessories: {}
+        damage_charges: {}
+      required:
+      - fuel_level
+      - odometer_reading
+      - returned_at
+    ReturnRefused:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        refusals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refusal'
+      required:
+      - code
+      - detail
+      - refusals
+    ReturnVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        model:
+          type: string
+          readOnly: true
+        registration_no:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicleStatusEnum'
+          readOnly: true
+        odometer:
+          type: integer
+          readOnly: true
+        fuel_type:
+          allOf:
+          - $ref: '#/components/schemas/FuelTypeEnum'
+          readOnly: true
+        fuel_capacity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+      required:
+      - brand
+      - category
+      - fuel_capacity
+      - fuel_type
+      - id
+      - model
+      - odometer
+      - registration_no
+      - status
+      - vehicle_type
     RoleEnum:
       enum:
       - CUSTOMER
@@ -5219,6 +5776,51 @@ components:
       - scheduled_from
       - scheduled_to
       - technician
+    SettlementRecord:
+      type: object
+      description: 'Return.Complete: the signed settlement and where its money went.'
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnCharge'
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        deposit_used:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        refund_status:
+          type: string
+        refund_paid_out_by:
+          type: string
+        maintenance_job:
+          type: integer
+          nullable: true
+      required:
+      - deposit
+      - deposit_used
+      - due
+      - lines
+      - maintenance_job
+      - refund
+      - refund_paid_out_by
+      - refund_status
+      - total
     SeverityEnum:
       enum:
       - Low
