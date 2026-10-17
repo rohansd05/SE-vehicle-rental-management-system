@@ -218,6 +218,7 @@ SPECTACULAR_SETTINGS = {
         "BookingStatusEnum": "apps.bookings.models.Booking.Status",
         "MaintenanceVehicleStatusEnum": "apps.fleet.models.Vehicle.Status",
         "HealthStatusEnum": ["ok", "degraded"],
+        "ExtraChargeMethodEnum": ["card", "online"],  # Book.Modify.Price, Book.Extend
     },
     "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",

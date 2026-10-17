@@ -11,3 +11,12 @@ def release_expired_holds() -> int:
 
     with transaction.atomic():
         return release()
+
+
+@shared_task
+def declare_no_shows() -> int:
+    """Appendix B No-show: uncollected bookings NO_SHOW_AFTER past pickup (every minute, 0005)."""
+    from .services import declare_no_shows as declare
+
+    with transaction.atomic():
+        return declare()

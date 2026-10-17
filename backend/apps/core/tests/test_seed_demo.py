@@ -40,15 +40,17 @@ EXPECTED = {
     FuelPrice: 4,
     # 20 + 4 bookable Andheri vehicles (bookings/seed.py) + the handover car (rentals/seed.py)
     # + the cash and refund demo cars (payments/seed.py)
-    Vehicle: 27,
-    Car: 17,
+    # + the two booking-changes cars (bookings/seed_changes.py)
+    Vehicle: 29,
+    Car: 19,
     TwoWheeler: 10,
-    VehicleDocument: 30,  # one each, and the handover car's four (SA-3)
+    VehicleDocument: 32,  # one each, and the handover car's four (SA-3)
     # 5 + pending@ (bookings/seed.py) + handover@ (rentals/seed.py) + payments@ (payments/seed.py)
-    User: 8,
-    Customer: 4,
-    Licence: 4,
-    LicenceCategory: 7,
+    # + changes@ (bookings/seed_changes.py)
+    User: 9,
+    Customer: 5,
+    Licence: 5,
+    LicenceCategory: 9,
     BranchStaff: 1,
     MaintenanceTechnician: 1,
     Administrator: 2,  # the administrator and the branch manager
@@ -67,8 +69,8 @@ def _counts():
 def test_seed_creates_the_expected_demo_data():
     _seed()
     assert _counts() == EXPECTED
-    # Fleet.Audit: 5 branches, 8 users, 5 tariffs and 27 vehicles were audited.
-    assert AuditLog.objects.filter(action="Create").count() == 45
+    # Fleet.Audit: 5 branches, 9 users, 5 tariffs and 29 vehicles were audited.
+    assert AuditLog.objects.filter(action="Create").count() == 48
     assert AuditLog.objects.verify_chain()
 
 
@@ -84,7 +86,7 @@ def test_reset_reloads_the_same_data():
     _seed()
     _seed("--reset")
     assert _counts() == EXPECTED
-    assert AuditLog.objects.filter(action="Delete").count() == 45
+    assert AuditLog.objects.filter(action="Delete").count() == 48
     assert AuditLog.objects.verify_chain()
 
 

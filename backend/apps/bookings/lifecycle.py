@@ -123,9 +123,13 @@ def _hold_until() -> datetime:
 
 
 def release_expired_holds(*, vehicle: Vehicle | None = None, request=None) -> int:
-    """Book.Hold.Expire: expired Pending Payment holds return to Draft, details kept (BK3)."""
+    """Book.Hold.Expire: expired Pending Payment holds return to Draft, details kept (BK3).
+
+    A cash-at-collection booking is left to the no-show task, which marks it
+    No-show at the same moment (services.declare_no_shows, R2-P1).
+    """
     expired = Booking.objects.select_for_update().filter(
-        status=Status.PENDING_PAYMENT, hold_expires_at__lte=timezone.now()
+        status=Status.PENDING_PAYMENT, hold_expires_at__lte=timezone.now(), cash_on_collection=False
     )
     if vehicle is not None:
         expired = expired.filter(vehicle=vehicle)
@@ -219,12 +223,26 @@ def _place_hold(booking: Booking, *, actor, request) -> None:
         raise  # pragma: no cover - any other integrity error is a bug
 
 
-def booking_quote(booking: Booking) -> Quote:
-    """The booking's price recomputed from its snapshot: tariff, add-on rates, discount."""
-    add_ons = [
-        (AddOn(pk=line.add_on_id, name=line.add_on.name, daily_rate=line.daily_rate), line.quantity)
-        for line in booking.add_ons.select_related("add_on").order_by("pk")
-    ]
+def booking_quote(
+    booking: Booking,
+    *,
+    pickup: datetime | None = None,
+    return_: datetime | None = None,
+    add_ons: list[tuple[AddOn, int]] | None = None,
+) -> Quote:
+    """The booking's price recomputed from its snapshot: tariff, add-on rates, discount.
+
+    Book.Modify.Price, Book.Extend: pass a new period or add-ons to reprice the
+    booking at its own tariff (BR-13) and discount.
+    """
+    if add_ons is None:
+        add_ons = [
+            (
+                AddOn(pk=line.add_on_id, name=line.add_on.name, daily_rate=line.daily_rate),
+                line.quantity,
+            )
+            for line in booking.add_ons.select_related("add_on").order_by("pk")
+        ]
     discount = None
     if booking.discount_code_id:
         # The snapshot amount, so a later edit of the code cannot change this booking.
@@ -236,8 +254,8 @@ def booking_quote(booking: Booking) -> Quote:
     return calculate_price(
         tariff=booking.tariff,
         vehicle_type=booking.vehicle.category.vehicle_type,
-        pickup=booking.pickup_datetime,
-        return_=booking.return_datetime,
+        pickup=pickup or booking.pickup_datetime,
+        return_=return_ or booking.return_datetime,
         add_ons=add_ons,
         discount=discount,
     )

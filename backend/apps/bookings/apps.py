@@ -6,3 +6,8 @@ class BookingsConfig(AppConfig):
     name = "apps.bookings"
     label = "bookings"
     verbose_name = "Bookings"
+
+    def ready(self) -> None:
+        from .notification_templates import register
+
+        register()

@@ -108,7 +108,7 @@ The SRS does not settle these; the code implements them as listed.
 
 | # | Item | Proposal |
 |---|---|---|
-| R1-P1 | Hold of a cash booking | Choosing cash keeps the booking Pending Payment, held until `NO_SHOW_AFTER` (2 hours) after the pickup time instead of the 15-minute Book.Hold; then it returns to Draft like any expired hold. **Differs from Book.Hold's 15 minutes**, which cannot cover a collection days later. The customer can still pay by card or on-line before then |
+| R1-P1 | Hold of a cash booking | Choosing cash keeps the booking Pending Payment, held until `NO_SHOW_AFTER` (2 hours) after the pickup time instead of the 15-minute Book.Hold; then the no-show task marks it No-show (R2-P1, `docs/traceability-booking-changes.md`; it returned to Draft before Module R2). **Differs from Book.Hold's 15 minutes**, which cannot cover a collection days later. The customer can still pay by card or on-line before then |
 | R1-P2 | Automatic approval limit (UC 13) | `REFUND_AUTO_APPROVAL_LIMIT = Decimal("5000.00")` in `business_rules.py`; "above" means strictly greater, so a full car deposit (5,000.00) is refunded without approval |
 | R1-P3 | Who approves refunds | Administrator only (UC 13's actor); a Branch Manager does not |
 | R1-P4 | Cash refunds | Issued at once when a Branch Staff member asks for them (the customer is at the counter; the acknowledgement is recorded then); asked for by anyone else, they wait as Approved on the branch's Cash desk; above the limit they need approval first, like every refund |

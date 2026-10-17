@@ -135,7 +135,7 @@ function Policies({ vehicle }: { vehicle: VehicleDetail }) {
   )
 }
 
-function AddOnPicker({
+export function AddOnPicker({
   addOns,
   chosen,
   onChange,

@@ -9,7 +9,7 @@ from freezegun import freeze_time
 
 from apps.accounts.tests.factories import BranchStaffFactory
 from apps.accounts.tests.helpers import authenticated_client
-from apps.bookings import lifecycle
+from apps.bookings import lifecycle, services
 from apps.bookings.models import Booking
 from apps.bookings.tests.conftest import PASSWORD
 from apps.core.models import AuditLog
@@ -172,11 +172,13 @@ def test_an_uncollected_cash_booking_is_released_after_the_no_show_window(
     booking = held(customer, car, pickup, return_)
     choose_cash(customer, booking)
     with freeze_time(pickup + timedelta(hours=2, minutes=1)):
-        assert lifecycle.release_expired_holds() == 1
+        # R2-P1: the no-show task, not the hold sweep, releases it, as No-show.
+        assert lifecycle.release_expired_holds() == 0
         with pytest.raises(lifecycle.HoldExpiredError):
             lifecycle.pay_booking(customer, booking.pk, idempotency_key="late", method="cash")
+        assert services.declare_no_shows() == 1
     booking.refresh_from_db()
-    assert booking.status == S.DRAFT
+    assert booking.status == S.NO_SHOW
 
 
 def test_a_cash_booking_can_still_be_paid_by_card(customer, car, pickup, return_):

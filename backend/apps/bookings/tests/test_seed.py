@@ -43,10 +43,11 @@ def test_the_demo_vehicles_show_in_an_andheri_search():
         pickup=pickup,
         return_=pickup + timedelta(days=2),
     ).values_list("registration_no", flat=True)
-    # The four demo vehicles, the one original Andheri vehicle maintenance leaves free, and
-    # the two payments demo cars (payments/seed.py), booked on other days.
+    # The four demo vehicles, the one original Andheri vehicle maintenance leaves free,
+    # the two payments demo cars (payments/seed.py), booked on other days, and the
+    # booking-changes no-show car (seed_changes.py; its twin is booked then).
     assert set(DEMO_REGISTRATIONS) <= set(found)
-    assert len(found) == 7
+    assert len(found) == 8
 
 
 def test_the_demo_customer_can_book_and_pay_for_one():

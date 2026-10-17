@@ -2,7 +2,9 @@
 
 For developers of other modules who move money: N2 Return and settlement
 (UC 8) calls `capture_charges`, `refund_deposit` and `record_due`; R2
-Modify/Cancel/Extend (UC 4) calls `capture_charges` and `refund_payment`.
+Modify/Cancel/Extend (UC 4) calls `authorize`, `record_booking_ledger`,
+`issue_debit_note`, `capture_charges`, `refund_payment` and `refund_deposit`
+(`docs/traceability-booking-changes.md`).
 Everything here is in `backend/apps/payments/services.py` (owner: Rohan).
 Call these functions; never create `Payment`, `LedgerEntry`,
 `RefundRequest` or `InvoiceAdjustment` rows yourself (CLAUDE.md: cross-module
@@ -162,9 +164,10 @@ against the customer." Return.Settle: when the charges exceed the deposit.
 | `pay_due(customer, *, payment_token, idempotency_key, channel="", upi_id="")` | The customer clears the whole due on-line (`POST /api/v1/payments/due/`) |
 | `approve_refund(refund, approver)`, `reject_refund(refund, approver, reason)` | UC 13, Administrator only (`/app/refunds`) |
 | `pay_out_cash_refund(refund, staff_user)` | An Approved cash refund paid out at the counter (`/app/cash`) |
-| `issue_credit_note(invoice, amount, reason, *, issued_by)` | Pay.Invoice correction; `refund_payment()` calls it for rental refunds |
+| `issue_credit_note(invoice, amount, reason, *, issued_by)` | Pay.Invoice correction; `refund_payment()` calls it for rental refunds. Credit notes never exceed the invoice total plus its debit notes |
+| `issue_debit_note(invoice, amount, reason, *, issued_by)` | Pay.Invoice: an extra charge after issue (Book.Modify.Price, Book.Extend), DN-YYYY-NNNNNN, tax inside at the invoice's rate |
 | `captured_amount(payment)`, `refunded_amount(payment)`, `refundable_amount(payment)` | Read-only sums |
-| `authorize(...)`, `record_cash(...)`, `record_booking_ledger(...)`, `issue_invoice(...)` | Book.Done only (`apps/bookings/lifecycle.py`) |
+| `authorize(...)`, `record_cash(...)`, `record_booking_ledger(...)`, `issue_invoice(...)` | Book.Done (`apps/bookings/lifecycle.py`). R2 also calls `authorize(deposit_amount=Decimal("0.00"))` for an extra rental charge (no deposit row; the same key returns the first result) and `record_booking_ledger(note=...)` for its Charge entry |
 | `handle_notification(payload, signature)` | SI-1.4 webhook only |
 
 ## Example: settling a return (N2)

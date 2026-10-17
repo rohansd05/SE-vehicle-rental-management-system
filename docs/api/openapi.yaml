@@ -266,6 +266,20 @@ paths:
         schema:
           type: integer
       - in: query
+        name: pickup_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: pickup_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: reference
+        schema:
+          type: string
+      - in: query
         name: status
         schema:
           type: string
@@ -285,6 +299,16 @@ paths:
           * `Completed` - Completed
           * `Cancelled` - Cancelled
           * `No-show` - No-show
+      - in: query
+        name: vehicle_type
+        schema:
+          type: string
+          enum:
+          - Car
+          - Two-Wheeler
+        description: |-
+          * `Car` - Car
+          * `Two-Wheeler` - Two-Wheeler
       tags:
       - Bookings
       security:
@@ -374,6 +398,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingDetail'
           description: ''
+  /api/v1/bookings/{id}/cancel/:
+    get:
+      operationId: api_v1_bookings_cancel_retrieve
+      description: Book.Cancel and Book.Cancel.Release (Exp 3 Booking.cancel_booking()).
+      summary: The refund if this booking is cancelled now (Book.Cancel, BR-8)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancellationQuote'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+    post:
+      operationId: api_v1_bookings_cancel_create
+      description: 'SE-9: the password is required. `expected_refund` is the total
+        refund the customer was shown; 409 `refund_changed` if BR-8 now gives another
+        amount. The vehicle is released, the booking Cancelled, the rental share (BR-8)
+        and the whole deposit refunded through the payments service (a refund above
+        the automatic approval limit waits for an Administrator, UC 13), and the customer
+        and the branch notified. An unpaid cash-at-collection booking is cancelled
+        with no refund. 409 `invalid_state` for an Active or other booking.'
+      summary: Cancel a booking before collection (Book.Cancel, Book.Cancel.Release)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/bookings/{id}/cash/:
     post:
       operationId: api_v1_bookings_cash_create
@@ -417,6 +520,108 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/{id}/extend/:
+    post:
+      operationId: api_v1_bookings_extend_create
+      description: 'SE-9: the password is required. Only an Active booking, when no
+        booking of the vehicle conflicts (409 `vehicle_unavailable`) and the whole
+        rental stays within 30 days (BR-5, 400). The extra charge is authorised before
+        the new return time takes effect (402 `payment_declined` changes nothing);
+        409 `price_changed` if it differs from `expected_charge`.'
+      summary: Extend an active rental (Book.Extend)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtendBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtendBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/{id}/extend/quote/:
+    post:
+      operationId: api_v1_bookings_extend_quote_create
+      description: 'Book.Extend: the extra charge for a later return; nothing is saved.'
+      summary: Price an extension of an active rental (Book.Extend, BR-5)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionQuote'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
           description: ''
         '409':
           content:
@@ -477,6 +682,114 @@ paths:
       responses:
         '200':
           description: The invoice PDF.
+  /api/v1/bookings/{id}/modify/:
+    post:
+      operationId: api_v1_bookings_modify_create
+      description: 'SE-9: the password is required. `expected_charge` and `expected_refund`
+        are the amounts the customer was shown; 409 `price_changed` otherwise. An
+        extra charge is authorised at once by card or on-line (402 `payment_declined`
+        changes nothing); an excess is refunded under BR-8. 409 `vehicle_unavailable`,
+        `modification_cutoff` or `invalid_state`. The same idempotency key never charges
+        or refunds twice (Pay.Idempotent).'
+      summary: Modify a confirmed booking (Book.Modify, Book.Modify.Price)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModifyBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModifyBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/{id}/modify/quote/:
+    post:
+      operationId: api_v1_bookings_modify_quote_create
+      description: Rechecks BR-5 and the licence (BR-2) and reprices at the booking's
+        own tariff (BR-13). `extra_charge` is charged at once; `refund_amount` is
+        the excess refunded under BR-8. When the vehicle is not free, `vehicle_free`
+        is false and `alternatives` lists vehicles of the same category at the same
+        tariff (UC 4 extension 3a). 409 `modification_cutoff` less than 12 hours before
+        pickup.
+      summary: Price a change of period, branch or add-ons (Book.Modify, Book.Modify.Price)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModificationQuote'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/bookings/{id}/pay/:
     post:
       operationId: api_v1_bookings_pay_create
@@ -2593,6 +2906,20 @@ components:
       - return_datetime
       - status
       - vehicle
+    CancelBooking:
+      type: object
+      properties:
+        expected_refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: The total refund the customer was shown.
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - expected_refund
+      - password
     CancelJob:
       type: object
       properties:
@@ -2601,6 +2928,45 @@ components:
           maxLength: 1000
       required:
       - reason
+    CancellationQuote:
+      type: object
+      description: 'Book.Cancel: the refund computed per BR-8, shown before the customer
+        confirms.'
+      properties:
+        notice_hours:
+          type: integer
+        refund_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        rental_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rental_refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        deposit_refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total_refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        awaits_approval:
+          type: boolean
+          description: 'UC 13: part of the refund is above the automatic approval
+            limit.'
+      required:
+      - awaits_approval
+      - deposit_refund
+      - notice_hours
+      - refund_percent
+      - rental_amount
+      - rental_refund
+      - total_refund
     CancellationRefund:
       type: object
       properties:
@@ -2988,6 +3354,84 @@ components:
       - billing_unit
       - security_deposit
       - total_payable
+    ExtendBooking:
+      type: object
+      description: |-
+        Pay.Method for an extra charge (card or on-line, D6); SE-9. A token is needed only
+        when the change costs more; the server says so (`payment_required`).
+      properties:
+        return_datetime:
+          type: string
+          format: date-time
+        method:
+          allOf:
+          - $ref: '#/components/schemas/ExtraChargeMethodEnum'
+          default: card
+        payment_token:
+          type: string
+          default: ''
+          maxLength: 255
+        channel:
+          default: ''
+          oneOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        upi_id:
+          type: string
+          default: ''
+          pattern: ^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$
+        idempotency_key:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+        expected_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - expected_charge
+      - idempotency_key
+      - password
+      - return_datetime
+    ExtensionQuote:
+      type: object
+      properties:
+        price:
+          $ref: '#/components/schemas/Quote'
+        return_datetime:
+          type: string
+          format: date-time
+        previous_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        extra_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - extra_charge
+      - previous_total
+      - price
+      - return_datetime
+    ExtensionRequest:
+      type: object
+      properties:
+        return_datetime:
+          type: string
+          format: date-time
+      required:
+      - return_datetime
+    ExtraChargeMethodEnum:
+      enum:
+      - card
+      - online
+      type: string
+      description: |-
+        * `card` - card
+        * `online` - online
     FuelTypeEnum:
       enum:
       - Petrol
@@ -3733,6 +4177,134 @@ components:
         * `Under Maintenance` - Under Maintenance
         * `Unsafe` - Unsafe
         * `Retired` - Retired
+    ModificationQuote:
+      type: object
+      properties:
+        price:
+          $ref: '#/components/schemas/Quote'
+        vehicle:
+          $ref: '#/components/schemas/BookingVehicle'
+        vehicle_free:
+          type: boolean
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingVehicle'
+        previous_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        new_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        extra_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        refund_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        refund_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - alternatives
+      - extra_charge
+      - new_total
+      - previous_total
+      - price
+      - refund_amount
+      - refund_percent
+      - vehicle
+      - vehicle_free
+    ModificationRequest:
+      type: object
+      description: |-
+        Book.Modify: the new period, pickup branch and add-ons; `vehicle` takes the
+        alternative offered when the booked vehicle is not free (UC 4 extension 3a).
+      properties:
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        pickup_branch:
+          type: integer
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnRequest'
+        vehicle:
+          type: integer
+          nullable: true
+      required:
+      - pickup_branch
+      - pickup_datetime
+      - return_datetime
+    ModifyBooking:
+      type: object
+      description: |-
+        Book.Modify: the new period, pickup branch and add-ons; `vehicle` takes the
+        alternative offered when the booked vehicle is not free (UC 4 extension 3a).
+      properties:
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        pickup_branch:
+          type: integer
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnRequest'
+        vehicle:
+          type: integer
+          nullable: true
+        method:
+          allOf:
+          - $ref: '#/components/schemas/ExtraChargeMethodEnum'
+          default: card
+        payment_token:
+          type: string
+          default: ''
+          maxLength: 255
+        channel:
+          default: ''
+          oneOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        upi_id:
+          type: string
+          default: ''
+          pattern: ^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$
+        idempotency_key:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+        expected_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        expected_refund:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - expected_charge
+      - expected_refund
+      - idempotency_key
+      - password
+      - pickup_branch
+      - pickup_datetime
+      - return_datetime
     NextServiceDue:
       type: object
       description: 'BR-15: whichever comes first.'
@@ -4056,7 +4628,7 @@ components:
       properties:
         method:
           allOf:
-          - $ref: '#/components/schemas/PayDueMethodEnum'
+          - $ref: '#/components/schemas/ExtraChargeMethodEnum'
           default: card
         payment_token:
           type: string
@@ -4085,14 +4657,6 @@ components:
       - idempotency_key
       - password
       - payment_token
-    PayDueMethodEnum:
-      enum:
-      - card
-      - online
-      type: string
-      description: |-
-        * `card` - card
-        * `online` - online
     PayOutCashRefund:
       type: object
       properties:
