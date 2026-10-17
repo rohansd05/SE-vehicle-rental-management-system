@@ -1144,6 +1144,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rentals/returns/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns due at your branch, or find a rental in progress
+         * @description Active bookings collected at the caller's branch and due back today or overdue, earliest return first. With `q`, finds an Active booking on any date by its booking reference or the customer's mobile number.
+         */
+        get: operations["api_v1_rentals_returns_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/returns/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A booking's return checklist (UC 8 step 1)
+         * @description The booking, its handover condition report (whose photos are shown beside the return photos, Return.Checklist), the BR-10 to BR-12 terms, the rental already paid (extensions included, never charged again) and how the deposit was paid. `refusals` says why a booking cannot be returned (only an Active one can). Once returned, `return_report` and `settlement` hold the signed settlement, its refund status (Pending Approval above the approval limit) and any due.
+         */
+        get: operations["api_v1_rentals_returns_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/returns/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record, settle and complete a return (BranchStaff.return_vehicle())
+         * @description Exp 4 sequence 2 in one transaction: the return condition report with one photo of each side, signed by the customer to acknowledge the settlement; the charges deducted from the deposit and put on the invoice as a debit note; the balance refunded (BR-14) or the excess recorded as a due (Pay.Dues); the vehicle's odometer updated; a maintenance job raised if the vehicle is flagged (Return.Flag); the booking Completed and the vehicle Available, or Under Maintenance if flagged unfit. If the charges differ from `expected_total` the answer is 409 `settlement_changed`. Sending it again for a returned booking returns the same result and moves no money.
+         */
+        post: operations["api_v1_rentals_returns_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/returns/{id}/quote/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute the itemised settlement (UC 8 step 3, Return.Charges)
+         * @description From the return readings and the charges the staff member enters: the late return (BR-10), excess kilometres (BR-11), fuel or charge shortfall (BR-12), accessories not returned, damage and tax as separate lines, then what is deducted from the deposit, refunded (BR-14) or left as a due. Nothing is saved. `override_required` is true when the distance needs a supervisor's approval (Return.Odometer). A reading below the handover reading is 400.
+         */
+        post: operations["api_v1_rentals_returns_quote_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1652,6 +1732,16 @@ export interface components {
          * @enum {string}
          */
         JobTypeEnum: "Preventive" | "Corrective" | "Inspection" | "Cleaning" | "Documentation";
+        /**
+         * @description * `late_return` - late_return
+         *     * `excess_km` - excess_km
+         *     * `fuel_shortfall` - fuel_shortfall
+         *     * `accessory` - accessory
+         *     * `damage` - damage
+         *     * `tax` - tax
+         * @enum {string}
+         */
+        KindEnum: "late_return" | "excess_km" | "fuel_shortfall" | "accessory" | "damage" | "tax";
         LedgerEntryResult: {
             id: number;
             entry_type: string;
@@ -1991,6 +2081,12 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Refund"][];
         };
+        /** @description A rental charge paid before the return (Pay.Ledger), e.g. an extension (Book.Extend). */
+        PaidCharge: {
+            description: string;
+            /** Format: decimal */
+            amount: string;
+        };
         PartInput: {
             part_name: string;
             /** Format: decimal */
@@ -2259,6 +2355,147 @@ export interface components {
          */
         ReportTypeEnum: "Handover" | "Return";
         /**
+         * @description Return.Checklist, Return.Settle, Return.Flag and Return.Odometer, as multipart/form-data.
+         *
+         *     The readings and charges as for a quote; one photo of each side (photo_front,
+         *     photo_rear, photo_left, photo_right) and optional extra_photos; damage_marks
+         *     (new damage, a JSON list); `signature`, the customer's acknowledgement of the
+         *     settlement (Exp 5); `expected_total`, the total they acknowledged. To flag the
+         *     vehicle (Return.Flag): flag_problem, flag_severity and flag_unfit. Above the
+         *     plausibility limit (Return.Odometer): override_email and override_password of a
+         *     Branch Manager of the branch or an Administrator, and override_reason.
+         */
+        Return: {
+            odometer_reading: number;
+            /** Format: decimal */
+            fuel_level: string;
+            /** Format: date-time */
+            returned_at: string;
+            missing_accessories?: unknown;
+            damage_charges?: unknown;
+            damage_marks?: unknown;
+            /** Format: uri */
+            photo_front: string;
+            /** Format: uri */
+            photo_rear: string;
+            /** Format: uri */
+            photo_left: string;
+            /** Format: uri */
+            photo_right: string;
+            extra_photos?: string[];
+            /** Format: uri */
+            signature: string;
+            /** Format: decimal */
+            expected_total: string;
+            /** @default  */
+            flag_problem: string;
+            flag_severity?: components["schemas"]["SeverityEnum"];
+            flag_unfit?: boolean;
+            /**
+             * Format: email
+             * @default
+             */
+            override_email: string;
+            /** @default  */
+            override_password: string;
+            /** @default  */
+            override_reason: string;
+        };
+        /** @description Return.Charges: one separate item of the settlement. */
+        ReturnCharge: {
+            kind: components["schemas"]["KindEnum"];
+            description: string;
+            /** Format: decimal */
+            amount: string;
+            justification: string;
+        };
+        /**
+         * @description UC 8 step 1: the booking, its handover report (Return.Checklist: the photos are shown
+         *     side by side), what is already paid and, once returned, the signed settlement.
+         */
+        ReturnDetail: {
+            readonly id: number;
+            readonly booking_reference: string;
+            readonly status: components["schemas"]["BookingStatusEnum"];
+            /** Format: date-time */
+            readonly pickup_datetime: string;
+            /** Format: date-time */
+            readonly return_datetime: string;
+            readonly pickup_branch: string;
+            readonly customer_name: string;
+            readonly customer_mobile: string;
+            readonly vehicle: components["schemas"]["ReturnVehicle"];
+            /** Format: date-time */
+            readonly handed_over_at: string | null;
+            /** Format: date-time */
+            readonly returned_at: string | null;
+            readonly distance_travelled: number | null;
+            /** Format: decimal */
+            readonly total_amount: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            readonly refusals: components["schemas"]["Refusal"][];
+            readonly can_return: boolean;
+            readonly photo_sides: string[];
+            readonly terms: components["schemas"]["QuoteTerms"];
+            readonly handover_report: components["schemas"]["ConditionReport"] | null;
+            readonly return_report: components["schemas"]["ConditionReport"] | null;
+            readonly rental_paid: components["schemas"]["PaidCharge"][];
+            /** @description Pay.Refund: a cash deposit is refunded in cash by the staff member who settles. */
+            readonly deposit_method: string | null;
+            readonly settlement: components["schemas"]["SettlementRecord"] | null;
+        };
+        /** @description UC 8 step 3: the itemised settlement for the customer to acknowledge. */
+        ReturnQuote: {
+            lines: components["schemas"]["ReturnCharge"][];
+            /** Format: decimal */
+            total: string;
+            /** Format: decimal */
+            deposit: string;
+            /** Format: decimal */
+            deposit_used: string;
+            /** Format: decimal */
+            refund: string;
+            /** Format: decimal */
+            due: string;
+            distance: number;
+            free_km: number;
+            accessories_returned: components["schemas"]["Accessory"][];
+            override_required: boolean;
+            plausibility_limit_km: number;
+        };
+        /**
+         * @description Return.Checklist readings and the staff's charges: a JSON body for a quote, form
+         *     fields (the lists as JSON) when the return is completed.
+         */
+        ReturnReadings: {
+            odometer_reading: number;
+            /** Format: decimal */
+            fuel_level: string;
+            /** Format: date-time */
+            returned_at: string;
+            missing_accessories?: unknown;
+            damage_charges?: unknown;
+        };
+        ReturnRefused: {
+            detail: string;
+            code: string;
+            refusals: components["schemas"]["Refusal"][];
+        };
+        ReturnVehicle: {
+            readonly id: number;
+            readonly brand: string;
+            readonly model: string;
+            readonly registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: string;
+            readonly status: components["schemas"]["MaintenanceVehicleStatusEnum"];
+            readonly odometer: number;
+            readonly fuel_type: components["schemas"]["FuelTypeEnum"];
+            /** Format: decimal */
+            readonly fuel_capacity: string | null;
+        };
+        /**
          * @description * `CUSTOMER` - Customer
          *     * `BRANCH_STAFF` - Branch Staff
          *     * `MAINTENANCE_TECHNICIAN` - Maintenance Technician
@@ -2281,6 +2518,23 @@ export interface components {
             scheduled_to: string;
             /** @default false */
             confirm_conflicts: boolean;
+        };
+        /** @description Return.Complete: the signed settlement and where its money went. */
+        SettlementRecord: {
+            lines: components["schemas"]["ReturnCharge"][];
+            /** Format: decimal */
+            total: string;
+            /** Format: decimal */
+            deposit: string;
+            /** Format: decimal */
+            deposit_used: string;
+            /** Format: decimal */
+            refund: string;
+            /** Format: decimal */
+            due: string;
+            refund_status: string;
+            refund_paid_out_by: string;
+            maintenance_job: number | null;
         };
         /**
          * @description * `Low` - Low
@@ -4379,6 +4633,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HandoverRefused"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_returns_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBranchBookingList"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_returns_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnDetail"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_returns_complete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Return"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            /** @description Not an Active booking */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnRefused"];
+                };
+            };
+        };
+    };
+    api_v1_rentals_returns_quote_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnReadings"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReturnReadings"];
+                "multipart/form-data": components["schemas"]["ReturnReadings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnQuote"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            /** @description Not an Active booking */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnRefused"];
                 };
             };
         };

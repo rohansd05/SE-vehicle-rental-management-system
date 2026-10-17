@@ -59,6 +59,17 @@ class ConditionReport(TimeStampedModel):
         related_name="odometer_overrides",
     )
     odometer_override_reason = models.TextField(blank=True)
+    # Return.Charges, Return.Settle: the itemised settlement the customer signs
+    # (kind, description, amount, justification per line); empty at handover.
+    charges = models.JSONField(default=list, blank=True)
+    # Return.Flag (UC 8 extension 3a): the job raised when the vehicle is flagged.
+    maintenance_job = models.ForeignKey(
+        "maintenance.MaintenanceJob",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="return_reports",
+    )
 
     class Meta:
         ordering = ["booking", "recorded_at"]

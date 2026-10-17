@@ -14,6 +14,7 @@ import type { HandoverDetail } from './api'
 import { makeCollection, makeHandover, page, REPORT } from './fixtures'
 
 const LIST = `${API}/rentals/branch-bookings/`
+const RETURNS = `${API}/rentals/returns/`
 const DETAIL = `${API}/rentals/handovers/41/`
 
 const jpg = (name: string) => new File(['jpeg'], name, { type: 'image/jpeg' })
@@ -38,6 +39,7 @@ function serveCollections(respond: (url: URL) => object) {
       seen.push(url.searchParams)
       return HttpResponse.json(respond(url))
     }),
+    http.get(RETURNS, () => HttpResponse.json(page([]))), // the desk lists returns too (N2)
   )
   return seen
 }
@@ -88,7 +90,10 @@ describe('branch bookings (UC 7 step 1)', () => {
 
   it('shows an error state with a retry', async () => {
     signedInAs('BRANCH_STAFF')
-    server.use(http.get(LIST, () => HttpResponse.json({ detail: 'Server unavailable.' }, { status: 500 })))
+    server.use(
+      http.get(LIST, () => HttpResponse.json({ detail: 'Server unavailable.' }, { status: 500 })),
+      http.get(RETURNS, () => HttpResponse.json(page([]))),
+    )
     renderApp({ route: '/app/handover' })
     expect(await screen.findByRole('alert')).toHaveTextContent('Server unavailable.')
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()

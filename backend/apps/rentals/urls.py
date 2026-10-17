@@ -14,4 +14,8 @@ urlpatterns = [
         views.HandoverCompleteView.as_view(),
         name="handover-complete",
     ),
+    path("returns/", views.ReturnListView.as_view(), name="returns"),
+    path("returns/<int:pk>/", views.ReturnDetailView.as_view(), name="return-detail"),
+    path("returns/<int:pk>/quote/", views.ReturnQuoteView.as_view(), name="return-quote"),
+    path("returns/<int:pk>/complete/", views.ReturnCompleteView.as_view(), name="return-complete"),
 ]

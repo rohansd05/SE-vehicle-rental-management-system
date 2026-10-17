@@ -108,6 +108,11 @@ HANDOVER_REQUIRED_DOCUMENTS = (
 CONDITION_IMAGE_EXTENSIONS = LICENCE_IMAGE_EXTENSIONS
 CONDITION_IMAGE_MAX_BYTES = LICENCE_IMAGE_MAX_BYTES
 
+# Return.Odometer: a distance above this many km per started day of the rental
+# needs a supervisor override with a recorded reason. Proposed (the SRS names
+# "the configured plausibility limit" but gives no value; it amends D16).
+ODOMETER_PLAUSIBILITY_KM_PER_DAY = 1000
+
 # UC 13 Approve Refund: a refund above this amount waits for an Administrator.
 # Proposed (the SRS names an "automatic approval threshold" but gives no value).
 REFUND_AUTO_APPROVAL_LIMIT = Decimal("5000.00")

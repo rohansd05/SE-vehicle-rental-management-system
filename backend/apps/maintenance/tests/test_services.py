@@ -178,6 +178,22 @@ def test_schedule_conflict_needs_confirmation(staff, vehicle, tech):
     assert job.status == S.SCHEDULED
 
 
+@pytest.mark.parametrize(
+    ("gap", "conflicts"),
+    [(timedelta(minutes=30), True), (timedelta(minutes=60), False)],
+    ids=["inside-the-buffer", "after-the-buffer"],
+)
+def test_conflicts_honour_the_br1_turnaround_buffer(vehicle, gap, conflicts):
+    """BR-1: a booking holds the vehicle until 60 minutes after its return time."""
+    pickup = timezone.now() + timedelta(days=2)
+    booking = BookingFactory(
+        vehicle=vehicle, pickup_datetime=pickup, return_datetime=pickup + timedelta(hours=8)
+    )
+    start = booking.return_datetime + gap
+    found = list(services.conflicting_bookings(vehicle, start, start + timedelta(hours=4)))
+    assert found == ([booking] if conflicts else [])
+
+
 def test_schedule_rejects_bad_period_inactive_technician_and_wrong_status(staff, vehicle, tech):
     job = _report(staff, vehicle)
     start, end = _period()

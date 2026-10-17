@@ -10,8 +10,9 @@ import { RequireRole } from '@/app/guards'
 
 import { BranchBookingsPage, HandoverDeskPage } from './CollectionsPage'
 import { HandoverPage } from './HandoverPage'
+import { ReturnPage } from './ReturnPage'
 
-/** Exp 2 UC 7: Branch Staff hand vehicles over. */
+/** Exp 2 UC 7 and UC 8: Branch Staff hand vehicles over and take them back. */
 const STAFF: readonly Role[] = ['BRANCH_STAFF']
 /** Branch Managers follow their branch's bookings, read only. */
 const BRANCH_TEAM: readonly Role[] = ['BRANCH_STAFF', 'BRANCH_MANAGER']
@@ -24,6 +25,7 @@ export function handoverRoutes() {
       <Route path="handover" element={guard(STAFF, <HandoverDeskPage />)} />
       <Route path="handover/:id" element={guard(BRANCH_TEAM, <HandoverPage />)} />
       <Route path="branch-bookings" element={guard(BRANCH_TEAM, <BranchBookingsPage />)} />
+      <Route path="returns/:id" element={guard(BRANCH_TEAM, <ReturnPage />)} />
     </>
   )
 }

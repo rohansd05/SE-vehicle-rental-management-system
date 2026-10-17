@@ -45,6 +45,7 @@ from apps.maintenance.seed import delete_demo_jobs, seed_demo_jobs
 from apps.payments.seed import delete_demo_payment_data, seed_demo_payment_data
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 from apps.rentals.seed import delete_demo_handover_data, seed_demo_handover_data
+from apps.rentals.seed_return import delete_demo_return_data, seed_demo_return_data
 
 DEMO_PASSWORD = "Demo@1234"
 IST = ZoneInfo("Asia/Kolkata")
@@ -228,6 +229,7 @@ class Command(BaseCommand):
         seed_demo_jobs(self._count)
         seed_demo_booking_data(self._count)
         seed_demo_handover_data(self._count)
+        seed_demo_return_data(self._count)
         seed_demo_payment_data(self._count)
         seed_demo_change_data(self._count)
 
@@ -474,6 +476,7 @@ class Command(BaseCommand):
         demo_emails = [account.email for account in DEMO_ACCOUNTS]
         try:
             delete_demo_handover_data()  # its booking protects a demo tariff
+            delete_demo_return_data()  # so do these, and their reports the staff account
             delete_demo_payment_data()  # so do these bookings
             delete_demo_change_data()  # and these
             self._delete_audited(Tariff.objects.filter(vehicle_category__name__in=CATEGORIES))

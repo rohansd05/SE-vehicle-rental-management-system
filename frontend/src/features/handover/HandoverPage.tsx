@@ -185,6 +185,15 @@ export function HandoverPage() {
           {refusals.length ? <Refusals refusals={refusals} /> : null}
           <BookingDetails handover={data} />
           {data.report ? <SignedReport report={data.report} /> : null}
+          {data.status === 'Active' || data.status === 'Completed' ? (
+            <div>
+              <Button asChild variant={data.status === 'Active' && isStaff ? 'default' : 'outline'} size="lg">
+                <Link to={`/app/returns/${data.id}`}>
+                  {data.status === 'Active' && isStaff ? 'Record the return' : 'View the return'}
+                </Link>
+              </Button>
+            </div>
+          ) : null}
           {!data.report && isStaff && data.can_hand_over && !refused ? (
             <div className="border-t pt-8">
               <HandoverForm

@@ -46,6 +46,11 @@ ENDPOINTS = [
     ("handover-detail", "get", booking_url("handover-detail"), BRANCH_TEAM),
     # UC 7's actor is Branch Staff; the report's recorded_by is a BranchStaff.
     ("handover-complete", "post", booking_url("handover-complete"), {"staff"}),
+    ("returns", "get", lambda: reverse("rentals:returns"), BRANCH_TEAM),
+    ("return-detail", "get", booking_url("return-detail"), BRANCH_TEAM),
+    # UC 8's actor is Branch Staff; Branch Managers follow a return read only.
+    ("return-quote", "post", booking_url("return-quote"), {"staff"}),
+    ("return-complete", "post", booking_url("return-complete"), {"staff"}),
 ]
 
 CASES = [

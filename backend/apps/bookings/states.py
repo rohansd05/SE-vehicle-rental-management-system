@@ -94,6 +94,22 @@ def activate_booking(booking: Booking, by, *, request=None) -> Booking:
     )
 
 
+def complete_booking(booking: Booking, by, *, request=None) -> Booking:
+    """Return.Complete: Active -> Completed, recording the return time and the distance.
+
+    Called by apps/rentals inside its return transaction, which holds the
+    booking row lock and has set returned_at and distance_travelled (Module N2).
+    """
+    return transition(
+        booking,
+        Status.COMPLETED,
+        actor=by,
+        reason="Vehicle returned and the settlement recorded (Return.Complete).",
+        request=request,
+        update_fields=("returned_at", "distance_travelled"),
+    )
+
+
 # ─── Module R2: modify, extend, cancel, no-show (UC 4; Appendix B) ────────
 # Called by bookings/services.py inside its transaction, which holds the
 # booking row lock. Each guards the one source status it accepts, because

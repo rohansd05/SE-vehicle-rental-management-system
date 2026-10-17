@@ -25,6 +25,20 @@ TEMPLATES: dict[tuple[str, int], Template] = {
             "Please return the vehicle by {return_at}.\n\n{agency}"
         ),
     ),
+    # Return.Settle; Exp 5 return fork "Receive settlement statement", "Send settlement
+    # and refund notification". The refund itself is e-mailed by R1 when issued.
+    ("return_settlement", 1): Template(
+        subject="{agency}: your return and settlement for {reference}",
+        body=(
+            "Hello {name},\n\n"
+            "Thank you for returning {vehicle} ({registration_no}) on {returned_at}. "
+            "You travelled {distance} km.\n\n"
+            "Charges at return:\n{charges}\n"
+            "Total charges: {total}\n"
+            "Security deposit: {deposit}\n\n"
+            "{balance}\n\n{agency}"
+        ),
+    ),
 }
 
 
@@ -43,6 +57,13 @@ SAMPLE_CONTEXT = {
     "damage": "Scratch on the rear bumper",
     "photo_count": 4,
     "staff": "Demo Branch Staff",
+    "returned_at": "17 Oct 2026 12:10",
+    "distance": 420,
+    "charges": "- Excess kilometres, 170 km over the 250 km allowance at 10.00 per km (BR-11): "
+    "INR 1,700.00",
+    "total": "INR 2,006.00",
+    "deposit": "INR 5,000.00",
+    "balance": "The balance of INR 2,994.00 is refunded to your original payment method (BR-14).",
 }
 
 

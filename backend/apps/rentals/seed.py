@@ -7,9 +7,13 @@
   so customer@vrms.test keeps an empty history for the Book Vehicle demo.
   Password as the other demo accounts.
 - A Confirmed, paid one-week booking of that car by that customer,
-  collected at Andheri from 07:00 IST today, with a child seat to issue, so
-  the demo branch staff can hand it over (Exp 2 use case 7). Being a week
-  long, it also keeps the car out of the Book Vehicle demo searches.
+  collected at Andheri from five minutes before seed_demo runs, with a
+  child seat to issue, so the demo branch staff can hand it over at once
+  (Exp 2 use case 7). Handover is refused before the pickup time, and R2's
+  no-show task marks a booking not collected two hours after its pickup
+  No-show, so a pickup time fixed in the morning broke this demo whenever
+  Celery Beat ran. Being a week long, the booking also keeps the car out of
+  the Book Vehicle demo searches.
 
 The booking moves through the booking state machine (Draft, Pending
 Payment, Confirmed) and its deposit is authorised through the payments
@@ -19,12 +23,12 @@ then never remove the booking.
 
 Idempotent: the car, its documents and the customer are created once; a booking is added
 only when none of the car's bookings blocks the new period, so a second run
-the same day changes nothing, and a run on a later day adds that day's
-booking once the last one is over.
+changes nothing while the last booking still holds the car, and a later run
+adds a new one once it is over, cancelled or a no-show.
 """
 
 from collections.abc import Callable
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 
 from django.utils import timezone
 
@@ -48,7 +52,7 @@ CUSTOMER_MOBILE = "+919800000007"
 LICENCE_NUMBER = "MH02 20160067890"
 VERIFIED_AT = datetime(2026, 10, 9, 11, 30, tzinfo=timezone.get_fixed_timezone(330))
 REGISTRATION = "MH02DH3001"
-PICKUP_TIME = time(7, 0)  # IST
+PICKUP_LEAD = timedelta(minutes=5)  # the pickup is this long before seed_demo runs
 RENTAL_DAYS = 7
 DOCUMENTS_VALID_TO = date(2027, 12, 31)
 PICKUP_CODE = "246810"  # fixed, so the demo can find the booking by its pickup code
@@ -149,7 +153,7 @@ def _seed_customer(count: Callable[[str, bool], None]) -> Customer:
 
 def _seed_booking(count: Callable[[str, bool], None], car: Car, customer: Customer) -> None:
     today = timezone.localdate()
-    pickup = timezone.make_aware(datetime.combine(today, PICKUP_TIME))
+    pickup = timezone.now().replace(second=0, microsecond=0) - PICKUP_LEAD
     return_ = pickup + timedelta(days=RENTAL_DAYS)
     period = Booking(pickup_datetime=pickup, return_datetime=return_).compute_blocked_period()
     if car.bookings.filter(

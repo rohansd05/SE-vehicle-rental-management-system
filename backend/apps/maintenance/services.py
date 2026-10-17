@@ -28,6 +28,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction
+from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
 from django.utils import timezone
 
 from apps.accounts.models import MaintenanceTechnician, User
@@ -178,15 +179,18 @@ def _release_vehicle(job: MaintenanceJob, actor, reason: str, request) -> None:
 
 
 def conflicting_bookings(vehicle: Vehicle, start, end):
-    """Maint.Conflict: Confirmed bookings whose blocked period overlaps [start, end)."""
+    """Maint.Conflict: Confirmed bookings whose blocked period overlaps [start, end).
+
+    The blocked period runs to the return time plus BR-1's turnaround buffer,
+    so a job starting within the buffer after a return conflicts too.
+    """
     from apps.bookings.models import Booking
 
     return (
         Booking.objects.filter(
             vehicle=vehicle,
             status=Booking.Status.CONFIRMED,
-            pickup_datetime__lt=end,
-            return_datetime__gt=start,
+            blocked_period__overlap=DateTimeTZRange(start, end, "[)"),
         )
         .select_related("customer__user")
         .order_by("pickup_datetime")
