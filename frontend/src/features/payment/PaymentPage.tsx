@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Clock } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '@/api/client'
-import { Field, SubmitButton } from '@/components/form'
+import { Field, FormAlert, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
 import { Photo } from '@/components/photo'
 import { StickyRail } from '@/components/sticky-rail'
@@ -21,15 +21,8 @@ import { BOOKINGS_KEY, bookingKey } from '@/features/booking/keys'
 import { PriceSummary } from '@/features/booking/PriceSummary'
 import { RAIL_LAYOUT } from '@/lib/layout'
 
-/**
- * Sandbox tokens (SI-1, Testability: "a test mode in which the payment ...
- * integrations use sandbox endpoints"). A live gateway's hosted fields would
- * produce the token instead; no card number ever reaches VRMS (CO-2).
- */
-const TEST_TOKENS = [
-  { value: 'tok_visa', label: 'Test card that is approved' },
-  { value: 'tok_decline', label: 'Test card that is declined' },
-] as const
+import { initialChoice, methodRequest } from './method'
+import { MethodPicker } from './MethodPicker'
 
 /** Seconds until `iso`, ticking once a second (Book.Hold: the 15-minute hold). */
 function useSecondsUntil(iso: string | null | undefined) {
@@ -54,7 +47,13 @@ function HoldTimer({ booking }: { booking: BookingDetail }) {
       aria-live={seconds <= 60 ? 'polite' : 'off'}
     >
       <Clock className="mt-[3px] size-4 shrink-0 text-signal-ink" aria-hidden="true" />
-      {seconds > 0 ? (
+      {booking.cash_on_collection && seconds > 0 ? (
+        // BR-9: a cash booking stays held for the collection, not for 15 minutes.
+        <span>
+          The vehicle is held for your collection until{' '}
+          <strong className="num-strong">{formatDateTime(booking.hold_expires_at)}</strong>.
+        </span>
+      ) : seconds > 0 ? (
         <span>
           The vehicle is held for you for <strong className="num-strong">{label}</strong> more.
         </span>
@@ -65,18 +64,27 @@ function HoldTimer({ booking }: { booking: BookingDetail }) {
   )
 }
 
-function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (confirmed: BookingDetail) => void }) {
+function PaymentForm({
+  booking,
+  onPaid,
+  onCashChosen,
+}: {
+  booking: BookingDetail
+  onPaid: (confirmed: BookingDetail) => void
+  onCashChosen: (held: BookingDetail) => void
+}) {
   const queryClient = useQueryClient()
   const { currency } = useAgency()
-  const [token, setToken] = useState<string>(TEST_TOKENS[0].value)
+  const [choice, setChoice] = useState(() => initialChoice(booking.cash_on_collection ? 'cash' : 'card'))
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const pay = useMutation({
     // A fresh key per attempt: a repeat of the same request never charges twice (Pay.Idempotent).
     mutationFn: () =>
-      payBooking(booking.id, { payment_token: token, idempotency_key: newIdempotencyKey(), password }),
-    onSuccess: onPaid,
+      payBooking(booking.id, { ...methodRequest(choice), idempotency_key: newIdempotencyKey(), password }),
+    // Pay.Method: cash leaves the booking Pending Payment until the branch records it (BR-9).
+    onSuccess: (result) => (result.status === 'Confirmed' ? onPaid(result) : onCashChosen(result)),
     onError: (error) => {
       setPassword('')
       const message = error instanceof ApiError ? error.fieldErrors.password?.join(' ') : undefined
@@ -105,31 +113,20 @@ function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (con
   const refusal = pay.error instanceof ApiError && pay.error.code ? pay.error : null
   const total = formatCurrency(booking.price.total_payable, currency)
   const deposit = formatCurrency(booking.price.security_deposit, currency)
+  const upiError = pay.error instanceof ApiError ? pay.error.fieldErrors.upi_id?.join(' ') : undefined
+  const methodError = pay.error instanceof ApiError ? pay.error.fieldErrors.method?.join(' ') : undefined
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-6" aria-label="Pay for this booking">
       <BookingRefusal error={refusal ?? rehold.error} onHoldAgain={() => rehold.mutate()} holding={rehold.isPending} />
-      <fieldset className="grid gap-1">
-        <legend className="heading text-section">Payment method (sandbox)</legend>
-        <p className="mb-2 text-small text-muted-foreground">
-          This is the test mode: no real money moves and no card details are entered here.
-        </p>
-        <div className="divide-y border-y">
-          {TEST_TOKENS.map((option) => (
-            <label key={option.value} className="flex min-h-14 items-center gap-3 text-sm">
-              <input
-                type="radio"
-                name="payment_token"
-                value={option.value}
-                className="size-4"
-                checked={token === option.value}
-                onChange={() => setToken(option.value)}
-              />
-              {option.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <FormAlert message={methodError} />
+      <MethodPicker
+        value={choice}
+        onChange={setChoice}
+        allowCash // BR-9: the server refuses cash for a doorstep delivery (cash_not_available)
+        upiError={upiError}
+        cashNote={`Bring ${total} for the rental and ${deposit} for the refundable deposit to ${booking.pickup_branch}. The booking is confirmed when the branch records your payment.`}
+      />
       <Field
         id="pay-password"
         label="Your password"
@@ -148,9 +145,15 @@ function PaymentForm({ booking, onPaid }: { booking: BookingDetail; onPaid: (con
         />
       </Field>
       <div>
-        <SubmitButton busy={pay.isPending} busyLabel="Authorising payment…" className="tabular-nums">
-          Pay {total} and hold {deposit} deposit
-        </SubmitButton>
+        {choice.method === 'cash' ? (
+          <SubmitButton busy={pay.isPending} busyLabel="Saving your choice…">
+            Pay in cash when I collect
+          </SubmitButton>
+        ) : (
+          <SubmitButton busy={pay.isPending} busyLabel="Authorising payment…" className="tabular-nums">
+            Pay {total} and hold {deposit} deposit
+          </SubmitButton>
+        )}
       </div>
     </form>
   )
@@ -161,6 +164,7 @@ export function PaymentPage() {
   const { id } = useParams()
   const bookingId = Number(id)
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [justPaid, setJustPaid] = useState(false)
   const booking = useQuery({
     queryKey: bookingKey(bookingId),
@@ -205,6 +209,11 @@ export function PaymentPage() {
                   setJustPaid(true)
                   queryClient.setQueryData(bookingKey(confirmed.id), confirmed)
                   void queryClient.invalidateQueries({ queryKey: BOOKINGS_KEY })
+                }}
+                onCashChosen={(held) => {
+                  queryClient.setQueryData(bookingKey(held.id), held)
+                  void queryClient.invalidateQueries({ queryKey: BOOKINGS_KEY })
+                  navigate(`/app/bookings/${held.id}`, { state: { cashChosen: true } })
                 }}
               />
             )}

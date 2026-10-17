@@ -374,6 +374,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingDetail'
           description: ''
+  /api/v1/bookings/{id}/cash/:
+    post:
+      operationId: api_v1_bookings_cash_create
+      description: 'Only Branch Staff of the pickup branch: the CashPayment names
+        them. SE-9: their password is required. `amount_received` must equal the rental
+        plus the deposit. The booking is confirmed in the same single transaction
+        as a card payment. 409 `invalid_state`, `hold_expired`, `price_changed` or
+        `discount_unavailable`. The same idempotency key never records the cash twice.'
+      summary: Record the cash received and confirm the booking (BR-9, Book.Done)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordCash'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecordCash'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecordCash'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/bookings/{id}/hold/:
     post:
       operationId: api_v1_bookings_hold_create
@@ -430,12 +480,15 @@ paths:
   /api/v1/bookings/{id}/pay/:
     post:
       operationId: api_v1_bookings_pay_create
-      description: 'SE-9: the customer''s password is required. One gateway authorisation
-        for the rental and the deposit. Success: Confirmed, with booking reference,
-        pickup code, transaction id and invoice. 402 `payment_declined`: the hold
-        is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`.
-        Repeating the same idempotency key never charges twice (Pay.Idempotent).'
-      summary: Pay for a held booking and confirm it (Pay.Authorize, Book.Done)
+      description: 'SE-9: the customer''s password is required. `method` card or online
+        (UPI, net banking, wallet; D6): one gateway authorisation for the rental and
+        the deposit; success is Confirmed, with booking reference, pickup code, transaction
+        id and invoice. `method` cash (BR-9): the booking stays Pending Payment, held
+        for the collection, until branch staff record the cash. 402 `payment_declined`:
+        the hold is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable`
+        or `invalid_state`. Repeating the same idempotency key never charges twice
+        (Pay.Idempotent).'
+      summary: Pay for a held booking and confirm it (Pay.Method, Pay.Authorize, Book.Done)
       parameters:
       - in: path
         name: id
@@ -456,6 +509,21 @@ paths:
                   idempotency_key: pay-7f3a9c21
                   password: …
                 summary: Sandbox card
+              SandboxUPI:
+                value:
+                  method: online
+                  channel: UPI
+                  upi_id: asha@okbank
+                  payment_token: tok_upi
+                  idempotency_key: pay-7f3a9c22
+                  password: …
+                summary: Sandbox UPI
+              CashAtCollection:
+                value:
+                  method: cash
+                  idempotency_key: pay-7f3a9c23
+                  password: …
+                summary: Cash at collection
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PayBooking'
@@ -489,6 +557,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/bookings/awaiting-cash/:
+    get:
+      operationId: api_v1_bookings_awaiting_cash_list
+      description: 'BR-9: the cash desk''s list of collections to be paid in cash.'
+      summary: Bookings waiting for cash at collection (BR-9)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCashDueBookingList'
           description: ''
   /api/v1/files/{token}/:
     get:
@@ -1371,6 +1462,402 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/payments/{id}/refund/:
+    post:
+      operationId: api_v1_payments_refund_create
+      description: Above REFUND_AUTO_APPROVAL_LIMIT the refund waits as Pending Approval
+        for an Administrator (UC 13); otherwise it is issued at once. A cash refund
+        is paid out by the branch staff member who asks for it. The same idempotency
+        key returns the first refund (Pay.Idempotent).
+      summary: Refund a payment to its original instrument (Pay.Refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefundCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefundCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/bookings/{id}/capture/:
+    post:
+      operationId: api_v1_payments_bookings_capture_create
+      description: 'Records each charge line and captures the uncaptured rental and
+        deposit authorisation. Once per booking: the same key returns the first result;
+        another key is 409 `already_captured`. 409 `not_paid`; 402 `capture_failed`.'
+      summary: Capture a booking's payment with its final charges (SI-1.2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Capture'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Capture'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Capture'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntryResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/due/:
+    get:
+      operationId: api_v1_payments_due_retrieve
+      description: 'Pay.Dues, BR-4: see the outstanding due and clear it on-line at
+        any time.'
+      summary: My outstanding due (Pay.Dues)
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Due'
+          description: ''
+    post:
+      operationId: api_v1_payments_due_create
+      description: 'SE-9: the password is required. Card or an on-line channel (UPI,
+        net banking, wallet; D6). On success the due is zero and booking is allowed
+        again at once (BR-4). 402 `payment_declined`; 409 `no_due`. The same idempotency
+        key never charges twice.'
+      summary: Pay the whole outstanding due on-line (Pay.Dues)
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayDue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayDue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayDue'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Due'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/refunds/:
+    get:
+      operationId: api_v1_payments_refunds_list
+      description: 'UC 13 step 1: the refunds waiting for approval (Administrator),
+        and refunds in scope.'
+      summary: List refunds, oldest request first (UC 13)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - Approved
+          - Failed
+          - Issued
+          - Pending Approval
+          - Rejected
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRefundList'
+          description: ''
+  /api/v1/payments/refunds/{id}/approve/:
+    post:
+      operationId: api_v1_payments_refunds_approve_create
+      description: 'SE-9: the password is required. 409 `not_pending`; 402 `capture_failed`.'
+      summary: Approve a refund and issue it (UC 13)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reauthenticated'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reauthenticated'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reauthenticated'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/refunds/{id}/pay-out/:
+    post:
+      operationId: api_v1_payments_refunds_pay_out_create
+      description: 'Pay.Refund: a named branch staff member pays an approved cash
+        refund out.'
+      summary: Record an approved cash refund as paid out (Pay.Refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayOutCashRefund'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayOutCashRefund'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayOutCashRefund'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/refunds/{id}/reject/:
+    post:
+      operationId: api_v1_payments_refunds_reject_create
+      description: 'UC 13 extension 2a: reject with a reason; the customer is notified.'
+      summary: Reject a refund with a reason (UC 13)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRefund'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectRefund'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectRefund'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/payments/webhook/:
+    post:
+      operationId: api_v1_payments_webhook_create
+      description: 'Body: JSON with `id`, `type` (e.g. refund.processed, refund.failed)
+        and `transaction_id`. A repeated `id` changes nothing (Pay.Idempotent). 403
+        `invalid_signature`.'
+      summary: Receive a signed gateway notification (SI-1.4)
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/pricing/add-ons/:
     get:
       operationId: api_v1_pricing_add_ons_list
@@ -1725,6 +2212,9 @@ components:
       description: |-
         * `day` - day
         * `hour` - hour
+    BlankEnum:
+      enum:
+      - ''
     Booking:
       type: object
       description: A booking as its customer, branch staff or an Administrator sees
@@ -1763,6 +2253,9 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        cash_on_collection:
+          type: boolean
+          readOnly: true
         confirmed_at:
           type: string
           format: date-time
@@ -1816,6 +2309,7 @@ components:
       required:
       - add_ons
       - booking_reference
+      - cash_on_collection
       - confirmed_at
       - created_at
       - discount_amount
@@ -1890,6 +2384,9 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        cash_on_collection:
+          type: boolean
+          readOnly: true
         confirmed_at:
           type: string
           format: date-time
@@ -1948,9 +2445,15 @@ components:
           type: string
           nullable: true
           readOnly: true
+        refunds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refund'
+          readOnly: true
       required:
       - add_ons
       - booking_reference
+      - cash_on_collection
       - confirmed_at
       - created_at
       - discount_amount
@@ -1963,6 +2466,7 @@ components:
       - pickup_code
       - pickup_datetime
       - price
+      - refunds
       - return_datetime
       - safety_notice_acknowledged_at
       - security_deposit
@@ -2109,6 +2613,152 @@ components:
       required:
       - notice_hours_at_least
       - refund_percent
+    Capture:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeLine'
+        idempotency_key:
+          type: string
+          description: 'Pay.Idempotent: one key per attempt; a repeat never charges
+            or refunds twice.'
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - idempotency_key
+      - password
+    CashDueBooking:
+      type: object
+      description: 'BR-9: a booking waiting for cash at collection, as its branch
+        staff see it.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BookingStatusEnum'
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/BookingVehicle'
+          readOnly: true
+        pickup_branch:
+          type: string
+          readOnly: true
+        pickup_branch_id:
+          type: integer
+          readOnly: true
+        pickup_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        return_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        hold_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cash_on_collection:
+          type: boolean
+          readOnly: true
+        confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        pickup_code:
+          type: string
+          readOnly: true
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingAddOnLine'
+          readOnly: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        discount_code:
+          type: string
+          readOnly: true
+          default: ''
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        terms_accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        safety_notice_acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        invoice_number:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_mobile:
+          type: string
+          readOnly: true
+        amount_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - add_ons
+      - amount_due
+      - booking_reference
+      - cash_on_collection
+      - confirmed_at
+      - created_at
+      - customer_mobile
+      - customer_name
+      - discount_amount
+      - discount_code
+      - hold_expires_at
+      - id
+      - invoice_number
+      - pickup_branch
+      - pickup_branch_id
+      - pickup_code
+      - pickup_datetime
+      - return_datetime
+      - safety_notice_acknowledged_at
+      - security_deposit
+      - status
+      - terms_accepted_at
+      - total_amount
+      - vehicle
     CategoriesEnum:
       enum:
       - Car
@@ -2117,6 +2767,29 @@ components:
       description: |-
         * `Car` - Car
         * `Two-Wheeler` - Two-Wheeler
+    ChannelEnum:
+      enum:
+      - UPI
+      - Net Banking
+      - Wallet
+      type: string
+      description: |-
+        * `UPI` - UPI
+        * `Net Banking` - Net Banking
+        * `Wallet` - Wallet
+    ChargeLine:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - description
     ConditionPhotoOut:
       type: object
       properties:
@@ -2272,6 +2945,19 @@ components:
           type: string
       required:
       - detail
+    Due:
+      type: object
+      description: 'Pay.Dues, BR-4: what the customer owes; above zero, no new booking
+        is accepted.'
+      properties:
+        outstanding_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        transaction_id:
+          type: string
+      required:
+      - outstanding_due
     Email:
       type: object
       properties:
@@ -2568,6 +3254,30 @@ components:
         * `Inspection` - Inspection
         * `Cleaning` - Cleaning
         * `Documentation` - Documentation
+    LedgerEntryResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        entry_type:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        method:
+          type: string
+        gateway_reference:
+          type: string
+        note:
+          type: string
+      required:
+      - amount
+      - entry_type
+      - gateway_reference
+      - id
+      - method
+      - note
     Licence:
       type: object
       description: A licence as its owner, branch staff and administrators see it.
@@ -3037,6 +3747,16 @@ components:
       required:
       - date
       - odometer
+    NotificationResult:
+      type: object
+      properties:
+        event_id:
+          type: string
+        duplicate:
+          type: boolean
+      required:
+      - duplicate
+      - event_id
     OTPCode:
       type: object
       properties:
@@ -3115,6 +3835,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BranchBooking'
+    PaginatedCashDueBookingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashDueBooking'
     PaginatedLicenceReviewList:
       type: object
       required:
@@ -3161,6 +3904,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MaintenanceJob'
+    PaginatedRefundList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refund'
     PartInput:
       type: object
       properties:
@@ -3235,14 +4001,32 @@ components:
           type: string
     PayBooking:
       type: object
-      description: 'Pay.Authorize with a gateway token (CO-2: never card details);
-        SE-9 re-authentication.'
+      description: |-
+        Pay.Method and Pay.Authorize with a gateway token (CO-2: never card details); SE-9.
+
+        card: a token from the hosted fields. online: a D6 channel (UPI, net
+        banking, wallet) and its token. cash: BR-9, paid at the branch on
+        collection; no token.
       properties:
+        method:
+          allOf:
+          - $ref: '#/components/schemas/PayBookingMethodEnum'
+          default: card
         payment_token:
           type: string
+          default: ''
           description: 'Token from the gateway''s hosted fields. Sandbox: tok_visa,
             tok_decline.'
           maxLength: 255
+        channel:
+          default: ''
+          oneOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        upi_id:
+          type: string
+          default: ''
+          pattern: ^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$
         idempotency_key:
           type: string
           description: 'Pay.Idempotent: one key per payment attempt; repeating it
@@ -3255,7 +4039,74 @@ components:
       required:
       - idempotency_key
       - password
+    PayBookingMethodEnum:
+      enum:
+      - card
+      - online
+      - cash
+      type: string
+      description: |-
+        * `card` - card
+        * `online` - online
+        * `cash` - cash
+    PayDue:
+      type: object
+      description: 'Pay.Method: a card token, or an on-line channel (D6) with its
+        token from the hosted page.'
+      properties:
+        method:
+          allOf:
+          - $ref: '#/components/schemas/PayDueMethodEnum'
+          default: card
+        payment_token:
+          type: string
+          description: 'From the gateway''s hosted fields or page. Sandbox: tok_decline
+            declines.'
+          maxLength: 255
+        channel:
+          default: ''
+          oneOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        upi_id:
+          type: string
+          default: ''
+          pattern: ^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9]{2,32}$
+        idempotency_key:
+          type: string
+          description: 'Pay.Idempotent: one key per attempt; a repeat never charges
+            or refunds twice.'
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - idempotency_key
+      - password
       - payment_token
+    PayDueMethodEnum:
+      enum:
+      - card
+      - online
+      type: string
+      description: |-
+        * `card` - card
+        * `online` - online
+    PayOutCashRefund:
+      type: object
+      properties:
+        customer_acknowledged:
+          type: boolean
+          description: 'Pay.Refund: the customer has acknowledged the cash. Must be
+            true.'
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - customer_acknowledged
+      - password
     Profile:
       type: object
       properties:
@@ -3467,6 +4318,35 @@ components:
       - late_return_grace_minutes
       - late_return_hourly_rate
       - no_show_retained_percent
+    Reauthenticated:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - password
+    RecordCash:
+      type: object
+      description: 'BR-9: the cash a named branch staff member received at collection;
+        SE-9.'
+      properties:
+        amount_received:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Must equal the rental plus the deposit.
+        idempotency_key:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - amount_received
+      - idempotency_key
+      - password
     RecordWork:
       type: object
       description: Maint.Record.
@@ -3499,6 +4379,133 @@ components:
       - parts
       - service_date
       - work_description
+    Refund:
+      type: object
+      description: A refund request as the Administrator queue (UC 13), staff and
+        the customer see it.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_id:
+          type: integer
+          readOnly: true
+        booking_reference:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        purpose:
+          type: string
+          readOnly: true
+        method:
+          type: string
+          readOnly: true
+        original_transaction_id:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RefundStatusEnum'
+          readOnly: true
+        requested_by_name:
+          type: string
+          readOnly: true
+          default: ''
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by_name:
+          type: string
+          readOnly: true
+          default: ''
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        failure_reason:
+          type: string
+          readOnly: true
+        refund_due_by:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        refund_transaction_id:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - amount
+      - booking_id
+      - booking_reference
+      - customer_name
+      - decided_at
+      - decided_by_name
+      - failure_reason
+      - id
+      - method
+      - original_transaction_id
+      - purpose
+      - reason
+      - refund_due_by
+      - refund_transaction_id
+      - rejection_reason
+      - requested_at
+      - requested_by_name
+      - status
+    RefundCreate:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reason:
+          type: string
+          maxLength: 255
+        idempotency_key:
+          type: string
+          description: 'Pay.Idempotent: one key per attempt; a repeat never charges
+            or refunds twice.'
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - amount
+      - idempotency_key
+      - password
+      - reason
+    RefundStatusEnum:
+      enum:
+      - Pending Approval
+      - Approved
+      - Issued
+      - Rejected
+      - Failed
+      type: string
+      description: |-
+        * `Pending Approval` - Pending Approval
+        * `Approved` - Approved
+        * `Issued` - Issued
+        * `Rejected` - Rejected
+        * `Failed` - Failed
     Refusal:
       type: object
       properties:
@@ -3558,6 +4565,19 @@ components:
       required:
       - detail
       - email
+    RejectRefund:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        password:
+          type: string
+          writeOnly: true
+          description: 'SE-9: re-authentication before a payment or a refund.'
+      required:
+      - password
+      - reason
     ReportJob:
       type: object
       description: Maint.Create; Maint.Unsafe (flag_unsafe).

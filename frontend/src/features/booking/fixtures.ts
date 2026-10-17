@@ -103,6 +103,7 @@ export const heldBooking = (minutes = 15): BookingDetail => ({
   pickup_datetime: PICKUP,
   return_datetime: RETURN,
   hold_expires_at: new Date(Date.now() + minutes * 60_000).toISOString(),
+  cash_on_collection: false,
   confirmed_at: null,
   pickup_code: '',
   add_ons: [],
@@ -116,6 +117,7 @@ export const heldBooking = (minutes = 15): BookingDetail => ({
   created_at: '2026-10-11T10:00:00Z',
   price: QUOTE,
   transaction_id: null,
+  refunds: [],
 })
 
 export const confirmedBooking = (): BookingDetail => ({
