@@ -40,6 +40,9 @@ def test_every_template_renders():
         "attempts": 5,
         "licence_number": "MH01 1",
         "reason": "Blurred",
+        "amount": "INR 8,260.00",
+        "booking": "VRMS-20261017-0001",
+        "due_by": "",
         **SAMPLE_CONTEXT,
         **RENTALS_SAMPLE_CONTEXT,
     }

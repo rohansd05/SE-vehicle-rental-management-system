@@ -54,6 +54,32 @@ TEMPLATES: dict[tuple[str, int], Template] = {
             "You can submit it again from your profile.\n\n{agency}"
         ),
     ),
+    # Notify.*: a change in the status of a refund (Pay.Refund, UC 13).
+    ("refund_issued", 1): Template(
+        subject="{agency}: your refund of {amount} has been issued",
+        body=(
+            "Hello {name},\n\n"
+            "We have refunded {amount} for booking {booking} to your original payment "
+            "method.{due_by}\n\n{agency}"
+        ),
+    ),
+    ("refund_rejected", 1): Template(
+        subject="{agency}: your refund request was not approved",
+        body=(
+            "Hello {name},\n\n"
+            "The refund of {amount} for booking {booking} was not approved.\n"
+            "Reason: {reason}\n\n"
+            "Reply to this e-mail if you would like us to look at it again.\n\n{agency}"
+        ),
+    ),
+    ("refund_failed", 1): Template(
+        subject="{agency}: your refund of {amount} could not be completed",
+        body=(
+            "Hello {name},\n\n"
+            "The payment provider could not complete the refund of {amount} for booking "
+            "{booking}. Our staff will contact you to arrange it.\n\n{agency}"
+        ),
+    ),
 }
 
 
