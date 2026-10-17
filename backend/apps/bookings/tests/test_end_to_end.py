@@ -220,7 +220,7 @@ def test_alt_licence_not_verified_then_verified():
     refused = create(pending, demo_car(), when)
     assert refused.status_code == 400
     assert refused.json()["code"] == "licence_not_verified"
-    assert not Booking.objects.exists()
+    assert not Booking.objects.filter(customer__user__email=PENDING_EMAIL).exists()
 
     # Licence.verify(): the demo branch staff approve it (SE-10), then the booking goes through.
     licence = Licence.objects.get(customer__user__email=PENDING_EMAIL)
@@ -263,7 +263,7 @@ def test_alt_vehicle_not_available():
     refused = create(second, demo_car(), overlapping)  # ...and refused if asked for anyway
     assert refused.status_code == 409
     assert refused.json()["code"] == "vehicle_unavailable"
-    assert Booking.objects.count() == 1
+    assert Booking.objects.filter(vehicle=demo_car()).count() == 1
 
 
 # ─── alt: payment declined -> hold retained ───────────────────────────────
