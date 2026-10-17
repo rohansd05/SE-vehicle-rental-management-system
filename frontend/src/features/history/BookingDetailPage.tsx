@@ -16,6 +16,7 @@ import { bookingKey } from '@/features/booking/keys'
 import { PriceSummary } from '@/features/booking/PriceSummary'
 import { RAIL_LAYOUT } from '@/lib/layout'
 
+import { BookingActions } from './BookingActions'
 import { BookingStatusBadge } from './BookingStatusBadge'
 
 type Refund = BookingDetail['refunds'][number]
@@ -182,6 +183,7 @@ export function BookingDetailPage() {
                 </Button>
               </div>
             ) : null}
+            <BookingActions booking={booking.data} />
             {booking.data.invoice_number ? (
               <div className="reveal grid gap-3 border-t pt-6">
                 <FormAlert message={download.error instanceof Error ? download.error.message : null} />

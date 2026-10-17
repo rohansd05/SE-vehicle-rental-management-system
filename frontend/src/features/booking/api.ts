@@ -16,6 +16,10 @@ export type Booking = Schemas['Booking']
 export type BookingDetail = Schemas['BookingDetail']
 export type BookingStatus = Schemas['BookingStatusEnum']
 export type BookingPage = Schemas['PaginatedBookingList']
+export type BookingVehicle = Schemas['BookingVehicle']
+export type CancellationQuote = Schemas['CancellationQuote']
+export type ModificationQuote = Schemas['ModificationQuote']
+export type ExtensionQuote = Schemas['ExtensionQuote']
 
 export interface AddOnChoice {
   add_on: number
@@ -81,14 +85,80 @@ export interface PayRequest {
 export const payBooking = (id: number, data: PayRequest) =>
   apiRequest<BookingDetail>(`/api/v1/bookings/${id}/pay/`, { method: 'POST', json: data })
 
+/** History.View filters: pickup date range (YYYY-MM-DD), status, vehicle type, reference. */
+export interface HistoryFilters {
+  status?: BookingStatus | ''
+  vehicle_type?: string
+  pickup_from?: string
+  pickup_to?: string
+  reference?: string
+  page?: number
+}
+
 /** History.View: the customer's own bookings, newest pickup first. */
-export function listBookings(filters: { status?: BookingStatus | ''; page?: number } = {}) {
+export function listBookings(filters: HistoryFilters = {}) {
   const params = new URLSearchParams()
-  if (filters.status) params.set('status', filters.status)
+  for (const name of ['status', 'vehicle_type', 'pickup_from', 'pickup_to'] as const) {
+    if (filters[name]) params.set(name, filters[name])
+  }
+  if (filters.reference?.trim()) params.set('reference', filters.reference.trim())
   if (filters.page && filters.page > 1) params.set('page', String(filters.page))
   const query = params.toString()
   return apiRequest<BookingPage>(`/api/v1/bookings/${query ? `?${query}` : ''}`)
 }
+
+// ─── Modify / Cancel Booking (UC 4) and Book.Extend ──────────────────────
+// Each action is priced first (nothing saved), then confirmed with the
+// password (SE-9) and the amounts shown; the server refuses (409) if they
+// changed meanwhile.
+
+/** An extra charge is paid by card or on-line (Pay.Method, D6), never cash. */
+export interface ExtraPayment {
+  method: 'card' | 'online'
+  payment_token: string
+  channel: string
+  upi_id: string
+  idempotency_key: string
+  password: string
+}
+
+/** Book.Cancel: the refund under BR-8, shown before the customer confirms. */
+export const getCancellationQuote = (id: number) =>
+  apiRequest<CancellationQuote>(`/api/v1/bookings/${id}/cancel/`)
+
+/** Booking.cancel_booking(): release, Cancelled, refund, notify (Book.Cancel.Release). */
+export const cancelBooking = (id: number, data: { expected_refund: string; password: string }) =>
+  apiRequest<BookingDetail>(`/api/v1/bookings/${id}/cancel/`, { method: 'POST', json: data })
+
+/** Book.Modify: the new period, branch and add-ons; `vehicle` takes a UC 4 3a alternative. */
+export interface ModificationRequest extends Period {
+  pickup_branch: number
+  add_ons: AddOnChoice[]
+  vehicle: number | null
+}
+
+/** Book.Modify.Price: availability, the new price, the extra charge or the BR-8 refund. */
+export const quoteModification = (id: number, data: ModificationRequest) =>
+  apiRequest<ModificationQuote>(`/api/v1/bookings/${id}/modify/quote/`, { method: 'POST', json: data })
+
+/** Booking.modify_booking(). */
+export const modifyBooking = (
+  id: number,
+  data: ModificationRequest & ExtraPayment & { expected_charge: string; expected_refund: string },
+) => apiRequest<BookingDetail>(`/api/v1/bookings/${id}/modify/`, { method: 'POST', json: data })
+
+/** Book.Extend: the extra charge for a later return (BR-5: 30 days in all). */
+export const quoteExtension = (id: number, returnDatetime: string) =>
+  apiRequest<ExtensionQuote>(`/api/v1/bookings/${id}/extend/quote/`, {
+    method: 'POST',
+    json: { return_datetime: returnDatetime },
+  })
+
+/** Booking.extend_booking(): collected before the extension takes effect. */
+export const extendBooking = (
+  id: number,
+  data: ExtraPayment & { return_datetime: string; expected_charge: string },
+) => apiRequest<BookingDetail>(`/api/v1/bookings/${id}/extend/`, { method: 'POST', json: data })
 
 /** Pay.Idempotent: one fresh key per payment attempt, so a repeat never charges twice. */
 export function newIdempotencyKey(): string {
