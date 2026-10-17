@@ -67,6 +67,9 @@ class Booking(TimeStampedModel):
     delivery_address = models.TextField(blank=True)
     delivery_pincode = models.CharField(max_length=6, blank=True)
     hold_expires_at = models.DateTimeField(null=True, blank=True)  # Book.Hold
+    # Pay.Method, BR-9: the customer pays cash at the branch on collection; the
+    # booking stays Pending Payment until a named staff member records it.
+    cash_on_collection = models.BooleanField(default=False)
     confirmed_at = models.DateTimeField(null=True, blank=True)  # Book.Done.Store, BR-13
     terms_accepted_at = models.DateTimeField(null=True, blank=True)  # Book.Quote.Terms
     safety_notice_acknowledged_at = models.DateTimeField(null=True, blank=True)  # SA-1

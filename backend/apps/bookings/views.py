@@ -9,16 +9,16 @@ an Administrator all. A booking outside the caller's scope is a 404.
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.serializers import DetailSerializer
-from apps.core.audit import record_audit
 from apps.core.permissions import (
     IsAdministrator,
     IsBranchManager,
@@ -28,6 +28,7 @@ from apps.core.permissions import (
 )
 from apps.fleet.services.availability import RentalPeriodError
 from apps.payments.pdf import render_invoice_pdf
+from apps.payments.reauth import require_password
 
 from . import lifecycle
 from .eligibility import NotEligibleError
@@ -36,8 +37,10 @@ from .serializers import (
     BookingDetailSerializer,
     BookingErrorSerializer,
     BookingSerializer,
+    CashDueBookingSerializer,
     CreateBookingSerializer,
     PayBookingSerializer,
+    RecordCashSerializer,
 )
 
 TAG = "Bookings"
@@ -187,19 +190,22 @@ class BookingHoldView(APIView):
 
 
 class BookingPayView(APIView):
-    """Pay.Authorize and Book.Done (Payment.authorize() -> Invoice.generate_invoice())."""
+    """Pay.Method, Pay.Authorize, Book.Done: Payment.authorize() -> Invoice.generate_invoice()."""
 
     permission_classes = [IsCustomer]
 
     @extend_schema(
         tags=[TAG],
-        summary="Pay for a held booking and confirm it (Pay.Authorize, Book.Done)",
+        summary="Pay for a held booking and confirm it (Pay.Method, Pay.Authorize, Book.Done)",
         description=(
-            "SE-9: the customer's password is required. One gateway authorisation for the "
-            "rental and the deposit. Success: Confirmed, with booking reference, pickup code, "
-            "transaction id and invoice. 402 `payment_declined`: the hold is kept. 409 "
-            "`hold_expired`, `price_changed`, `discount_unavailable` or `invalid_state`. "
-            "Repeating the same idempotency key never charges twice (Pay.Idempotent)."
+            "SE-9: the customer's password is required. `method` card or online (UPI, net "
+            "banking, wallet; D6): one gateway authorisation for the rental and the deposit; "
+            "success is Confirmed, with booking reference, pickup code, transaction id and "
+            "invoice. `method` cash (BR-9): the booking stays Pending Payment, held for the "
+            "collection, until branch staff record the cash. 402 `payment_declined`: the hold "
+            "is kept. 409 `hold_expired`, `price_changed`, `discount_unavailable` or "
+            "`invalid_state`. Repeating the same idempotency key never charges twice "
+            "(Pay.Idempotent)."
         ),
         request=PayBookingSerializer,
         responses={
@@ -217,7 +223,24 @@ class BookingPayView(APIView):
                     "idempotency_key": "pay-7f3a9c21",
                     "password": "…",
                 },
-            )
+            ),
+            OpenApiExample(
+                "Sandbox UPI",
+                request_only=True,
+                value={
+                    "method": "online",
+                    "channel": "UPI",
+                    "upi_id": "asha@okbank",
+                    "payment_token": "tok_upi",
+                    "idempotency_key": "pay-7f3a9c22",
+                    "password": "…",
+                },
+            ),
+            OpenApiExample(
+                "Cash at collection",
+                request_only=True,
+                value={"method": "cash", "idempotency_key": "pay-7f3a9c23", "password": "…"},
+            ),
         ],
     )
     def post(self, request, pk: int):
@@ -225,20 +248,84 @@ class BookingPayView(APIView):
         serializer = PayBookingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if not request.user.check_password(data["password"]):  # SE-9
-            record_audit(
-                request.user,
-                "Payment Re-authentication Failed",
-                entity_label="bookings.Booking",
-                entity_id=pk,
-                request=request,
-            )
-            raise ValidationError({"password": ["That password is not correct."]})
+        require_password(request, data["password"], entity_label="bookings.Booking", entity_id=pk)
         try:
             booking = lifecycle.pay_booking(
                 request.user.customer,
                 pk,
                 payment_token=data["payment_token"],
+                idempotency_key=data["idempotency_key"],
+                method=data["method"],
+                channel=data["channel"],
+                upi_id=data["upi_id"],
+                request=request,
+            )
+        except REFUSALS as exc:
+            return refusal(exc)
+        return _detail(booking, request)
+
+
+def awaiting_cash(user):
+    """BR-9: the branch's bookings whose customers pay cash at collection, held and unpaid."""
+    return (
+        scoped_bookings(user)
+        .select_related("customer__user")
+        .filter(
+            status=Booking.Status.PENDING_PAYMENT,
+            cash_on_collection=True,
+            hold_expires_at__gt=timezone.now(),
+        )
+        .order_by("pickup_datetime")
+    )
+
+
+class AwaitingCashListView(ListAPIView):
+    """BR-9: the cash desk's list of collections to be paid in cash."""
+
+    permission_classes = [IsBranchStaff]
+    serializer_class = CashDueBookingSerializer
+
+    def get_queryset(self):
+        return awaiting_cash(self.request.user)
+
+    @extend_schema(tags=[TAG], summary="Bookings waiting for cash at collection (BR-9)")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class BookingCashView(APIView):
+    """BR-9, Book.Confirm.Pay: record the cash received and confirm the booking (Book.Done)."""
+
+    permission_classes = [IsBranchStaff]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Record the cash received and confirm the booking (BR-9, Book.Done)",
+        description=(
+            "Only Branch Staff of the pickup branch: the CashPayment names them. SE-9: their "
+            "password is required. `amount_received` must equal the rental plus the deposit. "
+            "The booking is confirmed in the same single transaction as a card payment. 409 "
+            "`invalid_state`, `hold_expired`, `price_changed` or `discount_unavailable`. The "
+            "same idempotency key never records the cash twice."
+        ),
+        request=RecordCashSerializer,
+        responses={
+            200: BookingDetailSerializer,
+            400: DetailSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        get_object_or_404(scoped_bookings(request.user), pk=pk)
+        serializer = RecordCashSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        require_password(request, data["password"], entity_label="bookings.Booking", entity_id=pk)
+        try:
+            booking = lifecycle.record_cash_payment(
+                request.user,
+                pk,
+                amount_received=data["amount_received"],
                 idempotency_key=data["idempotency_key"],
                 request=request,
             )

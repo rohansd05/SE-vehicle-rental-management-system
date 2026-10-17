@@ -10,11 +10,13 @@ create_booking()   Customer -> Booking.create_booking()
                       alt: vehicle not free -> refused (409)
                    -> Tariff.calculate_price()       (pricing.services; snapshot stored, BK7)
                    -> Pending Payment with a 15-minute hold (Book.Hold)
-pay_booking()      -> Payment.authorize()            (payments.services.authorize)
+pay_booking()      -> Payment.authorize()            (payments.services.authorize; Pay.Method)
                       alt: declined -> hold retained (BK2)
                    -> Vehicle.update_status()        (Book.Done.Block; see below)
                    -> Invoice.generate_invoice()     (payments.services.issue_invoice)
                    -> status Confirmed, booking reference and pickup code (Book.Done.Store)
+record_cash_payment()  BR-9: the customer chose cash at collection; a named staff
+                   member records it, then the same Book.Done steps confirm it.
 
 Vehicle.update_status() at confirmation (team decision, 11 Oct 2026): the
 Appendix B state machine changes a vehicle's status only at handover, so
@@ -336,7 +338,9 @@ def hold_again(customer: Customer, booking_id: int, *, request=None) -> Booking:
     return booking
 
 
-# ─── pay_booking (Pay.Authorize, Book.Done) ───────────────────────────────
+# ─── pay_booking (Pay.Method, Pay.Authorize, Book.Done) ───────────────────
+
+CARD, ONLINE, CASH = "card", "online", "cash"  # Pay.Method; D6: on-line is UPI, net banking, wallet
 
 
 def _discount_still_usable(booking: Booking) -> bool:
@@ -359,17 +363,25 @@ def _confirm(booking: Booking, priced: Quote, auth, *, actor, request) -> None:
     )
     booking.confirmed_at = timezone.now()
     booking.hold_expires_at = None
+    booking.cash_on_collection = auth.deposit.method == "Cash"
     if booking.discount_code_id:
         DiscountCode.objects.filter(pk=booking.discount_code_id).update(
             times_used=F("times_used") + 1
         )
+    paid = "Cash received" if booking.cash_on_collection else "Payment authorised"
     transition(
         booking,
         Status.CONFIRMED,
         actor=actor,
-        reason=f"Payment authorised, transaction {auth.transaction_id} (Book.Done).",
+        reason=f"{paid}, transaction {auth.transaction_id} (Book.Done).",
         request=request,
-        update_fields=("booking_reference", "pickup_code", "confirmed_at", "hold_expires_at"),
+        update_fields=(
+            "booking_reference",
+            "pickup_code",
+            "confirmed_at",
+            "hold_expires_at",
+            "cash_on_collection",
+        ),
     )
     # Vehicle.update_status() in sequence 1 = Book.Done.Block (no status change; see module doc).
     record_audit(
@@ -388,15 +400,92 @@ def _confirm(booking: Booking, priced: Quote, auth, *, actor, request) -> None:
     payments.record_booking_ledger(booking, auth, actor=actor, request=request)
 
 
+def _back_to_draft(booking: Booking, *, actor, reason: str, request) -> None:
+    booking.hold_expires_at = None
+    transition(
+        booking,
+        Status.DRAFT,
+        actor=actor,
+        reason=reason,
+        request=request,
+        update_fields=("hold_expires_at",),
+    )
+
+
+def _payable(booking: Booking, *, actor, request) -> tuple[Quote | None, BookingError | None]:
+    """The checks before Book.Done: the hold, the discount (BK8) and the price (BK7).
+
+    Returns the price to collect, or the refusal to raise once the caller's
+    transaction has committed the booking's return to Draft.
+    """
+    if booking.hold_expires_at is None or booking.hold_expires_at <= timezone.now():
+        release_expired_holds(vehicle=booking.vehicle, request=request)
+        return None, HoldExpiredError(
+            "The 15-minute hold on this vehicle has expired. Hold it again to pay."
+        )
+    if not _discount_still_usable(booking):
+        _back_to_draft(
+            booking, actor=actor, reason="The discount code is no longer usable.", request=request
+        )
+        return None, BookingConflictError(
+            "Your discount code can no longer be used. Hold the vehicle again for a new price.",
+            code="discount_unavailable",
+        )
+    priced = booking_quote(booking)
+    if priced.total_payable != booking.total_amount:  # BK7 recheck
+        _back_to_draft(
+            booking,
+            actor=actor,
+            reason="The price changed while the vehicle was held.",
+            request=request,
+        )
+        return None, BookingConflictError(
+            "The price has changed. Hold the vehicle again to see the new price.",
+            code="price_changed",
+        )
+    return priced, None
+
+
+def _choose_cash(booking: Booking, *, actor, request) -> None:
+    """Pay.Method, BR-9: cash at collection.
+
+    The booking stays Pending Payment, held for the collection until
+    NO_SHOW_AFTER past the pickup time (proposed R1-P1), and is confirmed only
+    when a named staff member records the cash (record_cash_payment).
+    """
+    if booking.delivery_address:
+        raise BookingError(
+            "Cash is accepted only for a booking collected at the branch (BR-9).",
+            code="cash_not_available",
+            field="method",
+        )
+    if booking.cash_on_collection:
+        return  # Pay.Idempotent: choosing cash again changes nothing
+    booking.cash_on_collection = True
+    booking.hold_expires_at = booking.pickup_datetime + settings.NO_SHOW_AFTER
+    booking.save(update_fields=["cash_on_collection", "hold_expires_at", "updated_at"])
+    record_audit(
+        actor,
+        "Cash On Collection Chosen",
+        booking,
+        after={"hold_expires_at": booking.hold_expires_at.isoformat()},
+        request=request,
+    )
+
+
 def pay_booking(
     customer: Customer,
     booking_id: int,
     *,
-    payment_token: str,
+    payment_token: str = "",
     idempotency_key: str,
+    method: str = CARD,
+    channel: str = "",
+    upi_id: str = "",
     request=None,
 ) -> Booking:
-    """Pay.Authorize and Book.Done. Repeating the same idempotency key never charges twice."""
+    """Pay.Method, Pay.Authorize and Book.Done. Repeating the same idempotency key never
+    charges twice. With `method` cash the booking waits for the cash at collection."""
     actor = customer.user
     outcome: BookingError | None = None
     with transaction.atomic():
@@ -417,58 +506,75 @@ def pay_booking(
         if booking.status != Status.PENDING_PAYMENT:
             raise InvalidBookingStateError("This booking is not waiting for payment.")
 
-        if booking.hold_expires_at is None or booking.hold_expires_at <= timezone.now():
-            release_expired_holds(vehicle=booking.vehicle, request=request)
-            outcome = HoldExpiredError(
-                "The 15-minute hold on this vehicle has expired. Hold it again to pay."
-            )
-        elif not _discount_still_usable(booking):
-            booking.hold_expires_at = None
-            transition(
+        priced, outcome = _payable(booking, actor=actor, request=request)
+        if priced is not None and method == CASH:
+            _choose_cash(booking, actor=actor, request=request)
+        elif priced is not None:
+            auth = payments.authorize(  # Payment.authorize()
                 booking,
-                Status.DRAFT,
+                rental_amount=priced.total_payable,
+                deposit_amount=priced.security_deposit,
+                payment_token=payment_token,
+                idempotency_key=idempotency_key,
                 actor=actor,
-                reason="The discount code is no longer usable.",
                 request=request,
-                update_fields=("hold_expires_at",),
+                channel=channel if method == ONLINE else "",
+                upi_id=upi_id,
             )
-            outcome = BookingConflictError(
-                "Your discount code can no longer be used. Hold the vehicle again for a new price.",
-                code="discount_unavailable",
+            if auth.success:
+                _confirm(booking, priced, auth, actor=actor, request=request)
+            else:  # BK2: declined -> hold retained; the failed attempt stays recorded
+                outcome = PaymentDeclinedError(
+                    f"Your payment was declined: {auth.message} The vehicle stays held "
+                    "until the hold expires; you can try another card."
+                )
+    if outcome is not None:
+        raise outcome
+    return booking
+
+
+def record_cash_payment(
+    staff_user, booking_id: int, *, amount_received, idempotency_key: str, request=None
+) -> Booking:
+    """BR-9, Book.Confirm.Pay: a named branch staff member records the cash at collection.
+
+    The booking is then confirmed by the same Book.Done transaction as a card
+    payment (_confirm). Only the pickup branch's staff can find the booking.
+    """
+    staff = staff_user.branch_staff
+    outcome: BookingError | None = None
+    with transaction.atomic():
+        booking = (
+            Booking.objects.select_for_update(of=("self",))
+            .select_related("vehicle__category", "tariff", "discount_code")
+            .get(pk=booking_id, pickup_branch_id=staff.branch_id)
+        )
+        if booking.status == Status.CONFIRMED:
+            previous = payments.previous_authorization(booking, idempotency_key)
+            if previous is not None and previous.success:
+                return booking  # Pay.Idempotent: the same submission twice
+            raise InvalidBookingStateError("This booking is already confirmed and paid.")
+        if booking.status != Status.PENDING_PAYMENT or not booking.cash_on_collection:
+            raise InvalidBookingStateError("This booking is not waiting for a cash payment.")
+        priced, outcome = _payable(booking, actor=staff_user, request=request)
+        if priced is not None:
+            expected = priced.total_payable + priced.security_deposit
+            if amount_received != expected:
+                raise BookingError(
+                    f"Collect exactly {settings.CURRENCY} {expected}: the rental "
+                    f"{priced.total_payable} and the deposit {priced.security_deposit}.",
+                    code="wrong_amount",
+                    field="amount_received",
+                )
+            auth = payments.record_cash(
+                booking,
+                staff=staff,
+                rental_amount=priced.total_payable,
+                deposit_amount=priced.security_deposit,
+                idempotency_key=idempotency_key,
+                request=request,
             )
-        else:
-            priced = booking_quote(booking)
-            if priced.total_payable != booking.total_amount:  # BK7 recheck
-                booking.hold_expires_at = None
-                transition(
-                    booking,
-                    Status.DRAFT,
-                    actor=actor,
-                    reason="The price changed while the vehicle was held.",
-                    request=request,
-                    update_fields=("hold_expires_at",),
-                )
-                outcome = BookingConflictError(
-                    "The price has changed. Hold the vehicle again to see the new price.",
-                    code="price_changed",
-                )
-            else:
-                auth = payments.authorize(  # Payment.authorize()
-                    booking,
-                    rental_amount=priced.total_payable,
-                    deposit_amount=priced.security_deposit,
-                    payment_token=payment_token,
-                    idempotency_key=idempotency_key,
-                    actor=actor,
-                    request=request,
-                )
-                if auth.success:
-                    _confirm(booking, priced, auth, actor=actor, request=request)
-                else:  # BK2: declined -> hold retained; the failed attempt stays recorded
-                    outcome = PaymentDeclinedError(
-                        f"Your payment was declined: {auth.message} The vehicle stays held "
-                        "until the hold expires; you can try another card."
-                    )
+            _confirm(booking, priced, auth, actor=staff_user, request=request)
     if outcome is not None:
         raise outcome
     return booking
