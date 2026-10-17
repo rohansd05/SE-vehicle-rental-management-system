@@ -12,6 +12,7 @@ from apps.maintenance.notification_templates import SAMPLE_CONTEXT
 from apps.notifications.models import Notification
 from apps.notifications.services import queue_email
 from apps.notifications.templates import TEMPLATES, render
+from apps.rentals.notification_templates import SAMPLE_CONTEXT as RENTALS_SAMPLE_CONTEXT
 
 pytestmark = pytest.mark.django_db
 
@@ -40,6 +41,7 @@ def test_every_template_renders():
         "licence_number": "MH01 1",
         "reason": "Blurred",
         **SAMPLE_CONTEXT,
+        **RENTALS_SAMPLE_CONTEXT,
     }
     for name, version in TEMPLATES:
         subject, body = render(name, version, context)

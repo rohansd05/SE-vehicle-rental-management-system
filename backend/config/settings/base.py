@@ -216,6 +216,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "LicenceStatusEnum": "apps.accounts.models.Licence.Status",
         "BookingStatusEnum": "apps.bookings.models.Booking.Status",
+        "MaintenanceVehicleStatusEnum": "apps.fleet.models.Vehicle.Status",
         "HealthStatusEnum": ["ok", "degraded"],
     },
     "SWAGGER_UI_DIST": "SIDECAR",
