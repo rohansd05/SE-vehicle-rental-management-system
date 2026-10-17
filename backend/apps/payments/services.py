@@ -68,6 +68,7 @@ CENT = Decimal("0.01")
 Type = Payment.TransactionType
 Purpose = Payment.Purpose
 RefundStatus = RefundRequest.Status
+Adjustment = InvoiceAdjustment.AdjustmentType
 
 
 class PaymentError(Exception):
@@ -105,7 +106,8 @@ class AuthorizationResult:
     success: bool
     message: str
     rental: Payment | None  # None when the rental amount is zero (a full discount)
-    deposit: Payment
+    # None for an extra rental charge with no deposit (Book.Modify.Price, Book.Extend).
+    deposit: Payment | None
 
     @property
     def transaction_id(self) -> str:
@@ -123,10 +125,11 @@ def previous_authorization(booking, idempotency_key: str) -> AuthorizationResult
         )
     }
     deposit = rows.get(Purpose.SECURITY_DEPOSIT)
-    if deposit is None:
+    first = deposit or rows.get(Purpose.RENTAL)
+    if first is None:
         return None
-    success = deposit.status == Payment.Status.SUCCEEDED
-    return AuthorizationResult(success, deposit.failure_reason, rows.get(Purpose.RENTAL), deposit)
+    success = first.status == Payment.Status.SUCCEEDED
+    return AuthorizationResult(success, first.failure_reason, rows.get(Purpose.RENTAL), deposit)
 
 
 def _instrument_row(channel: str, upi_id: str, payment_token: str, **fields) -> Payment:
@@ -152,7 +155,8 @@ def authorize(
     """Exp 3 Payment.authorize(): one gateway hold for rental + deposit (SI-1.1, Pay.Authorize).
 
     Pay.Method: a card (`payment_token` from the hosted fields) or, with
-    `channel`, an on-line transfer or wallet (D6).
+    `channel`, an on-line transfer or wallet (D6). A `deposit_amount` of zero
+    authorises an extra rental charge alone (Book.Modify.Price, Book.Extend).
     """
     previous = previous_authorization(booking, idempotency_key)
     if previous is not None:
@@ -193,7 +197,7 @@ def authorize(
         return payment
 
     rental = row(Purpose.RENTAL, rental_amount) if rental_amount > 0 else None
-    deposit = row(Purpose.SECURITY_DEPOSIT, deposit_amount)
+    deposit = row(Purpose.SECURITY_DEPOSIT, deposit_amount) if deposit_amount > 0 else None
     return AuthorizationResult(response.success, reason, rental, deposit)
 
 
@@ -237,15 +241,21 @@ def record_cash(
 
 
 def record_booking_ledger(
-    booking, auth: AuthorizationResult, *, actor, request=None
+    booking,
+    auth: AuthorizationResult,
+    *,
+    actor,
+    request=None,
+    note: str = "Rental charge (Book.Done)",
 ) -> list[LedgerEntry]:
     """Pay.Ledger: the rental charge and the deposit hold (and, for cash, its capture)."""
     entries = []
     if auth.rental is not None:
-        entries.append((LedgerEntry.EntryType.CHARGE, auth.rental, "Rental charge (Book.Done)"))
-    entries.append(
-        (LedgerEntry.EntryType.DEPOSIT_HOLD, auth.deposit, "Security deposit held (BR-3)")
-    )
+        entries.append((LedgerEntry.EntryType.CHARGE, auth.rental, note))
+    if auth.deposit is not None:
+        entries.append(
+            (LedgerEntry.EntryType.DEPOSIT_HOLD, auth.deposit, "Security deposit held (BR-3)")
+        )
     for payment in (auth.rental, auth.deposit):
         if payment is not None and payment.transaction_type == Type.CAPTURE:
             entries.append((LedgerEntry.EntryType.CAPTURE, payment, "Cash received (BR-9)"))
@@ -354,32 +364,45 @@ def issue_credit_note(
     """Pay.Invoice: an issued invoice is never modified; a credit note references it.
 
     `amount` includes tax; the tax part is taken at the invoice's own rate.
-    The credit notes on one invoice never exceed its total.
+    The credit notes on one invoice never exceed its total plus its debit notes.
     """
     amount = _money(amount)
-    credited = (
-        invoice.adjustments.filter(
-            adjustment_type=InvoiceAdjustment.AdjustmentType.CREDIT_NOTE
-        ).aggregate(total=Sum("amount"))["total"]
-        or ZERO
-    )
-    if credited + amount > invoice.total_amount:
+
+    def adjusted(kind: str) -> Decimal:
+        return _total(invoice.adjustments.filter(adjustment_type=kind))
+
+    if adjusted(Adjustment.CREDIT_NOTE) + amount > invoice.total_amount + adjusted(
+        Adjustment.DEBIT_NOTE
+    ):
         raise PaymentError(
             "A credit note cannot exceed what is left of the invoice.", code="exceeds_invoice"
         )
+    return _adjust(invoice, Adjustment.CREDIT_NOTE, amount, reason, issued_by, request)
+
+
+def issue_debit_note(
+    invoice: Invoice, amount: Decimal, reason: str, *, issued_by, request=None
+) -> InvoiceAdjustment:
+    """Pay.Invoice: an extra charge after issue (Book.Modify.Price, Book.Extend) is a debit
+    note that references the invoice, never an edit of it. `amount` includes tax."""
+    return _adjust(invoice, Adjustment.DEBIT_NOTE, _money(amount), reason, issued_by, request)
+
+
+def _adjust(invoice, kind: str, amount: Decimal, reason: str, issued_by, request):
     rate = tax_rate_of(invoice)
+    prefix = "CN" if kind == Adjustment.CREDIT_NOTE else "DN"
     note = InvoiceAdjustment.objects.create(
         adjustment_number=next_in_sequence(
-            InvoiceAdjustment, "adjustment_number", f"CN-{timezone.localdate().year}-", 6
+            InvoiceAdjustment, "adjustment_number", f"{prefix}-{timezone.localdate().year}-", 6
         ),
         invoice=invoice,
-        adjustment_type=InvoiceAdjustment.AdjustmentType.CREDIT_NOTE,
+        adjustment_type=kind,
         reason=reason,
         amount=amount,
         tax_amount=(amount * rate / (100 + rate)).quantize(CENT),
         issued_by=issued_by,
     )
-    record_audit(issued_by, "Credit Note Issued", note, after=snapshot(note), request=request)
+    record_audit(issued_by, f"{kind} Issued", note, after=snapshot(note), request=request)
     return note
 
 
