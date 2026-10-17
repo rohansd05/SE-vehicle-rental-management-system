@@ -78,7 +78,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Handover and return',
     icon: ArrowLeftRight,
     roles: ['BRANCH_STAFF'],
-    available: false,
+    available: true,
     description: 'Hand vehicles over to customers and record their return.',
   },
   {
@@ -86,7 +86,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Branch bookings',
     icon: Building2,
     roles: ['BRANCH_STAFF', 'BRANCH_MANAGER'],
-    available: false,
+    available: true,
     description: "Today's collections and returns at your branch.",
   },
   {

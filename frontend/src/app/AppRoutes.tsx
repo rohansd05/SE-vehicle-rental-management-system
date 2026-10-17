@@ -7,6 +7,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { VerifyOtpPage } from '@/features/auth/VerifyOtpPage'
 import { bookingRoutes } from '@/features/booking/routes'
+import { handoverRoutes } from '@/features/handover/routes'
 import { LicenceQueuePage } from '@/features/licence/LicenceQueuePage'
 import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
 import { MyLicencePage } from '@/features/licence/MyLicencePage'
@@ -96,6 +97,7 @@ export function AppRoutes() {
         {maintenanceRoutes()}
         {searchRoutes()}
         {bookingRoutes()}
+        {handoverRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}
