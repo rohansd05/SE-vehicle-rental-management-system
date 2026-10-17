@@ -4,6 +4,8 @@ Only these transitions are legal:
 
 - Draft -> Pending Payment (Book.Hold)
 - Pending Payment -> Confirmed (Book.Done), or -> Draft (hold expires or payment fails)
+- Pending Payment -> Cancelled or -> No-show: only an unpaid cash-at-collection booking
+  (proposed R2-P1; not in Appendix B, see docs/traceability-booking-changes.md)
 - Confirmed -> Confirmed (modify), -> Active, -> Cancelled or -> No-show
 - Active -> Active (extend) or -> Completed
 
@@ -21,7 +23,9 @@ Status = Booking.Status
 
 ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     Status.DRAFT: frozenset({Status.PENDING_PAYMENT}),
-    Status.PENDING_PAYMENT: frozenset({Status.CONFIRMED, Status.DRAFT}),
+    Status.PENDING_PAYMENT: frozenset(
+        {Status.CONFIRMED, Status.DRAFT, Status.CANCELLED, Status.NO_SHOW}  # R2-P1: cash only
+    ),
     Status.CONFIRMED: frozenset(
         {Status.CONFIRMED, Status.ACTIVE, Status.CANCELLED, Status.NO_SHOW}
     ),
@@ -87,4 +91,68 @@ def activate_booking(booking: Booking, by, *, request=None) -> Booking:
         reason="Vehicle handed over and the condition report signed (Handover.Activate).",
         request=request,
         update_fields=("handed_over_at",),
+    )
+
+
+# ─── Module R2: modify, extend, cancel, no-show (UC 4; Appendix B) ────────
+# Called by bookings/services.py inside its transaction, which holds the
+# booking row lock. Each guards the one source status it accepts, because
+# ALLOWED_TRANSITIONS alone would also let Pending Payment -> Confirmed or
+# Confirmed -> Active through.
+
+
+def _require(booking: Booking, *sources: str, new: str) -> None:
+    if booking.status not in sources:
+        raise IllegalBookingTransition(booking.status, new)
+
+
+def record_modification(booking: Booking, by, *, request=None, update_fields=()) -> Booking:
+    """Book.Modify: Confirmed -> Confirmed with the new period, branch, vehicle or add-ons."""
+    _require(booking, Status.CONFIRMED, new=Status.CONFIRMED)
+    return transition(
+        booking,
+        Status.CONFIRMED,
+        actor=by,
+        reason="The customer modified the booking and the price was recalculated (Book.Modify).",
+        request=request,
+        update_fields=update_fields,
+    )
+
+
+def record_extension(booking: Booking, by, *, request=None, update_fields=()) -> Booking:
+    """Book.Extend: Active -> Active with the later return, once the extra charge is paid."""
+    _require(booking, Status.ACTIVE, new=Status.ACTIVE)
+    return transition(
+        booking,
+        Status.ACTIVE,
+        actor=by,
+        reason="The customer extended the rental and paid the additional charge (Book.Extend).",
+        request=request,
+        update_fields=update_fields,
+    )
+
+
+def mark_cancelled(booking: Booking, by, *, request=None) -> Booking:
+    """Book.Cancel.Release: Confirmed (or an unpaid cash booking, R2-P1) -> Cancelled."""
+    if not booking.cash_on_collection:
+        _require(booking, Status.CONFIRMED, new=Status.CANCELLED)
+    return transition(
+        booking,
+        Status.CANCELLED,
+        actor=by,
+        reason="The customer cancelled before collection; refund per BR-8 (Book.Cancel).",
+        request=request,
+    )
+
+
+def mark_no_show(booking: Booking, *, request=None) -> Booking:
+    """Appendix B: not collected NO_SHOW_AFTER past the pickup time -> No-show (BR-8)."""
+    if not booking.cash_on_collection:
+        _require(booking, Status.CONFIRMED, new=Status.NO_SHOW)
+    return transition(
+        booking,
+        Status.NO_SHOW,
+        actor=None,
+        reason="Not collected two hours after the pickup time (Appendix B No-show).",
+        request=request,
     )
