@@ -221,6 +221,8 @@ customers (Book.Hold). `blocked_period` = `[pickup, return + 60 min)`.
 | `ConditionReport.accessories` | Handover.Checklist, Return.Checklist |
 | `ConditionReport.damage_marks` | Appendix A 0:m damage mark; Handover.Checklist |
 | `ConditionReport.odometer_override_by`, `odometer_override_reason` | Return.Odometer |
+| `ConditionReport.charges` (migration 0003) | Return.Charges, Return.Settle: the itemised settlement the customer signs |
+| `ConditionReport.maintenance_job` (migration 0003) | Return.Flag; Exp 2 UC 8 extension 3a |
 | `ConditionPhoto` | Handover.Checklist, Return.Checklist (at least four photographs) |
 
 ### maintenance
@@ -320,6 +322,16 @@ choosing something. Each needs a yes/no or a correction from the team.
 | P22 | Handover input caps | `rentals.serializers.HandoverSerializer` | At most 30 accessories, 50 damage marks and 12 extra photos (input limits, not business rules) |
 | P23 | Accessories to issue | `rentals.services.expected_accessories()` | BR-7's free helmet on a two-wheeler, then every booked add-on (named driver and delivery included); staff tick what is issued |
 | P24 | "Paid" for a handover | `rentals.services._is_paid()` | A Succeeded Security Deposit payment; to be replaced by R1's payments service (cash bookings) |
+| P25 | Late-return hours (N2-P1) | `rentals.settlement.late_return()` | After BR-10's grace, whole hours, a part-hour billed only past the 15-minute grace (as PR2) |
+| P26 | Free kilometres (N2-P2) | `rentals.settlement.calculate_settlement()` | `free_km_allowance` per rental day of the booking's current period, days counted as for add-ons (PR8) |
+| P27 | Fuel shortfall quantity (N2-P3) | `rentals.settlement.fuel_shortfall()` | The drop in percent of `Vehicle.fuel_capacity`, at the `FuelPrice` in force at the return |
+| P28 | Tax on return charges (N2-P4) | `rentals.settlement.calculate_settlement()` | `TAX_RATE_PERCENT` (D14) on the return charges, as its own line (BR-6 "plus taxes") |
+| P29 | Accessory not returned (N2-P5) | `rentals.services._accessories()` | Charged at the cost the staff member enters |
+| P30 | Return.Flag job (N2-P6) | `rentals.services._flag_vehicle()` | A Corrective job; "unfit for use" decides Under Maintenance or Available |
+| P31 | Odometer plausibility limit (N2-P7) | `ODOMETER_PLAUSIBILITY_KM_PER_DAY` in `business_rules.py` | 1,000 km per started day; above it a Branch Manager of the branch or an Administrator approves with a reason. Amends D16 / G4 |
+| P32 | Actual return time (N2-P8) | `rentals.services._check_return_time()` | Entered by staff, not in the future, not before the handover |
+| P33 | Customer acknowledgement (N2-P9) | `ConditionReport.signature` of the return report | The customer signs after seeing the settlement |
+| P34 | Settle idempotency (N2-P10) | `rentals.services.return_vehicle()` | One return per booking; a repeated Settle returns the first result |
 
 Proposed values for authentication, OTPs and licence uploads (Phase 1B)
 are listed in `docs/decisions.md`, D20 (A1–A16).
