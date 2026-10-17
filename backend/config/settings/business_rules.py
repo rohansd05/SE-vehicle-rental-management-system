@@ -92,3 +92,18 @@ LOGIN_LOCKOUT_DURATION = timedelta(minutes=15)
 # Proposed (SRS silent; docs/decisions.md D20): accepted types and size limit.
 LICENCE_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png")
 LICENCE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+
+# Handover.Checklist: at least four photographs covering all sides of the vehicle,
+# so one photo of each side is required.
+HANDOVER_PHOTO_SIDES = ("Front", "Rear", "Left", "Right")
+# Handover.Refuse, SA-3: statutory documents valid for the whole booked period.
+HANDOVER_REQUIRED_DOCUMENTS = (
+    "Insurance",
+    "Pollution Certificate",
+    "Fitness Certificate",
+    "Road Tax",
+)
+# Condition photos and the signature image. Proposed (SRS silent): the licence
+# image limits above (D20).
+CONDITION_IMAGE_EXTENSIONS = LICENCE_IMAGE_EXTENSIONS
+CONDITION_IMAGE_MAX_BYTES = LICENCE_IMAGE_MAX_BYTES
