@@ -28,6 +28,7 @@ from apps.accounts.models import (
     User,
 )
 from apps.bookings.seed import delete_demo_booking_data, seed_demo_booking_data
+from apps.bookings.seed_changes import delete_demo_change_data, seed_demo_change_data
 from apps.core.audit import entity_type, snapshot
 from apps.core.choices import FuelType, VehicleType
 from apps.core.models import AuditLog
@@ -228,6 +229,7 @@ class Command(BaseCommand):
         seed_demo_booking_data(self._count)
         seed_demo_handover_data(self._count)
         seed_demo_payment_data(self._count)
+        seed_demo_change_data(self._count)
 
     def _seed_branches(self) -> dict[str, Branch]:
         branches = {}
@@ -473,6 +475,7 @@ class Command(BaseCommand):
         try:
             delete_demo_handover_data()  # its booking protects a demo tariff
             delete_demo_payment_data()  # so do these bookings
+            delete_demo_change_data()  # and these
             self._delete_audited(Tariff.objects.filter(vehicle_category__name__in=CATEGORIES))
             FuelPrice.objects.filter(effective_from=DEMO_EFFECTIVE_FROM).delete()
             delete_demo_jobs()
