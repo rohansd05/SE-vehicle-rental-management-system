@@ -89,6 +89,9 @@ MODIFICATION_CUTOFF = timedelta(hours=12)
 # Appendix B: a booking becomes No-show this long after the pickup time.
 NO_SHOW_AFTER = timedelta(hours=2)
 
+# Notify.Remind: the customer is reminded this long before the collection time.
+PICKUP_REMINDER_BEFORE = timedelta(hours=24)
+
 # Book.Done.Store / Appendix A: booking reference and pickup code formats.
 BOOKING_REFERENCE_PREFIX = "VRMS"
 BOOKING_REFERENCE_REGEX = r"^VRMS-[0-9]{8}-[0-9]{4}$"

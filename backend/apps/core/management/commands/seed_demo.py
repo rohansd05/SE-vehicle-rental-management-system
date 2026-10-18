@@ -48,6 +48,7 @@ from apps.payments.seed import delete_demo_payment_data, seed_demo_payment_data
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 from apps.rentals.seed import delete_demo_handover_data, seed_demo_handover_data
 from apps.rentals.seed_return import delete_demo_return_data, seed_demo_return_data
+from apps.reports.seed import seed_demo_report_data
 
 DEMO_PASSWORD = "Demo@1234"
 IST = ZoneInfo("Asia/Kolkata")
@@ -202,6 +203,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete the demo data first (only data this command creates), then reload it.",
         )
+        parser.add_argument(
+            "--reports",
+            action="store_true",
+            help="Also load three months of past bookings, invoices and ledger entries for "
+            "the reports (apps/reports/seed.py). They are append-only: afterwards --reset "
+            "refuses, as after any demo that moved money.",
+        )
 
     def handle(self, *args, **options):
         self.created: dict[str, int] = {}
@@ -209,6 +217,8 @@ class Command(BaseCommand):
             if options["reset"]:
                 self._reset()
             self._seed()
+            if options["reports"]:
+                seed_demo_report_data(self._count)
         created = ", ".join(f"{n} {label}" for label, n in self.created.items()) or "nothing"
         self.stdout.write(self.style.SUCCESS(f"Demo data ready. Created: {created}."))
         self.stdout.write(f"Demo accounts use the password {DEMO_PASSWORD}: ")

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useSignedInUser } from '@/features/auth/auth-context'
 import { getDue } from '@/features/payment/api'
 import { DUE_KEY } from '@/features/payment/keys'
+import { DashboardSummary } from '@/features/reports/DashboardSummary'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { stagger } from '@/lib/motion'
@@ -122,6 +123,7 @@ export function DashboardPage() {
         photo={HOME_PHOTO[user.role]}
       />
       {user.role === 'CUSTOMER' ? <DueNotice /> : null}
+      {user.role === 'ADMINISTRATOR' || user.role === 'BRANCH_MANAGER' ? <DashboardSummary /> : null}
       {tiles.length ? (
         <ul className="grid gap-6 lg:grid-cols-2">
           {tiles.map((item, index) => (

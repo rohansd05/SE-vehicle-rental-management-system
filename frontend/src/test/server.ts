@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import type { Role } from '@/api/types'
+import { EMPTY_REPORTS, makeDashboard } from '@/features/reports/fixtures'
 
 export const API = '*/api/v1'
 
@@ -47,6 +48,11 @@ export const defaultHandlers = [
   http.post(`${API}/auth/logout/`, () => new HttpResponse(null, { status: 204 })),
   // The customer home page asks for the outstanding due (Pay.Dues); none by default.
   http.get(`${API}/payments/due/`, () => HttpResponse.json({ outstanding_due: '0.00' })),
+  // The Administrator's and Branch Manager's home and Reports pages (Report.Dashboard, UC 14).
+  http.get(`${API}/reports/summary/`, () => HttpResponse.json(makeDashboard())),
+  http.get(`${API}/reports/:type/`, ({ params }) =>
+    HttpResponse.json(EMPTY_REPORTS[params.type as keyof typeof EMPTY_REPORTS]),
+  ),
 ]
 
 export const server = setupServer(...defaultHandlers)

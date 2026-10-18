@@ -145,6 +145,11 @@ Copy-Item .env.example .env                 # then edit .env
 loads it again; it refuses if bookings or other records already use it. To
 create your own administrator instead, run `manage.py createsuperuser`.
 
+`seed_demo --reports` also loads three months of past bookings at Andheri and
+Bandra for the Reports screen (customer `reports@vrms.test`, password as below).
+Their invoices and ledger entries are append-only, so afterwards `--reset`
+refuses; load it last, on a database you will not reset.
+
 Always call the venv's interpreter (`.\venv\Scripts\python.exe`) or activate
 the venv first (`.\venv\Scripts\Activate.ps1`), so that no other Python
 installation on the machine is used.

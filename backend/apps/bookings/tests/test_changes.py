@@ -152,7 +152,7 @@ def test_cancelling_48_hours_ahead_refunds_everything(customer, car, pickup, ret
     status_change = AuditLog.objects.filter(action="Booking Status Changed").latest("id")
     assert status_change.after["status"] == S.CANCELLED
     assert "booking_cancelled" in templates(customer.user)
-    assert templates(staff) == ["booking_branch_update"]
+    assert templates(staff) == ["booking_branch_update"] * 2  # Book.Done.Branch, then UC 4 step 6
     other = eligible_customer()
     assert confirmed(other, car, pickup, return_, key="pay-r2-0002").status == S.CONFIRMED
 

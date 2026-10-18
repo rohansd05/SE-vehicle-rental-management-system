@@ -3813,6 +3813,135 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReturnRefused'
           description: Not an Active booking
+  /api/v1/reports/customers/:
+    get:
+      operationId: api_v1_reports_customers_retrieve
+      summary: 'Customers: new, active, top, with dues, no-shows (UC 14)'
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Local date; default the 1st
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Default today
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerReport'
+          description: ''
+  /api/v1/reports/maintenance/:
+    get:
+      operationId: api_v1_reports_maintenance_retrieve
+      summary: Maintenance cost by vehicle and job type (UC 14)
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Local date; default the 1st
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Default today
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceCostReport'
+          description: ''
+  /api/v1/reports/revenue/:
+    get:
+      operationId: api_v1_reports_revenue_retrieve
+      summary: Revenue, refunds and net revenue (Report.Revenue)
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Local date; default the 1st
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Default today
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueReport'
+          description: ''
+  /api/v1/reports/summary/:
+    get:
+      operationId: api_v1_reports_summary_retrieve
+      description: Report.Dashboard, for the Administrator's and Branch Manager's
+        home page.
+      summary: Summary dashboard (Report.Dashboard)
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
+  /api/v1/reports/utilisation/:
+    get:
+      operationId: api_v1_reports_utilisation_retrieve
+      summary: Vehicle utilisation (Report.Utilisation)
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Local date; default the 1st
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Default today
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisationReport'
+          description: ''
 components:
   schemas:
     AccessToken:
@@ -5431,6 +5560,75 @@ components:
       - return_datetime
       - terms_accepted
       - vehicle
+    CustomerDue:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        outstanding_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - customer_id
+      - email
+      - name
+      - outstanding_due
+    CustomerReport:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        scope:
+          type: string
+          description: '"All branches", or the Branch Manager''s branch.'
+        totals:
+          $ref: '#/components/schemas/CustomerTotals'
+        top:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopCustomer'
+        with_dues:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerDue'
+      required:
+      - date_from
+      - date_to
+      - scope
+      - top
+      - totals
+      - with_dues
+    CustomerTotals:
+      type: object
+      properties:
+        new:
+          type: integer
+        active:
+          type: integer
+        no_shows:
+          type: integer
+        with_dues:
+          type: integer
+        dues_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - active
+      - dues_total
+      - new
+      - no_shows
+      - with_dues
     DamageMark:
       type: object
       description: 'A mark on the vehicle diagram: x and y in percent of its width
@@ -5451,6 +5649,35 @@ components:
       required:
       - x
       - y
+    Dashboard:
+      type: object
+      properties:
+        scope:
+          type: string
+        vehicles_by_status:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusCount'
+        collections_today:
+          type: integer
+        returns_today:
+          type: integer
+        overdue_returns:
+          type: integer
+        open_maintenance_jobs:
+          type: integer
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodFigures'
+      required:
+      - collections_today
+      - open_maintenance_jobs
+      - overdue_returns
+      - periods
+      - returns_today
+      - scope
+      - vehicles_by_status
     DatabaseEnum:
       enum:
       - ok
@@ -6184,6 +6411,123 @@ components:
       required:
       - email
       - password
+    MaintenanceCostJobType:
+      type: object
+      properties:
+        job_type:
+          type: string
+        jobs:
+          type: integer
+        automatic:
+          type: integer
+          description: Raised by the system (Maint.Auto.Km, .Time).
+        labour:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        parts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - automatic
+      - job_type
+      - jobs
+      - labour
+      - parts
+      - total
+    MaintenanceCostReport:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        scope:
+          type: string
+          description: '"All branches", or the Branch Manager''s branch.'
+        totals:
+          $ref: '#/components/schemas/MaintenanceCostTotals'
+        by_vehicle:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceCostVehicle'
+        by_job_type:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceCostJobType'
+      required:
+      - by_job_type
+      - by_vehicle
+      - date_from
+      - date_to
+      - scope
+      - totals
+    MaintenanceCostTotals:
+      type: object
+      properties:
+        jobs:
+          type: integer
+        labour:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        parts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        invoices_attached:
+          type: integer
+      required:
+      - invoices_attached
+      - jobs
+      - labour
+      - parts
+      - total
+    MaintenanceCostVehicle:
+      type: object
+      properties:
+        vehicle_id:
+          type: integer
+        registration_no:
+          type: string
+        vehicle:
+          type: string
+        branch:
+          type: string
+        jobs:
+          type: integer
+        labour:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        parts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - branch
+      - jobs
+      - labour
+      - parts
+      - registration_no
+      - total
+      - vehicle
+      - vehicle_id
     MaintenanceJob:
       type: object
       properties:
@@ -7237,6 +7581,22 @@ components:
       required:
       - customer_acknowledged
       - password
+    PeriodFigures:
+      type: object
+      properties:
+        period:
+          type: string
+          description: today, week (from Monday) or month.
+        bookings:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - bookings
+      - period
+      - revenue
     PhotoUpload:
       type: object
       properties:
@@ -8126,6 +8486,161 @@ components:
       - registration_no
       - status
       - vehicle_type
+    RevenueGroup:
+      type: object
+      properties:
+        name:
+          type: string
+        rental:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        add_ons:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        discounts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        debit_notes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        credit_notes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        net_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - add_ons
+      - credit_notes
+      - debit_notes
+      - discounts
+      - name
+      - net_revenue
+      - rental
+      - tax
+    RevenueMethod:
+      type: object
+      properties:
+        method:
+          type: string
+        charges:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        refunds:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - charges
+      - method
+      - net
+      - refunds
+    RevenueReport:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        scope:
+          type: string
+          description: '"All branches", or the Branch Manager''s branch.'
+        totals:
+          $ref: '#/components/schemas/RevenueTotals'
+        by_branch:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueGroup'
+        by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueGroup'
+        by_method:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueMethod'
+      required:
+      - by_branch
+      - by_category
+      - by_method
+      - date_from
+      - date_to
+      - scope
+      - totals
+    RevenueTotals:
+      type: object
+      properties:
+        invoices:
+          type: integer
+        rental:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        add_ons:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        discounts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        invoiced:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        debit_notes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        credit_notes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        net_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        refunds_awaiting_approval:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        outstanding_dues:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - add_ons
+      - credit_notes
+      - debit_notes
+      - discounts
+      - invoiced
+      - invoices
+      - net_revenue
+      - outstanding_dues
+      - refunds_awaiting_approval
+      - rental
+      - tax
     RoleEnum:
       enum:
       - CUSTOMER
@@ -8360,6 +8875,16 @@ components:
         * `Missing` - Missing
         * `Expired` - Expired
         * `Expiring` - Expiring
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - status
     TariffInput:
       type: object
       description: |-
@@ -8444,6 +8969,31 @@ components:
       - name
       - technician_id
       - workshop
+    TopCustomer:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        bookings:
+          type: integer
+        no_shows:
+          type: integer
+        net_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - bookings
+      - customer_id
+      - email
+      - name
+      - net_revenue
+      - no_shows
     TransmissionEnum:
       enum:
       - Manual
@@ -8471,6 +9021,111 @@ components:
       - email
       - id
       - name
+    UtilisationGroup:
+      type: object
+      properties:
+        name:
+          type: string
+        vehicles:
+          type: integer
+        rented_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,1})?$
+        available_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,1})?$
+        utilisation_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,1})?$
+          nullable: true
+      required:
+      - available_hours
+      - name
+      - rented_hours
+      - utilisation_percent
+      - vehicles
+    UtilisationReport:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        scope:
+          type: string
+          description: '"All branches", or the Branch Manager''s branch.'
+        totals:
+          $ref: '#/components/schemas/UtilisationGroup'
+        by_vehicle:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilisationVehicle'
+        by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilisationGroup'
+        by_branch:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilisationGroup'
+        least_utilised:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilisationVehicle'
+      required:
+      - by_branch
+      - by_category
+      - by_vehicle
+      - date_from
+      - date_to
+      - least_utilised
+      - scope
+      - totals
+    UtilisationVehicle:
+      type: object
+      properties:
+        vehicle_id:
+          type: integer
+        registration_no:
+          type: string
+        vehicle:
+          type: string
+        category:
+          type: string
+        branch:
+          type: string
+        rented_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,1})?$
+        available_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,1})?$
+        maintenance_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,1})?$
+        utilisation_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,1})?$
+          nullable: true
+      required:
+      - available_hours
+      - branch
+      - category
+      - maintenance_days
+      - registration_no
+      - rented_hours
+      - utilisation_percent
+      - vehicle
+      - vehicle_id
     VehicleCategory:
       type: object
       properties:

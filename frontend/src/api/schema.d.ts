@@ -1811,6 +1811,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/customers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customers: new, active, top, with dues, no-shows (UC 14) */
+        get: operations["api_v1_reports_customers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/maintenance/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Maintenance cost by vehicle and job type (UC 14) */
+        get: operations["api_v1_reports_maintenance_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/revenue/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revenue, refunds and net revenue (Report.Revenue) */
+        get: operations["api_v1_reports_revenue_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summary dashboard (Report.Dashboard)
+         * @description Report.Dashboard, for the Administrator's and Branch Manager's home page.
+         */
+        get: operations["api_v1_reports_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/utilisation/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vehicle utilisation (Report.Utilisation) */
+        get: operations["api_v1_reports_utilisation_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2356,12 +2444,48 @@ export interface components {
              */
             safety_notice_acknowledged: boolean;
         };
+        CustomerDue: {
+            customer_id: number;
+            name: string;
+            /** Format: email */
+            email: string;
+            /** Format: decimal */
+            outstanding_due: string;
+        };
+        CustomerReport: {
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            /** @description "All branches", or the Branch Manager's branch. */
+            scope: string;
+            totals: components["schemas"]["CustomerTotals"];
+            top: components["schemas"]["TopCustomer"][];
+            with_dues: components["schemas"]["CustomerDue"][];
+        };
+        CustomerTotals: {
+            new: number;
+            active: number;
+            no_shows: number;
+            with_dues: number;
+            /** Format: decimal */
+            dues_total: string;
+        };
         /** @description A mark on the vehicle diagram: x and y in percent of its width and height. */
         DamageMark: {
             x: number;
             y: number;
             /** @default  */
             note: string;
+        };
+        Dashboard: {
+            scope: string;
+            vehicles_by_status: components["schemas"]["StatusCount"][];
+            collections_today: number;
+            returns_today: number;
+            overdue_returns: number;
+            open_maintenance_jobs: number;
+            periods: components["schemas"]["PeriodFigures"][];
         };
         /**
          * @description * `ok` - ok
@@ -2666,6 +2790,52 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        MaintenanceCostJobType: {
+            job_type: string;
+            jobs: number;
+            /** @description Raised by the system (Maint.Auto.Km, .Time). */
+            automatic: number;
+            /** Format: decimal */
+            labour: string;
+            /** Format: decimal */
+            parts: string;
+            /** Format: decimal */
+            total: string;
+        };
+        MaintenanceCostReport: {
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            /** @description "All branches", or the Branch Manager's branch. */
+            scope: string;
+            totals: components["schemas"]["MaintenanceCostTotals"];
+            by_vehicle: components["schemas"]["MaintenanceCostVehicle"][];
+            by_job_type: components["schemas"]["MaintenanceCostJobType"][];
+        };
+        MaintenanceCostTotals: {
+            jobs: number;
+            /** Format: decimal */
+            labour: string;
+            /** Format: decimal */
+            parts: string;
+            /** Format: decimal */
+            total: string;
+            invoices_attached: number;
+        };
+        MaintenanceCostVehicle: {
+            vehicle_id: number;
+            registration_no: string;
+            vehicle: string;
+            branch: string;
+            jobs: number;
+            /** Format: decimal */
+            labour: string;
+            /** Format: decimal */
+            parts: string;
+            /** Format: decimal */
+            total: string;
         };
         MaintenanceJob: {
             readonly job_id: number;
@@ -3148,6 +3318,13 @@ export interface components {
             /** @description SE-9: re-authentication before a payment or a refund. */
             password: string;
         };
+        PeriodFigures: {
+            /** @description today, week (from Monday) or month. */
+            period: string;
+            bookings: number;
+            /** Format: decimal */
+            revenue: string;
+        };
         PhotoUpload: {
             /** Format: uri */
             image: string;
@@ -3488,6 +3665,67 @@ export interface components {
             /** Format: decimal */
             readonly fuel_capacity: string | null;
         };
+        RevenueGroup: {
+            name: string;
+            /** Format: decimal */
+            rental: string;
+            /** Format: decimal */
+            add_ons: string;
+            /** Format: decimal */
+            discounts: string;
+            /** Format: decimal */
+            tax: string;
+            /** Format: decimal */
+            debit_notes: string;
+            /** Format: decimal */
+            credit_notes: string;
+            /** Format: decimal */
+            net_revenue: string;
+        };
+        RevenueMethod: {
+            method: string;
+            /** Format: decimal */
+            charges: string;
+            /** Format: decimal */
+            refunds: string;
+            /** Format: decimal */
+            net: string;
+        };
+        RevenueReport: {
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            /** @description "All branches", or the Branch Manager's branch. */
+            scope: string;
+            totals: components["schemas"]["RevenueTotals"];
+            by_branch: components["schemas"]["RevenueGroup"][];
+            by_category: components["schemas"]["RevenueGroup"][];
+            by_method: components["schemas"]["RevenueMethod"][];
+        };
+        RevenueTotals: {
+            invoices: number;
+            /** Format: decimal */
+            rental: string;
+            /** Format: decimal */
+            add_ons: string;
+            /** Format: decimal */
+            discounts: string;
+            /** Format: decimal */
+            tax: string;
+            /** Format: decimal */
+            invoiced: string;
+            /** Format: decimal */
+            debit_notes: string;
+            /** Format: decimal */
+            credit_notes: string;
+            /** Format: decimal */
+            net_revenue: string;
+            /** Format: decimal */
+            refunds_awaiting_approval: string;
+            /** Format: decimal */
+            outstanding_dues: string;
+        };
         /**
          * @description * `CUSTOMER` - Customer
          *     * `BRANCH_STAFF` - Branch Staff
@@ -3585,6 +3823,10 @@ export interface components {
          * @enum {string}
          */
         StateEnum: "Missing" | "Expired" | "Expiring";
+        StatusCount: {
+            status: string;
+            count: number;
+        };
         /**
          * @description Fleet.Tariff: the rates for a category from an effective date (now if empty).
          *     The security deposit is BR-3's for the category's type, not an input.
@@ -3621,6 +3863,16 @@ export interface components {
             /** @description BR-16 */
             readonly authorised_to_clear_unsafe: boolean;
         };
+        TopCustomer: {
+            customer_id: number;
+            name: string;
+            /** Format: email */
+            email: string;
+            bookings: number;
+            no_shows: number;
+            /** Format: decimal */
+            net_revenue: string;
+        };
         /**
          * @description * `Manual` - Manual
          *     * `Automatic` - Automatic
@@ -3633,6 +3885,44 @@ export interface components {
             email: string;
             name: string;
             role?: components["schemas"]["RoleEnum"];
+        };
+        UtilisationGroup: {
+            name: string;
+            vehicles: number;
+            /** Format: decimal */
+            rented_hours: string;
+            /** Format: decimal */
+            available_hours: string;
+            /** Format: decimal */
+            utilisation_percent: string | null;
+        };
+        UtilisationReport: {
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            /** @description "All branches", or the Branch Manager's branch. */
+            scope: string;
+            totals: components["schemas"]["UtilisationGroup"];
+            by_vehicle: components["schemas"]["UtilisationVehicle"][];
+            by_category: components["schemas"]["UtilisationGroup"][];
+            by_branch: components["schemas"]["UtilisationGroup"][];
+            least_utilised: components["schemas"]["UtilisationVehicle"][];
+        };
+        UtilisationVehicle: {
+            vehicle_id: number;
+            registration_no: string;
+            vehicle: string;
+            category: string;
+            branch: string;
+            /** Format: decimal */
+            rented_hours: string;
+            /** Format: decimal */
+            available_hours: string;
+            /** Format: decimal */
+            maintenance_days: string;
+            /** Format: decimal */
+            utilisation_percent: string | null;
         };
         VehicleCategory: {
             readonly id: number;
@@ -7055,6 +7345,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReturnRefused"];
+                };
+            };
+        };
+    };
+    api_v1_reports_customers_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Local date; default the 1st */
+                date_from?: string;
+                /** @description Default today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReport"];
+                };
+            };
+        };
+    };
+    api_v1_reports_maintenance_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Local date; default the 1st */
+                date_from?: string;
+                /** @description Default today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceCostReport"];
+                };
+            };
+        };
+    };
+    api_v1_reports_revenue_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Local date; default the 1st */
+                date_from?: string;
+                /** @description Default today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevenueReport"];
+                };
+            };
+        };
+    };
+    api_v1_reports_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    api_v1_reports_utilisation_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Local date; default the 1st */
+                date_from?: string;
+                /** @description Default today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisationReport"];
                 };
             };
         };

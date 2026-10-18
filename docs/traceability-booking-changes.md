@@ -119,7 +119,7 @@ staff@vrms.test, then sign in as that customer. Tests: [seed].
 | R2-P7 | Money on cancellation and no-show | `capture_charges()` with no lines captures the authorisation, then the rental share and the whole deposit are refunded; the deposit refund carries BR-14's 7-working-day date like any deposit refund |
 | R2-P8 | Extension rules | The new return is later than the current one and in the future; scheduled maintenance windows block it, as they block search |
 | R2-P9 | No-show schedule | Every minute; a booking with any handover condition report is skipped (N1), and a row locked by a handover is skipped and seen Active next time; a gateway refusal is logged and retried on the next run |
-| R2-P10 | Notifications | E-mail only (the SMS copy of Notify.Booking is Module R3); the branch is told of modifications and cancellations (UC 4 step 6), the customer of all four changes |
+| R2-P10 | Notifications | E-mail only (the SMS copy of Notify.Booking is Module R3, now built: `docs/traceability-reports.md`); the branch is told of modifications and cancellations (UC 4 step 6), the customer of all four changes |
 | R2-P11 | History date range | Filters on the local pickup date, inclusive |
 | R2-P12 | Rebook | The vehicle page with a period of the same length from tomorrow at the same time of day; offered for Completed, Cancelled and No-show bookings |
 | R2-P13 | Who may change a booking | The customer only (UC 4's actor); staff and administrators cannot |

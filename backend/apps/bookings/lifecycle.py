@@ -15,6 +15,8 @@ pay_booking()      -> Payment.authorize()            (payments.services.authoriz
                    -> Vehicle.update_status()        (Book.Done.Block; see below)
                    -> Invoice.generate_invoice()     (payments.services.issue_invoice)
                    -> status Confirmed, booking reference and pickup code (Book.Done.Store)
+                   -> e-mail and SMS to the customer, e-mail to the branch
+                      (Book.Done.Customer, Book.Done.Branch; Celery after commit, R3)
 record_cash_payment()  BR-9: the customer chose cash at collection; a named staff
                    member records it, then the same Book.Done steps confirm it.
 
@@ -416,6 +418,9 @@ def _confirm(booking: Booking, priced: Quote, auth, *, actor, request) -> None:
     )
     payments.issue_invoice(booking, priced, actor=actor, request=request)
     payments.record_booking_ledger(booking, auth, actor=actor, request=request)
+    from .services import notify_booking_confirmed  # services imports this module
+
+    notify_booking_confirmed(booking)  # Book.Done.Customer, Book.Done.Branch (Celery)
 
 
 def _back_to_draft(booking: Booking, *, actor, reason: str, request) -> None:
