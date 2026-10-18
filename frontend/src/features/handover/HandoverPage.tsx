@@ -10,6 +10,8 @@ import { ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { VehicleStatusBadge } from '@/components/VehicleStatusBadge'
 import { useSignedInUser } from '@/features/auth/auth-context'
+import { getBooking } from '@/features/booking/api'
+import { bookingKey } from '@/features/booking/keys'
 import { BookingStatusBadge } from '@/features/history/BookingStatusBadge'
 import { formatDate, formatDateTime } from '@/lib/dates'
 import { DETAILS_LIST, RAIL_LAYOUT } from '@/lib/layout'
@@ -44,6 +46,20 @@ function Refusals({ refusals }: { refusals: Refusal[] }) {
   )
 }
 
+/**
+ * Book.Deliver.Location (Module R4): a doorstep delivery's address, display only.
+ * Read from the booking, so the rentals API is unchanged.
+ */
+function DeliveryRow({ bookingId }: { bookingId: number }) {
+  const booking = useQuery({ queryKey: bookingKey(bookingId), queryFn: () => getBooking(bookingId) })
+  if (!booking.data?.delivery_address) return null
+  return (
+    <Row label="Doorstep delivery">
+      {booking.data.delivery_address}, <span className="num">{booking.data.delivery_pincode}</span>
+    </Row>
+  )
+}
+
 function BookingDetails({ handover }: { handover: HandoverDetail }) {
   const { vehicle, licence } = handover
   return (
@@ -60,6 +76,7 @@ function BookingDetails({ handover }: { handover: HandoverDetail }) {
             <span className="num whitespace-nowrap">{vehicle.registration_no}</span>
           </Row>
           <Row label="Branch">{handover.pickup_branch}</Row>
+          <DeliveryRow bookingId={handover.id} />
           <Row label="Pickup">
             <span className="num">{formatDateTime(handover.pickup_datetime)}</span>
           </Row>
