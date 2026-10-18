@@ -6,6 +6,7 @@ message content (and no OTP code) is ever written to the broker.
 
 from celery import shared_task
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 from integrations.notification import get_notification_service
@@ -51,11 +52,23 @@ def _send(notification: Notification, subject: str, body: str) -> None:
 
 @shared_task(autoretry_for=(DeliveryError,), retry_backoff=True, max_retries=5)
 def deliver_notification(notification_id: int) -> None:
-    notification = Notification.objects.get(pk=notification_id)
-    subject, body = render(
-        notification.template, notification.template_version, notification.context
-    )
+    notification = Notification.objects.select_related("booking").get(pk=notification_id)
+    context = notification.context
+    if notification.booking is not None:
+        # Book.Done.Customer, Notify.Remind: read at send time, so the pickup code is
+        # never copied into the delivery log (History.Privacy keeps it from staff).
+        context = {**context, "pickup_code": notification.booking.pickup_code}
+    subject, body = render(notification.template, notification.template_version, context)
     _send(notification, subject, body)
+
+
+@shared_task
+def send_pickup_reminders() -> int:
+    """Notify.Remind: the 24-hour pickup reminder (Celery Beat, notifications/0002)."""
+    from .services import send_pickup_reminders as send
+
+    with transaction.atomic():
+        return send()
 
 
 @shared_task(autoretry_for=(DeliveryError,), retry_backoff=True, max_retries=5)

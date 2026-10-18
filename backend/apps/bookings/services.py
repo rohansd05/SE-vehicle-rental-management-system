@@ -32,7 +32,7 @@ from apps.fleet.services.availability import (
     requested_block,
 )
 from apps.maintenance.services import blocked_vehicle_ids
-from apps.notifications.services import queue_email
+from apps.notifications.services import queue_email, queue_sms
 from apps.payments import services as payments
 from apps.payments.models import Payment, RefundRequest
 from apps.pricing.models import AddOn
@@ -283,26 +283,55 @@ def _book_extra(booking, auth, amount, note, actor, request) -> None:
         payments.issue_debit_note(invoice, amount, note, issued_by=actor, request=request)
 
 
-def _notify(booking: Booking, template: str, *, branches=(), **extra) -> None:
-    """Notify.Booking (customer) and, where UC 4 step 6 says so, the branch; sent by Celery."""
+def notification_context(booking: Booking) -> dict:
+    """The template variables every booking message shares (no pickup code: it is read
+    at send time). Proposed R3-P2: the documents to bring are the licence on record."""
     vehicle = booking.vehicle
-    context = {
+    licence = getattr(booking.customer, "licence", None)
+    return {
         "name": booking.customer.user.name,
         "reference": booking.booking_reference,
         "vehicle": f"{vehicle.brand} {vehicle.model}",
         "registration_no": vehicle.registration_no,
         "branch": booking.pickup_branch.branch_name,
+        "branch_address": booking.pickup_branch.address,
         "pickup": _local(booking.pickup_datetime),
         "return_at": _local(booking.return_datetime),
         "status": booking.status,
-        **extra,
+        "documents": "your driving licence"
+        + (f" {licence.licence_number}" if licence is not None else ""),
     }
+
+
+def _notify(booking: Booking, template: str, *, branches=(), **extra) -> None:
+    """Notify.Booking by e-mail and SMS (customer) and, where UC 4 step 6 or Book.Done.Branch
+    says so, the branch; sent by Celery after commit."""
+    context = {**notification_context(booking), **extra}
     queue_email(booking.customer.user, template, context, booking=booking)
+    queue_sms(booking.customer.user, f"{template}_sms", context, booking=booking)
     staff = User.objects.filter(
         role=User.Role.BRANCH_STAFF, is_active=True, branch_staff__branch_id__in=branches
     )
     for user in staff:
         queue_email(user, "booking_branch_update", {**context, "name": user.name}, booking=booking)
+
+
+def notify_booking_confirmed(booking: Booking) -> None:
+    """Book.Done.Customer: an e-mail with the booking, the price (itemised as invoiced, UI-4)
+    and the collection details, and an SMS with the pickup code. Book.Done.Branch: the
+    pickup branch's staff are told; the booking is on its collection list (Module N1)."""
+    invoice = booking.invoice
+    price = [
+        f"- {line.description}: {_money(line.amount)}" for line in invoice.lines.order_by("pk")
+    ]
+    price += [
+        f"- Tax: {_money(invoice.tax_amount)}",
+        f"Total: {_money(invoice.total_amount)}",
+        f"Refundable security deposit, held apart: {_money(booking.security_deposit)}",
+    ]
+    _notify(
+        booking, "booking_confirmed", branches=[booking.pickup_branch_id], price="\n".join(price)
+    )
 
 
 # ─── Cancel (Book.Cancel, Book.Cancel.Release; Booking.cancel_booking()) ──
