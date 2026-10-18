@@ -115,10 +115,7 @@ stored column would contradict D13 (flagged, not changed).
 
 ## 7. Not built
 
-- The delivery address on the **branch bookings list** (`/app/branch-bookings`):
-  that list comes from `apps/rentals` (`BranchBookingSerializer`), which this
-  module may not change. One line adds it: `"delivery_address"` in
-  `BranchBookingSerializer.Meta.fields` (Nidhi's), then the list can show it.
-- The pickup reminder (`pickup_reminder`) still says "collect at the branch"
-  for a delivered booking.
+- ~~The delivery address on the **branch bookings list**~~ and ~~the pickup
+  reminder saying "collect at the branch" for a delivered booking~~: both built
+  in Module N4 (`docs/traceability-deploy.md`, section 4).
 - `Customer.blacklist_reason` (optional N3 follow-up).
