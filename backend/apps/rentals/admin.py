@@ -1,27 +1,24 @@
-"""Rentals admin registrations."""
+"""Rentals admin registrations.
+
+Condition reports (handover and return) and their photographs are view-only:
+only the handover and return flows write them, after their checks, and a
+signed report can never change (Handover.Sign, append-only).
+"""
 
 from django.contrib import admin
 
-from apps.core.admin import AuditedModelAdmin
+from apps.core.admin import ReadOnlyModelAdmin, ReadOnlyTabularInline
 
 from .models import ConditionPhoto, ConditionReport
 
 
-class ConditionPhotoInline(admin.TabularInline):
+class ConditionPhotoInline(ReadOnlyTabularInline):
     model = ConditionPhoto
-    extra = 0
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-
-def _is_signed(report) -> bool:
-    return report is not None and report.is_signed_in_db
 
 
 @admin.register(ConditionReport)
-class ConditionReportAdmin(AuditedModelAdmin):
-    """Handover.Sign: a signed report is view-only."""
+class ConditionReportAdmin(ReadOnlyModelAdmin):
+    """Handover.Sign: view-only, signed or not."""
 
     list_display = (
         "booking",
@@ -34,31 +31,10 @@ class ConditionReportAdmin(AuditedModelAdmin):
     )
     list_filter = ("report_type",)
     search_fields = ("booking__booking_reference",)
-    raw_id_fields = ("booking", "recorded_by", "odometer_override_by")
     inlines = [ConditionPhotoInline]
-
-    def has_add_permission(self, request):
-        return False  # only the handover (and return) flow creates a report, after its checks
-
-    def has_change_permission(self, request, obj=None):
-        return not _is_signed(obj) and super().has_change_permission(request, obj)
-
-    def has_delete_permission(self, request, obj=None):
-        return not _is_signed(obj) and super().has_delete_permission(request, obj)
 
 
 @admin.register(ConditionPhoto)
-class ConditionPhotoAdmin(AuditedModelAdmin):
+class ConditionPhotoAdmin(ReadOnlyModelAdmin):
     list_display = ("report", "caption", "uploaded_at")
     search_fields = ("report__booking__booking_reference",)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        report = obj.report if obj is not None else None
-        return not _is_signed(report) and super().has_change_permission(request, obj)
-
-    def has_delete_permission(self, request, obj=None):
-        report = obj.report if obj is not None else None
-        return not _is_signed(report) and super().has_delete_permission(request, obj)
