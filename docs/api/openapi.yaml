@@ -4,6 +4,511 @@ info:
   version: 1.0.0
   description: REST + JSON API documented with OpenAPI 3.0 (CO-4).
 paths:
+  /api/v1/admin/customers/:
+    get:
+      operationId: api_v1_admin_customers_list
+      description: 'BR-4: customers, to find one to blacklist, or the blacklist itself.'
+      summary: Customers and the blacklist (BR-4)
+      parameters:
+      - in: query
+        name: blacklisted
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Name, e-mail or mobile
+      tags:
+      - Users and blacklist
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminCustomerList'
+          description: ''
+  /api/v1/admin/customers/{id}/:
+    get:
+      operationId: api_v1_admin_customers_retrieve
+      summary: A customer with their Confirmed and Active bookings
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCustomerDetail'
+          description: ''
+  /api/v1/admin/customers/{id}/blacklist/:
+    post:
+      operationId: api_v1_admin_customers_blacklist_create
+      description: New bookings are refused from now on. The answer lists the customer's
+        Confirmed bookings, to decide on each (UC 12 extension 2a), and Active ones
+        (return pending).
+      summary: Blacklist a customer with the reason (BR-4, UC 12 step 2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCustomerDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/admin/customers/{id}/bookings/{booking_id}/cancel/:
+    get:
+      operationId: api_v1_admin_customers_bookings_cancel_retrieve
+      description: |-
+        UC 12 extension 2a: cancel one Confirmed booking of a blacklisted customer,
+        through R2's cancellation (BR-8).
+      summary: The refund if this booking is cancelled now (R2, BR-8)
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancellationQuote'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+    post:
+      operationId: api_v1_admin_customers_bookings_cancel_create
+      description: 'SE-9: the Administrator''s password. `expected_refund` is the
+        total shown; 409 `refund_changed` if BR-8 now gives another amount. An Active
+        booking is never cancelled here (409 `invalid_state`).'
+      summary: Cancel the booking (R2's cancel_booking(), BR-8)
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenBooking'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+  /api/v1/admin/customers/{id}/lift-blacklist/:
+    post:
+      operationId: api_v1_admin_customers_lift_blacklist_create
+      summary: Take a customer off the blacklist, with the reason
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCustomerDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/admin/users/:
+    get:
+      operationId: api_v1_admin_users_list
+      description: 'Fleet.Users: Branch Staff, Maintenance Technician and Branch Manager
+        accounts.'
+      summary: Staff accounts (Fleet.Users)
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Name, e-mail or mobile
+      - in: query
+        name: role
+        schema:
+          type: string
+        description: BRANCH_STAFF, MAINTENANCE_TECHNICIAN or BRANCH_MANAGER
+      tags:
+      - Users and blacklist
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffAccountList'
+          description: ''
+    post:
+      operationId: api_v1_admin_users_create
+      description: Branch Staff and Branch Managers need a `branch`, a technician
+        a `workshop`. The password is the first one; the user may change it after
+        signing in.
+      summary: Create a staff account (Fleet.Users, UC 12 step 1)
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffAccount'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/admin/users/{id}/:
+    get:
+      operationId: api_v1_admin_users_retrieve
+      summary: A staff account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffAccount'
+          description: ''
+    patch:
+      operationId: api_v1_admin_users_partial_update
+      summary: Edit a staff account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffAccount'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/admin/users/{id}/disable/:
+    post:
+      operationId: api_v1_admin_users_disable_create
+      description: Every session ends at once and sign-in is refused; past actions
+        stay.
+      summary: Disable a staff account (Fleet.Users)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffAccount'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/admin/users/{id}/enable/:
+    post:
+      operationId: api_v1_admin_users_enable_create
+      summary: Re-enable a staff account (Fleet.Users)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Users and blacklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffAccount'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/audit/:
+    get:
+      operationId: api_v1_audit_list
+      description: Filter with `actor` (part of a name or e-mail, or `system`), `action`,
+        `entity_type`, `entity_id`, and `date_from` / `date_to` (local dates).
+      summary: Read the audit log (Fleet.Audit)
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: actor
+        schema:
+          type: string
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: entity_id
+        schema:
+          type: string
+      - in: query
+        name: entity_type
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Audit log
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditEntryList'
+          description: ''
+  /api/v1/audit/filters/:
+    get:
+      operationId: api_v1_audit_filters_retrieve
+      description: The actions and entity types the caller's entries hold, for the
+        filter lists.
+      summary: Actions and entity types to filter the audit log by
+      tags:
+      - Audit log
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditFilterOptions'
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: api_v1_auth_login_create
@@ -918,6 +1423,446 @@ paths:
           description: The file
         '404':
           description: No response body
+  /api/v1/fleet/admin/branches/:
+    get:
+      operationId: api_v1_fleet_admin_branches_list
+      description: 'UC 11 "branches": every branch with its serviceable areas.'
+      summary: Branches and their serviceable areas
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminBranch'
+          description: ''
+    post:
+      operationId: api_v1_fleet_admin_branches_create
+      description: 'UC 11 "branches": every branch with its serviceable areas.'
+      summary: Add a branch
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBranch'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/branches/{id}/:
+    patch:
+      operationId: api_v1_fleet_admin_branches_partial_update
+      summary: Edit a branch
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchInput'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBranch'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/branches/{id}/areas/:
+    post:
+      operationId: api_v1_fleet_admin_branches_areas_create
+      summary: Add a serviceable area (Book.Deliver.Location)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AreaInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AreaInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AreaInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArea'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/branches/{id}/areas/{area_id}/:
+    delete:
+      operationId: api_v1_fleet_admin_branches_areas_destroy
+      summary: Remove a serviceable area
+      parameters:
+      - in: path
+        name: area_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/fleet/admin/vehicles/:
+    get:
+      operationId: api_v1_fleet_admin_vehicles_list
+      description: 'Fleet.Status: every vehicle with its current status; Fleet.Add
+        (POST).'
+      summary: The fleet (Fleet.Status)
+      parameters:
+      - in: query
+        name: home_branch
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Registration, brand, model
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - Available
+          - On Rent
+          - Retired
+          - Under Maintenance
+          - Unsafe
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminVehicleList'
+          description: ''
+    post:
+      operationId: api_v1_fleet_admin_vehicles_create
+      description: multipart/form-data. `photos` repeated, at least four images; `documents`
+        a JSON list with each statutory document's type and expiry date. A registration
+        or chassis number already on record is refused (UC 11 extension 1a).
+      summary: Add a vehicle (Fleet.Add, UC 11 step 1)
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VehicleCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVehicleDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/vehicles/{id}/:
+    get:
+      operationId: api_v1_fleet_admin_vehicles_retrieve
+      summary: A vehicle with its photos and documents
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVehicleDetail'
+          description: ''
+    patch:
+      operationId: api_v1_fleet_admin_vehicles_partial_update
+      description: 'Status is not editable here: it changes only through the state
+        machine.'
+      summary: Edit a vehicle's master data (UC 11 step 1)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicleUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVehicleDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/vehicles/{id}/documents/:
+    post:
+      operationId: api_v1_fleet_admin_vehicles_documents_create
+      summary: Record a statutory document or its renewal (Fleet.Add, SA-3)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUpload'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDocument'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/vehicles/{id}/documents/{document_id}/:
+    delete:
+      operationId: api_v1_fleet_admin_vehicles_documents_destroy
+      summary: Remove a document entered in error
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/fleet/admin/vehicles/{id}/photos/:
+    post:
+      operationId: api_v1_fleet_admin_vehicles_photos_create
+      summary: Add a photograph (Fleet.Add)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhotoUpload'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPhoto'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/vehicles/{id}/photos/{photo_id}/:
+    delete:
+      operationId: api_v1_fleet_admin_vehicles_photos_destroy
+      summary: Remove a photograph (at least four stay)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: photo_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/fleet/admin/vehicles/{id}/retire/:
+    post:
+      operationId: api_v1_fleet_admin_vehicles_retire_create
+      description: 'Through the vehicle state machine: 409 while the vehicle has a
+        booking that is not over (cancel or reassign it first). History is kept and
+        reportable.'
+      summary: Retire a vehicle (Fleet.Retire)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Fleet administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Retire'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Retire'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Retire'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVehicleDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
   /api/v1/fleet/branches/:
     get:
       operationId: api_v1_fleet_branches_list
@@ -1443,7 +2388,10 @@ paths:
       description: 'Validates the recorded work, parts and cost; if incomplete the
         answer is 400 with `code: work_incomplete` ("record work first"). If the vehicle
         is flagged Unsafe the job stays In Progress with `awaiting_clearance: true`
-        until an Administrator approves it (BR-16). Otherwise the vehicle becomes
+        until an Administrator approves it (BR-16), unless the caller may clear the
+        flag (`can_clear_unsafe`: an Administrator or an authorised technician) and
+        sends `clear_unsafe: true`; the flag is then cleared as the job closes and
+        the caller is recorded (UC 10 extension 1a). Otherwise the vehicle becomes
         Available, the next service due is computed (BR-15) and the job is Completed.'
       summary: Complete a job (Exp 4 sequence 3, MaintenanceJob.complete_job())
       parameters:
@@ -1454,6 +2402,17 @@ paths:
         required: true
       tags:
       - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteJob'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompleteJob'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompleteJob'
       security:
       - jwtAuth: []
       responses:
@@ -1468,6 +2427,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkIncomplete'
+          description: ''
+  /api/v1/maintenance/jobs/{id}/invoice/:
+    put:
+      operationId: api_v1_maintenance_jobs_invoice_update
+      description: A PDF, JPG or PNG of at most 5 MB; a new upload replaces the previous
+        one.
+      summary: Attach the workshop invoice (Maint.Record, UC 9 step 3)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkshopInvoice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
           description: ''
   /api/v1/maintenance/jobs/{id}/record/:
     put:
@@ -1626,6 +2620,57 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Technician'
+          description: ''
+  /api/v1/maintenance/technicians/{id}/authorisation/:
+    put:
+      operationId: api_v1_maintenance_technicians_authorisation_update
+      description: 'BR-16: an Administrator authorises a technician to clear an Unsafe
+        flag, or revokes it.'
+      summary: Authorise the technician to clear Unsafe flags (BR-16)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance clearance (BR-16)
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technician'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+    delete:
+      operationId: api_v1_maintenance_technicians_authorisation_destroy
+      description: 'BR-16: an Administrator authorises a technician to clear an Unsafe
+        flag, or revokes it.'
+      summary: Revoke the technician's authorisation (BR-16)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Maintenance clearance (BR-16)
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technician'
           description: ''
   /api/v1/maintenance/vehicles/:
     get:
@@ -2198,6 +3243,263 @@ paths:
                 items:
                   $ref: '#/components/schemas/AddOn'
           description: ''
+  /api/v1/pricing/admin/add-ons/:
+    get:
+      operationId: api_v1_pricing_admin_add_ons_list
+      summary: Add-ons, active or not (Book.Addons)
+      tags:
+      - Tariff administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminAddOn'
+          description: ''
+    post:
+      operationId: api_v1_pricing_admin_add_ons_create
+      summary: 'Add an add-on (BR-7: charged at its daily rate)'
+      tags:
+      - Tariff administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminAddOn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminAddOn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminAddOn'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAddOn'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/pricing/admin/add-ons/{id}/:
+    patch:
+      operationId: api_v1_pricing_admin_add_ons_partial_update
+      description: Confirmed bookings keep the rate they were priced at (BR-13).
+      summary: Change an add-on's name, rate, vehicle type or availability
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tariff administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAddOn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAddOn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAddOn'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAddOn'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/pricing/admin/discount-codes/:
+    get:
+      operationId: api_v1_pricing_admin_discount_codes_list
+      summary: Discount codes (D17)
+      tags:
+      - Tariff administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminDiscountCode'
+          description: ''
+    post:
+      operationId: api_v1_pricing_admin_discount_codes_create
+      summary: Create a discount code (D17)
+      tags:
+      - Tariff administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminDiscountCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminDiscountCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminDiscountCode'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDiscountCode'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/pricing/admin/discount-codes/{id}/:
+    patch:
+      operationId: api_v1_pricing_admin_discount_codes_partial_update
+      description: The code text itself cannot change.
+      summary: Change a discount code's value, window, limit or availability
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tariff administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDiscountCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDiscountCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDiscountCode'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDiscountCode'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/pricing/admin/tariffs/:
+    get:
+      operationId: api_v1_pricing_admin_tariffs_list
+      description: 'Fleet.Tariff.History: every tariff, newest first per category.'
+      summary: Tariff history (Fleet.Tariff.History)
+      parameters:
+      - in: query
+        name: vehicle_category
+        schema:
+          type: integer
+      tags:
+      - Tariff administration
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminTariff'
+          description: ''
+    post:
+      operationId: api_v1_pricing_admin_tariffs_create
+      description: The previous tariff stays; bookings and invoices keep the tariff
+        they were priced at (UC 11 extension 2a). `effective_from` empty means now;
+        a past date is refused.
+      summary: Define a tariff from an effective date (Fleet.Tariff, BR-13)
+      tags:
+      - Tariff administration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TariffInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TariffInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TariffInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTariff'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/v1/pricing/admin/tariffs/{id}/:
+    delete:
+      operationId: api_v1_pricing_admin_tariffs_destroy
+      summary: Withdraw a scheduled tariff before it takes effect
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tariff administration
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
   /api/v1/pricing/quote/:
     post:
       operationId: api_v1_pricing_quote_create
@@ -2597,6 +3899,676 @@ components:
           default: 1
       required:
       - add_on
+    AdminAddOn:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vehicle_type:
+          type: string
+          description: Car, Two-Wheeler, or empty for any.
+        is_active:
+          type: boolean
+      required:
+      - daily_rate
+      - id
+      - name
+    AdminArea:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pincode:
+          type: string
+          pattern: ^[0-9]{6}$
+          maxLength: 6
+        locality:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - pincode
+    AdminBranch:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+          readOnly: true
+        branch_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        serviceable_areas:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminArea'
+          readOnly: true
+        vehicle_count:
+          type: integer
+          readOnly: true
+      required:
+      - address
+      - branch_id
+      - branch_name
+      - serviceable_areas
+      - vehicle_count
+    AdminCustomer:
+      type: object
+      description: A customer, with the latest blacklisting (BR-4) taken from the
+        audit log.
+      properties:
+        customer_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        mobile_no:
+          type: string
+          readOnly: true
+        is_blacklisted:
+          type: boolean
+          readOnly: true
+        outstanding_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        blacklist_reason:
+          type: string
+          nullable: true
+          readOnly: true
+        blacklisted_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        blacklisted_by:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - blacklist_reason
+      - blacklisted_at
+      - blacklisted_by
+      - customer_id
+      - email
+      - is_blacklisted
+      - mobile_no
+      - name
+      - outstanding_due
+    AdminCustomerDetail:
+      type: object
+      description: A customer, with the latest blacklisting (BR-4) taken from the
+        audit log.
+      properties:
+        customer_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        mobile_no:
+          type: string
+          readOnly: true
+        is_blacklisted:
+          type: boolean
+          readOnly: true
+        outstanding_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        blacklist_reason:
+          type: string
+          nullable: true
+          readOnly: true
+        blacklisted_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        blacklisted_by:
+          type: string
+          nullable: true
+          readOnly: true
+        open_bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpenBooking'
+          readOnly: true
+      required:
+      - blacklist_reason
+      - blacklisted_at
+      - blacklisted_by
+      - customer_id
+      - email
+      - is_blacklisted
+      - mobile_no
+      - name
+      - open_bookings
+      - outstanding_due
+    AdminDiscountCode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        discount_type:
+          $ref: '#/components/schemas/DiscountTypeEnum'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        usage_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Empty for unlimited use.
+        times_used:
+          type: integer
+          readOnly: true
+      required:
+      - code
+      - discount_type
+      - id
+      - times_used
+      - valid_from
+      - valid_to
+      - value
+    AdminDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          readOnly: true
+        document_number:
+          type: string
+          readOnly: true
+        valid_from:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+        current:
+          type: boolean
+          readOnly: true
+          description: The latest document of its type; older rows are history.
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - current
+      - document_number
+      - document_type
+      - expiry_date
+      - file_url
+      - id
+      - state
+      - valid_from
+    AdminPhoto:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - id
+      - position
+      - url
+    AdminTariff:
+      type: object
+      description: 'Fleet.Tariff.History: one tariff with whether it is in force.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle_category:
+          type: integer
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        weekly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        security_deposit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        free_km_allowance:
+          type: integer
+          readOnly: true
+          description: Kilometres per rental day.
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        effective_from:
+          type: string
+          format: date-time
+          readOnly: true
+        defined_by:
+          type: string
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+        booking_count:
+          type: integer
+          readOnly: true
+          description: Bookings priced at this tariff; a later tariff never reprices
+            them (BR-13).
+      required:
+      - booking_count
+      - category_name
+      - daily_rate
+      - defined_by
+      - effective_from
+      - excess_km_rate
+      - free_km_allowance
+      - hourly_rate
+      - id
+      - security_deposit
+      - state
+      - vehicle_category
+      - vehicle_type
+      - weekly_rate
+    AdminVehicle:
+      type: object
+      description: 'One row of the fleet display (Fleet.Status: every vehicle''s current
+        status).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        registration_no:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: integer
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        model:
+          type: string
+          readOnly: true
+        year:
+          type: integer
+          readOnly: true
+        colour:
+          type: string
+          readOnly: true
+        fuel_type:
+          allOf:
+          - $ref: '#/components/schemas/FuelTypeEnum'
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        chassis_number:
+          type: string
+          readOnly: true
+        home_branch:
+          type: integer
+          readOnly: true
+        home_branch_name:
+          type: string
+          readOnly: true
+        odometer:
+          type: integer
+          readOnly: true
+        fuel_capacity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        available_from:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicleStatusEnum'
+          readOnly: true
+        photo_count:
+          type: integer
+          readOnly: true
+        document_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAlert'
+          readOnly: true
+          description: 'SA-3: statutory documents missing, expired or expiring soon.'
+      required:
+      - available_from
+      - brand
+      - category
+      - category_name
+      - chassis_number
+      - colour
+      - document_alerts
+      - engine_cc
+      - fuel_capacity
+      - fuel_type
+      - home_branch
+      - home_branch_name
+      - id
+      - model
+      - odometer
+      - photo_count
+      - registration_no
+      - seating_capacity
+      - status
+      - transmission
+      - vehicle_type
+      - year
+    AdminVehicleDetail:
+      type: object
+      description: 'One row of the fleet display (Fleet.Status: every vehicle''s current
+        status).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        registration_no:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        category:
+          type: integer
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        model:
+          type: string
+          readOnly: true
+        year:
+          type: integer
+          readOnly: true
+        colour:
+          type: string
+          readOnly: true
+        fuel_type:
+          allOf:
+          - $ref: '#/components/schemas/FuelTypeEnum'
+          readOnly: true
+        transmission:
+          type: string
+          nullable: true
+          readOnly: true
+        seating_capacity:
+          type: integer
+          nullable: true
+          readOnly: true
+        engine_cc:
+          type: integer
+          nullable: true
+          readOnly: true
+        chassis_number:
+          type: string
+          readOnly: true
+        home_branch:
+          type: integer
+          readOnly: true
+        home_branch_name:
+          type: string
+          readOnly: true
+        odometer:
+          type: integer
+          readOnly: true
+        fuel_capacity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        available_from:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceVehicleStatusEnum'
+          readOnly: true
+        photo_count:
+          type: integer
+          readOnly: true
+        document_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAlert'
+          readOnly: true
+          description: 'SA-3: statutory documents missing, expired or expiring soon.'
+        last_service_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_service_odometer:
+          type: integer
+          readOnly: true
+          nullable: true
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminPhoto'
+          readOnly: true
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDocument'
+          readOnly: true
+      required:
+      - available_from
+      - brand
+      - category
+      - category_name
+      - chassis_number
+      - colour
+      - document_alerts
+      - documents
+      - engine_cc
+      - fuel_capacity
+      - fuel_type
+      - home_branch
+      - home_branch_name
+      - id
+      - last_service_date
+      - last_service_odometer
+      - model
+      - odometer
+      - photo_count
+      - photos
+      - registration_no
+      - seating_capacity
+      - status
+      - transmission
+      - vehicle_type
+      - year
+    AreaInput:
+      type: object
+      properties:
+        pincode:
+          type: string
+          pattern: ^[0-9]{6}$
+        locality:
+          type: string
+          default: ''
+          maxLength: 100
+      required:
+      - pincode
+    AuditActor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+      required:
+      - email
+      - id
+      - name
+      - role
+    AuditEntry:
+      type: object
+      description: 'Fleet.Audit: the user, the date and time, and the previous and
+        new values.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/AuditActor'
+          readOnly: true
+          nullable: true
+        action:
+          type: string
+          readOnly: true
+        entity_type:
+          type: string
+          readOnly: true
+        entity_id:
+          type: string
+          readOnly: true
+        before:
+          readOnly: true
+          nullable: true
+        after:
+          readOnly: true
+          nullable: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - action
+      - actor
+      - after
+      - before
+      - entity_id
+      - entity_type
+      - id
+      - ip_address
+      - timestamp
+    AuditFilterOptions:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            type: string
+        entity_types:
+          type: array
+          items:
+            type: string
+      required:
+      - actions
+      - entity_types
     AvailableVehicle:
       type: object
       description: 'One search result: the specification a customer chooses by (Search.Filter
@@ -3068,6 +5040,18 @@ components:
       - return_datetime
       - status
       - vehicle
+    BranchInput:
+      type: object
+      properties:
+        branch_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 1000
+      required:
+      - address
+      - branch_name
     CancelBooking:
       type: object
       properties:
@@ -3318,6 +5302,15 @@ components:
       required:
       - amount
       - description
+    CompleteJob:
+      type: object
+      description: |-
+        BR-16, UC 10 extension 1a: an Administrator or an authorised technician may
+        clear the Unsafe flag as part of closing the job.
+      properties:
+        clear_unsafe:
+          type: boolean
+          default: false
     ConditionPhotoOut:
       type: object
       properties:
@@ -3473,6 +5466,65 @@ components:
           type: string
       required:
       - detail
+    DiscountTypeEnum:
+      enum:
+      - Percent
+      - Fixed
+      type: string
+      description: |-
+        * `Percent` - Percent
+        * `Fixed` - Fixed
+    DocumentAlert:
+      type: object
+      properties:
+        document_type:
+          type: string
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        expiry_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - document_type
+      - expiry_date
+      - state
+    DocumentTypeEnum:
+      enum:
+      - Insurance
+      - Pollution Certificate
+      - Fitness Certificate
+      - Road Tax
+      type: string
+      description: |-
+        * `Insurance` - Insurance
+        * `Pollution Certificate` - Pollution Certificate
+        * `Fitness Certificate` - Fitness Certificate
+        * `Road Tax` - Road Tax
+    DocumentUpload:
+      type: object
+      description: The same, as multipart/form-data with an optional scan (SI-3).
+      properties:
+        document_type:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        document_number:
+          type: string
+          default: ''
+          maxLength: 64
+        valid_from:
+          type: string
+          format: date
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+        file:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - document_type
+      - expiry_date
     Due:
       type: object
       description: 'Pay.Dues, BR-4: what the customer owes; above zero, no new booking
@@ -4165,6 +6217,18 @@ components:
         reported_by:
           type: string
           readOnly: true
+          nullable: true
+          description: Empty for a Preventive job the system raised (Maint.Auto.Km,
+            Maint.Auto.Time).
+        due_odometer:
+          type: integer
+          readOnly: true
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
         scheduled_from:
           type: string
           format: date-time
@@ -4237,17 +6301,46 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        cancelled_by:
+          type: string
+          readOnly: true
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancel_reason:
+          type: string
+          readOnly: true
+        workshop_invoice_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Maint.Record: a signed link to the attached workshop invoice
+            (SI-3).'
+        can_clear_unsafe:
+          type: boolean
+          readOnly: true
+          description: 'BR-16: the caller may clear the vehicle''s Unsafe flag while
+            closing the job.'
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
       - awaiting_clearance
+      - can_clear_unsafe
+      - cancel_reason
+      - cancelled_at
+      - cancelled_by
       - clearance_requested_at
       - closed_at
       - closed_by
       - created_at
       - downtime_hours
+      - due_date
+      - due_odometer
       - job_id
       - job_type
       - labour_cost
@@ -4266,6 +6359,7 @@ components:
       - total_cost
       - vehicle
       - work_description
+      - workshop_invoice_url
     MaintenanceJobStatusEnum:
       enum:
       - Reported
@@ -4327,6 +6421,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/NextServiceDue'
           readOnly: true
+        service_overdue:
+          type: boolean
+          readOnly: true
+          description: 'BR-15, SA-2: the service is due by distance or date; no handover
+            until done.'
       required:
       - brand
       - category
@@ -4339,6 +6438,7 @@ components:
       - next_service_due
       - odometer
       - registration_no
+      - service_overdue
       - status
       - vehicle_type
     MaintenanceVehicleStatusEnum:
@@ -4507,6 +6607,9 @@ components:
       required:
       - duplicate
       - event_id
+    NullEnum:
+      enum:
+      - null
     OTPCode:
       type: object
       properties:
@@ -4516,6 +6619,114 @@ components:
           pattern: ^[0-9]{6}$
       required:
       - code
+    OpenBooking:
+      type: object
+      description: 'UC 12 extension 2a: a Confirmed booking to decide on, or an Active
+        one (return pending).'
+      properties:
+        id:
+          type: integer
+        booking_reference:
+          type: string
+        status:
+          type: string
+        registration_no:
+          type: string
+        vehicle:
+          type: string
+          readOnly: true
+        pickup_branch:
+          type: string
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        return_pending:
+          type: boolean
+          readOnly: true
+          description: 'Active: the vehicle is out; it is returned as usual, never
+            cancelled here.'
+      required:
+      - booking_reference
+      - id
+      - pickup_branch
+      - pickup_datetime
+      - registration_no
+      - return_datetime
+      - return_pending
+      - status
+      - vehicle
+    PaginatedAdminCustomerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminCustomer'
+    PaginatedAdminVehicleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVehicle'
+    PaginatedAuditEntryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
     PaginatedAvailableVehicleList:
       type: object
       required:
@@ -4677,6 +6888,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Refund'
+    PaginatedStaffAccountList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffAccount'
     PaidCharge:
       type: object
       description: A rental charge paid before the return (Pay.Ledger), e.g. an extension
@@ -4751,6 +6985,65 @@ components:
       required:
       - current_password
       - new_password
+    PatchedAdminAddOn:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vehicle_type:
+          type: string
+          description: Car, Two-Wheeler, or empty for any.
+        is_active:
+          type: boolean
+    PatchedAdminDiscountCode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        discount_type:
+          $ref: '#/components/schemas/DiscountTypeEnum'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        usage_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Empty for unlimited use.
+        times_used:
+          type: integer
+          readOnly: true
+    PatchedBranchInput:
+      type: object
+      properties:
+        branch_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 1000
     PatchedProfileUpdate:
       type: object
       properties:
@@ -4763,6 +7056,87 @@ components:
           maxLength: 15
         address:
           type: string
+    PatchedStaffUpdate:
+      type: object
+      description: Send only what changes. The role never changes.
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        name:
+          type: string
+          maxLength: 150
+        mobile_no:
+          type: string
+          pattern: ^\+?[0-9]{10,15}$
+          maxLength: 15
+        address:
+          type: string
+          maxLength: 1000
+        branch:
+          type: integer
+        workshop:
+          type: string
+          maxLength: 150
+    PatchedVehicleUpdate:
+      type: object
+      description: 'UC 11 "edit": any of the master data fields (send only those that
+        change).'
+      properties:
+        registration_no:
+          type: string
+          maxLength: 16
+        category:
+          type: integer
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        transmission:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TransmissionEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        seating_capacity:
+          type: integer
+          maximum: 60
+          minimum: 1
+          nullable: true
+        engine_cc:
+          type: integer
+          maximum: 5000
+          minimum: 1
+          nullable: true
+        chassis_number:
+          type: string
+          maxLength: 32
+        home_branch:
+          type: integer
+        odometer:
+          type: integer
+          maximum: 9999999
+          minimum: 0
+        fuel_capacity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          description: 'Litres (petrol, diesel), kg (CNG) or kWh (electric): BR-12
+            needs it.'
+        available_from:
+          type: string
+          format: date
     PayBooking:
       type: object
       description: |-
@@ -4863,6 +7237,14 @@ components:
       required:
       - customer_acknowledged
       - password
+    PhotoUpload:
+      type: object
+      properties:
+        image:
+          type: string
+          format: uri
+      required:
+      - image
     Profile:
       type: object
       properties:
@@ -5074,6 +7456,14 @@ components:
       - late_return_grace_minutes
       - late_return_hourly_rate
       - no_show_retained_percent
+    Reason:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
     Reauthenticated:
       type: object
       properties:
@@ -5363,6 +7753,14 @@ components:
       description: |-
         * `Handover` - Handover
         * `Return` - Return
+    Retire:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
     Return:
       type: object
       description: |-
@@ -5833,6 +8231,174 @@ components:
         * `Medium` - Medium
         * `High` - High
         * `Critical` - Critical
+    StaffAccount:
+      type: object
+      description: A staff account with its branch (or workshop) and, for a technician,
+        BR-16.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        mobile_no:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+          readOnly: true
+        branch_name:
+          type: string
+          nullable: true
+          readOnly: true
+        workshop:
+          type: string
+          nullable: true
+          readOnly: true
+        technician_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        authorised_to_clear_unsafe:
+          type: boolean
+          readOnly: true
+          description: BR-16
+      required:
+      - address
+      - authorised_to_clear_unsafe
+      - branch
+      - branch_name
+      - date_joined
+      - email
+      - id
+      - is_active
+      - last_login
+      - mobile_no
+      - name
+      - role
+      - technician_id
+      - workshop
+    StaffCreate:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/StaffRoleEnum'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        name:
+          type: string
+          maxLength: 150
+        mobile_no:
+          type: string
+          pattern: ^\+?[0-9]{10,15}$
+          maxLength: 15
+        address:
+          type: string
+          default: ''
+          maxLength: 1000
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+        branch:
+          type: integer
+          nullable: true
+        workshop:
+          type: string
+          default: ''
+          maxLength: 150
+      required:
+      - email
+      - mobile_no
+      - name
+      - password
+      - role
+    StaffRoleEnum:
+      enum:
+      - BRANCH_STAFF
+      - MAINTENANCE_TECHNICIAN
+      - BRANCH_MANAGER
+      type: string
+      description: |-
+        * `BRANCH_STAFF` - Branch Staff
+        * `MAINTENANCE_TECHNICIAN` - Maintenance Technician
+        * `BRANCH_MANAGER` - Branch Manager
+    StateEnum:
+      enum:
+      - Missing
+      - Expired
+      - Expiring
+      type: string
+      description: |-
+        * `Missing` - Missing
+        * `Expired` - Expired
+        * `Expiring` - Expiring
+    TariffInput:
+      type: object
+      description: |-
+        Fleet.Tariff: the rates for a category from an effective date (now if empty).
+        The security deposit is BR-3's for the category's type, not an input.
+      properties:
+        vehicle_category:
+          type: integer
+        hourly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        daily_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        weekly_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_km_allowance:
+          type: integer
+          minimum: 0
+          description: Kilometres per rental day.
+        excess_km_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        effective_from:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - daily_rate
+      - excess_km_rate
+      - free_km_allowance
+      - hourly_rate
+      - vehicle_category
+      - weekly_rate
     TariffSummary:
       type: object
       description: 'Search.Detail "the applicable tariff" (PR3: the weekly rate is
@@ -5869,10 +8435,23 @@ components:
         workshop:
           type: string
           readOnly: true
+        authorised_to_clear_unsafe:
+          type: boolean
+          readOnly: true
+          description: BR-16
       required:
+      - authorised_to_clear_unsafe
       - name
       - technician_id
       - workshop
+    TransmissionEnum:
+      enum:
+      - Manual
+      - Automatic
+      type: string
+      description: |-
+        * `Manual` - Manual
+        * `Automatic` - Automatic
     UserSummary:
       type: object
       properties:
@@ -5908,6 +8487,86 @@ components:
       - id
       - name
       - vehicle_type
+    VehicleCreate:
+      type: object
+      description: |-
+        Fleet.Add as multipart/form-data: `photos` repeated (at least four images) and
+        `documents` a JSON list of the four statutory documents with their expiry dates.
+      properties:
+        registration_no:
+          type: string
+          maxLength: 16
+        category:
+          type: integer
+        brand:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 64
+        year:
+          type: integer
+          maximum: 2100
+          minimum: 1990
+        colour:
+          type: string
+          maxLength: 32
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        transmission:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TransmissionEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        seating_capacity:
+          type: integer
+          maximum: 60
+          minimum: 1
+          nullable: true
+        engine_cc:
+          type: integer
+          maximum: 5000
+          minimum: 1
+          nullable: true
+        chassis_number:
+          type: string
+          maxLength: 32
+        home_branch:
+          type: integer
+        odometer:
+          type: integer
+          maximum: 9999999
+          minimum: 0
+        fuel_capacity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          description: 'Litres (petrol, diesel), kg (CNG) or kWh (electric): BR-12
+            needs it.'
+        available_from:
+          type: string
+          format: date
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        documents: {}
+      required:
+      - available_from
+      - brand
+      - category
+      - chassis_number
+      - colour
+      - documents
+      - fuel_capacity
+      - fuel_type
+      - home_branch
+      - model
+      - odometer
+      - photos
+      - registration_no
+      - year
     VehicleDetail:
       type: object
       description: 'Search.Detail: photos, specification, tariff, deposit, policies,
@@ -6040,6 +8699,15 @@ components:
       - code
       - detail
       - missing
+    WorkshopInvoice:
+      type: object
+      description: Maint.Record "permit the workshop invoice to be attached", as multipart/form-data.
+      properties:
+        workshop_invoice:
+          type: string
+          format: uri
+      required:
+      - workshop_invoice
   securitySchemes:
     jwtAuth:
       type: http
