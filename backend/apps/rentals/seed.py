@@ -14,6 +14,12 @@
   No-show, so a pickup time fixed in the morning broke this demo whenever
   Celery Beat ran. Being a week long, the booking also keeps the car out of
   the Book Vehicle demo searches.
+- Module N4 (R4 follow-up): MH02DH3002, a second demo car at Andheri, booked
+  by the same customer for a week with doorstep delivery to an Andheri
+  address (Book.Deliver.Location), collected from 24 hours and 10 minutes
+  after seed_demo runs. It is in the branch's upcoming collections with its
+  delivery address, and Celery Beat sends its pickup reminder (Notify.Remind,
+  template version 2, naming the address) about ten minutes later.
 
 The booking moves through the booking state machine (Draft, Pending
 Payment, Confirmed) and its deposit is authorised through the payments
@@ -56,6 +62,12 @@ PICKUP_LEAD = timedelta(minutes=5)  # the pickup is this long before seed_demo r
 RENTAL_DAYS = 7
 DOCUMENTS_VALID_TO = date(2027, 12, 31)
 PICKUP_CODE = "246810"  # fixed, so the demo can find the booking by its pickup code
+DELIVERY_REGISTRATION = "MH02DH3002"
+DELIVERY_PICKUP_LEAD = timedelta(hours=24, minutes=10)  # after seed_demo runs: reminded soon
+DELIVERY_RENTAL_DAYS = 7  # like the handover car: kept out of the Book Vehicle demo searches
+DELIVERY_PICKUP_CODE = "975310"
+DELIVERY_ADDRESS = "21 Demo Lane, Andheri (W), Mumbai"
+DELIVERY_PINCODE = "400053"  # in Andheri's serviceable areas (seed_demo BRANCHES)
 
 Status = Booking.Status
 
@@ -72,9 +84,11 @@ def _audit(action: str, obj) -> None:
     )
 
 
-def _seed_car(count: Callable[[str, bool], None]) -> Car:
+def _seed_car(
+    count: Callable[[str, bool], None], registration: str = REGISTRATION, chassis: str = "0001"
+) -> Car:
     car, created = Car.objects.get_or_create(
-        registration_no=REGISTRATION,
+        registration_no=registration,
         defaults={
             "brand": "Tata",
             "model": "Altroz",
@@ -83,7 +97,7 @@ def _seed_car(count: Callable[[str, bool], None]) -> Car:
             "year": 2025,
             "colour": "Gold",
             "fuel_type": FuelType.PETROL,
-            "chassis_number": "DEMOHANDOVER0001",
+            "chassis_number": f"DEMOHANDOVER{chassis}",
             "available_from": date(2026, 1, 1),
             "odometer": 8200,
             "last_service_date": date(2026, 9, 15),
@@ -151,10 +165,20 @@ def _seed_customer(count: Callable[[str, bool], None]) -> Customer:
     return customer
 
 
-def _seed_booking(count: Callable[[str, bool], None], car: Car, customer: Customer) -> None:
+def _seed_booking(
+    count: Callable[[str, bool], None],
+    car: Car,
+    customer: Customer,
+    *,
+    lead: timedelta = -PICKUP_LEAD,
+    days: int = RENTAL_DAYS,
+    add_on: str = "Child seat",
+    pickup_code: str = PICKUP_CODE,
+    delivery: tuple[str, str] = ("", ""),
+) -> None:
     today = timezone.localdate()
-    pickup = timezone.now().replace(second=0, microsecond=0) - PICKUP_LEAD
-    return_ = pickup + timedelta(days=RENTAL_DAYS)
+    pickup = timezone.now().replace(second=0, microsecond=0) + lead
+    return_ = pickup + timedelta(days=days)
     period = Booking(pickup_datetime=pickup, return_datetime=return_).compute_blocked_period()
     if car.bookings.filter(
         status__in=Booking.BLOCKING_STATUSES, blocked_period__overlap=period
@@ -168,11 +192,11 @@ def _seed_booking(count: Callable[[str, bool], None], car: Car, customer: Custom
         pickup_datetime=pickup,
         return_datetime=return_,
         terms_accepted_at=timezone.now(),
+        delivery_address=delivery[0],
+        delivery_pincode=delivery[1],
     )
-    child_seat = AddOn.objects.get(name="Child seat")
-    BookingAddOn.objects.create(
-        booking=booking, add_on=child_seat, daily_rate=child_seat.daily_rate
-    )
+    extra = AddOn.objects.get(name=add_on)
+    BookingAddOn.objects.create(booking=booking, add_on=extra, daily_rate=extra.daily_rate)
     priced = booking_quote(booking)
     booking.total_amount = priced.total_payable
     booking.security_deposit = priced.security_deposit
@@ -194,7 +218,7 @@ def _seed_booking(count: Callable[[str, bool], None], car: Car, customer: Custom
     booking.booking_reference = next_in_sequence(
         Booking, "booking_reference", f"VRMS-{today:%Y%m%d}-", 4
     )
-    booking.pickup_code = PICKUP_CODE
+    booking.pickup_code = pickup_code
     booking.confirmed_at = timezone.now()
     transition(
         booking,
@@ -208,7 +232,18 @@ def _seed_booking(count: Callable[[str, bool], None], car: Car, customer: Custom
 
 def seed_demo_handover_data(count: Callable[[str, bool], None]) -> None:
     """Called by seed_demo after its own data; `count(label, created)` is its counter."""
-    _seed_booking(count, _seed_car(count), _seed_customer(count))
+    customer = _seed_customer(count)
+    _seed_booking(count, _seed_car(count), customer)
+    _seed_booking(
+        count,
+        _seed_car(count, DELIVERY_REGISTRATION, "0002"),
+        customer,
+        lead=DELIVERY_PICKUP_LEAD,
+        days=DELIVERY_RENTAL_DAYS,
+        add_on="Doorstep delivery",
+        pickup_code=DELIVERY_PICKUP_CODE,
+        delivery=(DELIVERY_ADDRESS, DELIVERY_PINCODE),
+    )
 
 
 def delete_demo_handover_data() -> None:
@@ -217,7 +252,7 @@ def delete_demo_handover_data() -> None:
     Raises ProtectedError, like the rest of the reset, once a booking has a
     signed condition report (Handover.Sign: it can never be removed).
     """
-    for car in Car.objects.filter(registration_no=REGISTRATION):
+    for car in Car.objects.filter(registration_no__in=(REGISTRATION, DELIVERY_REGISTRATION)):
         for booking in car.bookings.all():
             booking.payments.all().delete()
             booking.delete()
