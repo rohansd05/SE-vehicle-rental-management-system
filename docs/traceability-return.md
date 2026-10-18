@@ -196,8 +196,9 @@ Tests: `test_two_active_rentals_are_ready_to_return_one_on_time_and_one_late`,
 ## 11. Not built here
 
 - Maint.Auto.Km (a Preventive job when the odometer reaches the BR-15
-  interval "evaluated at every return"): the odometer is updated, the job is
-  for N3.
+  interval "evaluated at every return"): built in N3, one call after
+  `_record_odometer()` to `maintenance.services.raise_preventive_job_if_due()`
+  (`docs/traceability-admin.md`).
 - Notify overdue alerts (3.8.2 "A vehicle becomes overdue for return"):
   no Celery task was added to Beat in N2.
 - An invoice for a booking that has none (the seeded demos): Pay.Invoice is
