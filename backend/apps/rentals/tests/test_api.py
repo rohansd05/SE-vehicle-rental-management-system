@@ -72,6 +72,21 @@ def test_branch_bookings_lists_only_the_callers_branch_and_hides_the_pickup_code
     assert "pickup_code" not in row
 
 
+def test_branch_bookings_show_the_doorstep_delivery_address():
+    """Book.Deliver.Location (R4, fixed in N4): staff see where a delivered booking goes."""
+    delivered = BookingFactory(
+        pickup_datetime=timezone.now(),
+        delivery_address="12 Demo Lane, Andheri (W)",
+        delivery_pincode="400053",
+    )
+    collected = BookingFactory(
+        pickup_datetime=timezone.now(), vehicle__home_branch=delivered.pickup_branch
+    )
+    rows = {row["id"]: row for row in staff_client(delivered).get(LIST).json()["results"]}
+    assert rows[delivered.pk]["delivery_address"] == "12 Demo Lane, Andheri (W)"
+    assert rows[collected.pk]["delivery_address"] == ""
+
+
 def test_a_branch_manager_sees_their_branch_too():
     booking = BookingFactory(pickup_datetime=timezone.now() + timedelta(days=3))
     client = authenticated_client(BranchManagerFactory(branch=booking.pickup_branch).user)

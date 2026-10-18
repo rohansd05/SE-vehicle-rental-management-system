@@ -5518,10 +5518,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/BookingVehicle'
           readOnly: true
+        delivery_address:
+          type: string
+          readOnly: true
       required:
       - booking_reference
       - customer_mobile
       - customer_name
+      - delivery_address
       - id
       - pickup_branch
       - pickup_datetime
@@ -6347,6 +6351,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/HandoverVehicle'
           readOnly: true
+        delivery_address:
+          type: string
+          readOnly: true
         handed_over_at:
           type: string
           format: date-time
@@ -6390,6 +6397,7 @@ components:
       - can_hand_over
       - customer_mobile
       - customer_name
+      - delivery_address
       - handed_over_at
       - id
       - licence
@@ -8700,6 +8708,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/ReturnVehicle'
           readOnly: true
+        delivery_address:
+          type: string
+          readOnly: true
         handed_over_at:
           type: string
           format: date-time
@@ -8772,6 +8783,7 @@ components:
       - can_return
       - customer_mobile
       - customer_name
+      - delivery_address
       - deposit_method
       - distance_travelled
       - handed_over_at

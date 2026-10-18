@@ -42,6 +42,7 @@ class BranchBookingSerializer(serializers.ModelSerializer):
             "customer_name",
             "customer_mobile",
             "vehicle",
+            "delivery_address",  # Book.Deliver.Location: blank for a branch collection
         ]
         read_only_fields = fields
 

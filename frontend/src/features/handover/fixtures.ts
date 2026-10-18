@@ -20,6 +20,7 @@ export function makeCollection(overrides: Partial<BranchBooking> = {}): BranchBo
       vehicle_type: 'Car',
       category: 'Hatchback',
     },
+    delivery_address: '',
     ...overrides,
   }
 }
