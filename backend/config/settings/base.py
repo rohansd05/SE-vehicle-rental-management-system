@@ -115,6 +115,10 @@ AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
 AXES_USERNAME_FORM_FIELD = "username"
 AXES_USERNAME_CALLABLE = "apps.accounts.lockout.axes_username"
 AXES_LOCKOUT_CALLABLE = "apps.accounts.lockout.lockout_response"
+# The client address recorded with each attempt: the same NUM_PROXIES rule as
+# throttling and the audit log, so behind Caddy it is the address Caddy saw,
+# never Caddy's own and never a client-supplied X-Forwarded-For entry.
+AXES_CLIENT_IP_CALLABLE = "apps.core.audit.client_ip"
 
 # SE-2 / D4: bcrypt with a work factor of at least 12. The first entry hashes
 # every new password.

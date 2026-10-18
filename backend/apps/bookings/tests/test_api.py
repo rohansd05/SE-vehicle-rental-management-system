@@ -242,6 +242,47 @@ def test_a_wrong_password_stops_the_payment_and_is_audited(client, customer, car
     assert (entry.actor_id, entry.entity_id) == (customer.user_id, str(booking_id))
 
 
+def test_wrong_passwords_in_a_row_stop_the_re_check_for_15_minutes(
+    client, customer, car, pickup, return_
+):
+    """Proposed N4-P3: after LOGIN_FAILURE_LIMIT wrong passwords the pay endpoint's re-check
+    is throttled (429) for LOGIN_LOCKOUT_DURATION, even for the right password; then it works."""
+    booking_id = create(client, car, pickup, return_).json()["id"]
+    start = timezone.now()
+    with freeze_time(start) as clock:
+        for _ in range(5):
+            assert pay(client, booking_id, password="not-my-password").status_code == 400
+        throttled = pay(client, booking_id)
+        assert throttled.status_code == 429
+        assert not Booking.objects.get(pk=booking_id).payments.exists()
+        assert AuditLog.objects.filter(action="Payment Re-authentication Failed").count() == 5
+        clock.move_to(start + timedelta(minutes=15, seconds=1))
+        # The first hold and the access token have expired by now (D19); a new booking is
+        # paid with the right password.
+        client = authenticated_client(customer.user)
+        fresh = create(client, car, pickup + timedelta(days=14), return_ + timedelta(days=14))
+        assert pay(client, fresh.json()["id"], idempotency_key="pay-api-0003").status_code == 200
+
+
+def test_a_right_password_resets_the_wrong_password_count(client, car, pickup, return_):
+    booking_id = create(client, car, pickup, return_).json()["id"]
+    for _ in range(4):
+        pay(client, booking_id, password="not-my-password")
+    assert pay(client, booking_id, idempotency_key="pay-api-0002").status_code == 200
+    other = create(client, car, pickup + timedelta(days=7), return_ + timedelta(days=7))
+    for _ in range(4):
+        assert pay(client, other.json()["id"], password="nope").status_code == 400
+
+
+def test_another_users_wrong_passwords_do_not_throttle_mine(client, car, pickup, return_):
+    stranger = authenticated_client(eligible_customer().user)
+    theirs = create(stranger, car, pickup + timedelta(days=7), return_ + timedelta(days=7))
+    for _ in range(6):
+        pay(stranger, theirs.json()["id"], password="nope")
+    booking_id = create(client, car, pickup, return_).json()["id"]
+    assert pay(client, booking_id).status_code == 200
+
+
 def test_the_password_is_never_echoed(client, car, pickup, return_):
     booking_id = create(client, car, pickup, return_).json()["id"]
     assert PASSWORD not in pay(client, booking_id).content.decode()
