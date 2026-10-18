@@ -2,9 +2,9 @@
 
 from django.contrib import admin
 
-from apps.core.admin import AuditedModelAdmin
+from apps.core.admin import AuditedModelAdmin, ReadOnlyModelAdmin
 
-from .models import MaintenanceJob, PartUsed
+from .models import MaintenanceJob, PartUsed, UnsafeClearanceAuthorisation
 
 
 class PartUsedInline(admin.TabularInline):
@@ -26,7 +26,7 @@ class MaintenanceJobAdmin(AuditedModelAdmin):
     )
     list_filter = ("status", "job_type", "severity")
     search_fields = ("vehicle__registration_no", "reported_problem")
-    raw_id_fields = ("vehicle", "reported_by", "closed_by")
+    raw_id_fields = ("vehicle", "reported_by", "closed_by", "cancelled_by")
     inlines = [PartUsedInline]
 
 
@@ -34,3 +34,10 @@ class MaintenanceJobAdmin(AuditedModelAdmin):
 class PartUsedAdmin(AuditedModelAdmin):
     list_display = ("job", "part_name", "quantity", "unit_cost")
     search_fields = ("part_name",)
+
+
+@admin.register(UnsafeClearanceAuthorisation)
+class UnsafeClearanceAuthorisationAdmin(ReadOnlyModelAdmin):
+    """BR-16: granted and revoked on the Users screen, which audits both."""
+
+    list_display = ("technician", "granted_by", "granted_at")

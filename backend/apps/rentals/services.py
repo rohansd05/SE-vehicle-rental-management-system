@@ -51,7 +51,13 @@ from apps.core.permissions import branch_id_of
 from apps.fleet.models import Vehicle
 from apps.fleet.services.status import update_status
 from apps.maintenance.models import MaintenanceJob
-from apps.maintenance.services import MaintenanceError, report_job
+from apps.maintenance.services import (
+    MaintenanceError,
+    due_text,
+    raise_preventive_job_if_due,
+    report_job,
+    service_due,
+)
 from apps.notifications.services import queue_email
 from apps.payments import services as payments
 from apps.payments.models import LedgerEntry, Payment, RefundRequest
@@ -183,7 +189,8 @@ def _vehicle_refusal(vehicle: Vehicle) -> Refusal | None:
     if vehicle.status == Vehicle.Status.UNSAFE:
         return Refusal(
             "vehicle_unsafe",
-            "The vehicle is flagged Unsafe. Only an Administrator can clear the flag (SA-2).",
+            "The vehicle is flagged Unsafe. Only an Administrator or an authorised technician "
+            "can clear the flag (SA-2).",
         )
     if vehicle.status != Vehicle.Status.AVAILABLE:
         return Refusal(
@@ -191,6 +198,18 @@ def _vehicle_refusal(vehicle: Vehicle) -> Refusal | None:
             f"The vehicle is {vehicle.status}, so it cannot be handed over.",
         )
     return None
+
+
+def _service_refusal(vehicle: Vehicle) -> Refusal | None:
+    """SA-2: no handover of a vehicle overdue for its preventive service (BR-15)."""
+    due = service_due(vehicle)
+    if due is None:
+        return None
+    return Refusal(
+        "service_overdue",
+        f"The vehicle's preventive service was due at {due_text(due)} (BR-15); it reads "
+        f"{vehicle.odometer:,} km. It must be serviced before it is handed over (SA-2).",
+    )
 
 
 def _is_paid(booking: Booking) -> bool:
@@ -227,6 +246,9 @@ def handover_refusals(booking: Booking) -> list[Refusal]:
     vehicle = _vehicle_refusal(booking.vehicle)
     if vehicle:
         refusals.append(vehicle)
+    service = _service_refusal(booking.vehicle)
+    if service:
+        refusals.append(service)
     if not _is_paid(booking):
         refusals.append(
             Refusal(
@@ -832,6 +854,7 @@ def return_vehicle(
             )
         refund = _settle(booking, settlement, user, request)
         _record_odometer(booking.vehicle, readings.odometer_reading, user, request)
+        raise_preventive_job_if_due(booking.vehicle, request=request)  # Maint.Auto.Km
         vehicle = Vehicle.objects.get(pk=booking.vehicle_id)
         if vehicle.status == Vehicle.Status.ON_RENT:  # an Unsafe flag stays until cleared (SA-2)
             unfit = job is not None and flag.unfit

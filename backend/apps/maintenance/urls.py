@@ -14,6 +14,7 @@ urlpatterns = [
     path("jobs/<int:pk>/start/", views.JobStartView.as_view(), name="job-start"),
     path("jobs/<int:pk>/record/", views.JobRecordView.as_view(), name="job-record"),
     path("jobs/<int:pk>/complete/", views.JobCompleteView.as_view(), name="job-complete"),
+    path("jobs/<int:pk>/invoice/", views.JobInvoiceView.as_view(), name="job-invoice"),
     path(
         "jobs/<int:pk>/approve-clearance/",
         views.ApproveClearanceView.as_view(),
@@ -21,6 +22,11 @@ urlpatterns = [
     ),
     path("clearances/", views.ClearanceQueueView.as_view(), name="clearance-queue"),
     path("technicians/", views.TechnicianListView.as_view(), name="technician-list"),
+    path(
+        "technicians/<int:pk>/authorisation/",
+        views.TechnicianAuthorisationView.as_view(),
+        name="technician-authorisation",
+    ),
     path("vehicles/", views.VehicleListView.as_view(), name="vehicle-list"),
     path("vehicles/<int:pk>/history/", views.VehicleHistoryView.as_view(), name="vehicle-history"),
 ]

@@ -18,10 +18,16 @@ complete_job() follows Exp 4 sequence diagram 3:
 Every write locks the job row, calls record_audit (SE-10) and queues any
 notification through Celery after commit (SI-2.2).
 
+Module N3 adds Maint.Auto.Km and Maint.Auto.Time (raise_preventive_job_if_due(),
+the one function both the return and the daily Beat task call), the document
+expiry alert, BR-16's authorised technician, the workshop invoice and the
+cancellation record.
+
 Owner: Nidhi (WBS 1.4.4).
 """
 
 import calendar
+import uuid
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -29,17 +35,18 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import transaction
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import MaintenanceTechnician, User
 from apps.core.audit import record_audit, snapshot
 from apps.core.choices import VehicleType
 from apps.core.permissions import branch_id_of
-from apps.fleet.models import Vehicle
-from apps.fleet.services.status import update_status
+from apps.fleet.models import Vehicle, VehicleDocument
+from apps.fleet.services.status import may_clear_unsafe, update_status
 from apps.notifications.services import queue_email
 
-from .models import MaintenanceJob, PartUsed
+from .models import MaintenanceJob, PartUsed, UnsafeClearanceAuthorisation
 
 Job = MaintenanceJob
 VStatus = Vehicle.Status
@@ -123,6 +130,26 @@ def next_service_due(vehicle: Vehicle) -> NextServiceDue:
             else None
         ),
     )
+
+
+def service_due(vehicle: Vehicle, on: date | None = None) -> NextServiceDue | None:
+    """BR-15, SA-2: the due point once the vehicle has reached it by distance or by
+    time, whichever comes first; None while it is not due or no service is on record."""
+    due = next_service_due(vehicle)
+    on = on or timezone.localdate()
+    by_km = due.odometer is not None and vehicle.odometer >= due.odometer
+    by_date = due.date is not None and on >= due.date
+    return due if by_km or by_date else None
+
+
+def due_text(due: NextServiceDue) -> str:
+    """The due point in words: "25,000 km or 01 Apr 2027, whichever comes first"."""
+    parts = []
+    if due.odometer is not None:
+        parts.append(f"{due.odometer:,} km")
+    if due.date is not None:
+        parts.append(f"{due.date:%d %b %Y}")
+    return " or ".join(parts) + (", whichever comes first" if len(parts) == 2 else "")
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
@@ -234,8 +261,28 @@ def _notify_technician_assigned(job: MaintenanceJob) -> None:
     )
 
 
+def _active(role: str):
+    return User.objects.filter(role=role, is_active=True)
+
+
+def _notify_service_due(job: MaintenanceJob) -> None:
+    """Send Maintenance Alert (SRS 3.6.2, DFD 7.3): technicians and Administrators."""
+    for user in [*_active(User.Role.MAINTENANCE_TECHNICIAN), *_active(User.Role.ADMINISTRATOR)]:
+        queue_email(
+            user,
+            "maintenance_service_due",
+            {
+                "name": user.name,
+                "job_id": job.job_id,
+                "registration_no": job.vehicle.registration_no,
+                "due": due_text(NextServiceDue(job.due_odometer, job.due_date)),
+                "odometer": f"{job.vehicle.odometer:,}",
+            },
+        )
+
+
 def _notify_clearance_requested(job: MaintenanceJob) -> None:
-    administrators = User.objects.filter(role=User.Role.ADMINISTRATOR, is_active=True)
+    administrators = _active(User.Role.ADMINISTRATOR)
     for admin in administrators:
         queue_email(
             admin,
@@ -354,6 +401,9 @@ def cancel_job(job_id: int, actor, reason: str, request=None) -> MaintenanceJob:
         raise MaintenanceError("Give a reason for cancelling.")
     before = snapshot(job)
     job.status = Job.Status.CANCELLED
+    job.cancelled_by = actor
+    job.cancelled_at = timezone.now()
+    job.cancel_reason = reason.strip()
     job.save()
     record_audit(actor, "Cancel", job, before, {**snapshot(job), "reason": reason}, request)
     _release_vehicle(job, actor, f"Maintenance job {job.job_id} cancelled", request)
@@ -448,6 +498,27 @@ def record_work(
     return job
 
 
+@transaction.atomic
+def attach_invoice(job_id: int, actor, upload, request=None) -> MaintenanceJob:
+    """Maint.Record "permit the workshop invoice to be attached" (UC 9 step 3).
+
+    A new upload replaces the previous one; the audit entry keeps the old key.
+    """
+    job = _lock(job_id)
+    _check_assignee(actor, job)
+    if job.status != Job.Status.IN_PROGRESS:
+        raise MaintenanceError("An invoice can be attached only while the job is in progress.")
+    if job.clearance_requested_at:
+        raise MaintenanceError("The record is with an Administrator for clearance.")
+    before = snapshot(job)
+    extension = upload.name.rsplit(".", 1)[-1].lower()
+    upload.name = f"invoice-{uuid.uuid4().hex}.{extension}"  # an unguessable key (SI-3)
+    job.workshop_invoice = upload
+    job.save()
+    _audit(actor, "Workshop Invoice Attached", job, before, request)
+    return job
+
+
 # ─── Exp 4 sequence diagram 3: Close Maintenance Job ──────────────────────
 
 
@@ -504,12 +575,36 @@ def _finish(job: MaintenanceJob, closer, request) -> MaintenanceJob:
     return job
 
 
+def _clear_and_finish(job: MaintenanceJob, actor, request) -> MaintenanceJob:
+    """BR-16: clear the Unsafe flag (update_status() -> Available, `actor` recorded),
+    then complete the job with `actor` as closed_by."""
+    update_status(
+        job.vehicle,
+        VStatus.AVAILABLE,
+        actor=actor,
+        reason=f"Unsafe flag cleared on maintenance job {job.job_id}",
+        request=request,
+    )
+    if _has_other_open_jobs(job):
+        # Another job still holds the vehicle (Proposed M7).
+        update_status(
+            job.vehicle,
+            VStatus.UNDER_MAINTENANCE,
+            actor=actor,
+            reason=f"Another maintenance job is open after job {job.job_id}",
+            request=request,
+        )
+    return _finish(job, actor, request)
+
+
 @transaction.atomic
-def complete_job(job_id: int, actor, request=None) -> MaintenanceJob:
+def complete_job(job_id: int, actor, request=None, *, clear_unsafe: bool = False) -> MaintenanceJob:
     """Exp 3 MaintenanceJob.complete_job(), Exp 4 sequence diagram 3.
 
     Returns the job: Completed, or still In Progress and awaiting an
     Administrator's clearance (job.awaiting_clearance) if the vehicle is Unsafe.
+    With `clear_unsafe`, an Administrator or an authorised technician (BR-16, UC 10
+    extension 1a) clears the flag while closing the job and is recorded.
     """
     job = _lock(job_id)
     # BR-16: only an Administrator or the assigned technician closes a job.
@@ -526,6 +621,13 @@ def complete_job(job_id: int, actor, request=None) -> MaintenanceJob:
         raise WorkIncompleteError(missing)
 
     vehicle = Vehicle.objects.select_for_update().get(pk=job.vehicle_id)
+    if clear_unsafe and vehicle.status == VStatus.UNSAFE:
+        if not may_clear_unsafe(actor):
+            raise MaintenanceError(
+                "Only an Administrator or an authorised technician can clear an Unsafe flag "
+                "(BR-16)."
+            )
+        return _clear_and_finish(job, actor, request)
     if vehicle.status == VStatus.UNSAFE:
         # 2. alt [vehicle flagged Unsafe]: request clearance of the flag (BR-16).
         before = snapshot(job)
@@ -553,24 +655,7 @@ def approve_clearance(job_id: int, actor, request=None) -> MaintenanceJob:
     missing = missing_work(job)
     if missing:
         raise WorkIncompleteError(missing)
-
-    update_status(
-        job.vehicle,
-        VStatus.AVAILABLE,
-        actor=actor,
-        reason=f"Unsafe flag cleared on maintenance job {job.job_id}",
-        request=request,
-    )
-    if _has_other_open_jobs(job):
-        # Another job still holds the vehicle (Proposed M7).
-        update_status(
-            job.vehicle,
-            VStatus.UNDER_MAINTENANCE,
-            actor=actor,
-            reason=f"Another maintenance job is open after job {job.job_id}",
-            request=request,
-        )
-    return _finish(job, actor, request)
+    return _clear_and_finish(job, actor, request)
 
 
 def clearance_queue():
@@ -578,3 +663,132 @@ def clearance_queue():
     return Job.objects.filter(
         status=Job.Status.IN_PROGRESS, clearance_requested_at__isnull=False
     ).order_by("clearance_requested_at")
+
+
+# ─── BR-16: technicians authorised to clear an Unsafe flag ────────────────
+
+
+@transaction.atomic
+def authorise_technician(technician: MaintenanceTechnician, actor, request=None):
+    """An Administrator marks a technician "authorised to clear Unsafe" (BR-16, SA-3, SE-6)."""
+    if not _is_role(actor, User.Role.ADMINISTRATOR):
+        raise MaintenanceError("Only an Administrator can authorise a technician (BR-16).")
+    if not technician.user.is_active:
+        raise MaintenanceError("This technician's account is disabled.")
+    grant, created = UnsafeClearanceAuthorisation.objects.get_or_create(
+        technician=technician, defaults={"granted_by": actor}
+    )
+    if created:
+        record_audit(
+            actor, "Unsafe Clearance Authorised", technician, after=snapshot(grant), request=request
+        )
+    return grant
+
+
+@transaction.atomic
+def revoke_authorisation(technician: MaintenanceTechnician, actor, request=None) -> None:
+    if not _is_role(actor, User.Role.ADMINISTRATOR):
+        raise MaintenanceError("Only an Administrator can revoke an authorisation (BR-16).")
+    grant = UnsafeClearanceAuthorisation.objects.filter(technician=technician).first()
+    if grant is None:
+        return
+    before = snapshot(grant)
+    grant.delete()
+    record_audit(actor, "Unsafe Clearance Revoked", technician, before=before, request=request)
+
+
+# ─── Maint.Auto.Km, Maint.Auto.Time (BR-15); Send Maintenance Alert ───────
+
+OPEN_PREVENTIVE = (Job.Status.REPORTED, *OPEN_STATUSES)
+
+
+@transaction.atomic
+def raise_preventive_job_if_due(vehicle: Vehicle, *, request=None) -> MaintenanceJob | None:
+    """Maint.Auto.Km (at every return) and Maint.Auto.Time (daily): a Preventive job
+    once the vehicle reaches BR-15's interval by distance or time, whichever first.
+
+    The one function both triggers call. Nothing is raised for a retired vehicle,
+    before a service is on record, or while the vehicle already has an open
+    Preventive job. The system is the reporter (reported_by empty); the job is
+    pre-filled with the due point (UC 9 extension 2a), audited, and the
+    technicians and Administrators are alerted (Send Maintenance Alert).
+    """
+    vehicle = Vehicle.objects.select_for_update().select_related("category").get(pk=vehicle.pk)
+    due = service_due(vehicle)
+    if (
+        due is None
+        or vehicle.status == VStatus.RETIRED
+        or vehicle.maintenance_jobs.filter(
+            job_type=Job.JobType.PREVENTIVE, status__in=OPEN_PREVENTIVE
+        ).exists()
+    ):
+        return None
+    job = Job.objects.create(
+        vehicle=vehicle,
+        job_type=Job.JobType.PREVENTIVE,
+        severity=settings.PREVENTIVE_JOB_SEVERITY,
+        reported_problem=(
+            f"Preventive service due (BR-15) at {due_text(due)}. "
+            f"The odometer reads {vehicle.odometer:,} km."
+        ),
+        due_odometer=due.odometer,
+        due_date=due.date,
+    )
+    _audit(None, "Create", job, None, request)
+    _notify_service_due(job)
+    return job
+
+
+def raise_due_preventive_jobs() -> int:
+    """Maint.Auto.Time, evaluated daily (Celery Beat, migration 0004). Distance is
+    checked too, so a reading recorded outside a return is not missed."""
+    vehicle_ids = Vehicle.objects.exclude(status=VStatus.RETIRED).filter(
+        Q(last_service_date__isnull=False) | Q(last_service_odometer__isnull=False)
+    )
+    # Each vehicle in its own transaction, so one failure never undoes the others.
+    return sum(
+        1
+        for pk in list(vehicle_ids.values_list("pk", flat=True))
+        if raise_preventive_job_if_due(Vehicle(pk=pk))
+    )
+
+
+# ─── Document expiry alert (context diagram, SA-3) ────────────────────────
+
+
+def expiring_documents(on: date | None = None) -> list[VehicleDocument]:
+    """Each vehicle's latest document of each type that has expired or expires within
+    DOCUMENT_EXPIRY_ALERT_WINDOW. A renewal is a newer row, so it replaces the old one."""
+    on = on or timezone.localdate()
+    latest = (
+        VehicleDocument.objects.exclude(vehicle__status=VStatus.RETIRED)
+        .select_related("vehicle")
+        .order_by("vehicle_id", "document_type", "-expiry_date")
+        .distinct("vehicle_id", "document_type")
+    )
+    limit = on + settings.DOCUMENT_EXPIRY_ALERT_WINDOW
+    return sorted(
+        (document for document in latest if document.expiry_date <= limit),
+        key=lambda document: (document.expiry_date, document.vehicle.registration_no),
+    )
+
+
+def alert_expiring_documents(on: date | None = None) -> int:
+    """The daily document expiry alert to every active Administrator; returns the count."""
+    on = on or timezone.localdate()
+    documents = expiring_documents(on)
+    if not documents:
+        return 0
+    lines = "\n".join(
+        f"- {document.vehicle.registration_no}: {document.document_type} "
+        f"{'expired' if document.expiry_date < on else 'expires'} on "
+        f"{document.expiry_date:%d %b %Y}"
+        for document in documents
+    )
+    for admin in _active(User.Role.ADMINISTRATOR):
+        queue_email(
+            admin,
+            "vehicle_documents_expiring",
+            {"name": admin.name, "count": len(documents), "documents": lines},
+        )
+    return len(documents)

@@ -6,6 +6,7 @@ Owner: Nidhi (WBS 1.4.4). Only the owner edits this file or its migrations.
 from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
+from django.utils import timezone
 
 from apps.core.models import TimeStampedModel
 
@@ -55,8 +56,16 @@ class MaintenanceJob(TimeStampedModel):
     )
     reported_problem = models.TextField()  # Maint.Create
     reported_by = models.ForeignKey(  # Maint.Create "the reporting user"
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="maintenance_reported"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="maintenance_reported",
+        help_text="Empty for a Preventive job the system raised (Maint.Auto.Km, Maint.Auto.Time).",
     )
+    # UC 9 extension 2a: the BR-15 due point an automatic Preventive job was raised for.
+    due_odometer = models.PositiveIntegerField(null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
     # Maint.Schedule: the period blocked from search and booking.
     scheduled_from = models.DateTimeField(null=True, blank=True)
     scheduled_to = models.DateTimeField(null=True, blank=True)
@@ -84,6 +93,16 @@ class MaintenanceJob(TimeStampedModel):
         related_name="maintenance_closed",
     )
     closed_at = models.DateTimeField(null=True, blank=True)
+    # Appendix B Cancelled: who cancelled the job, when and why.
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="maintenance_cancelled",
+    )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancel_reason = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -158,3 +177,22 @@ class PartUsed(models.Model):
     @property
     def total_cost(self):
         return self.quantity * self.unit_cost
+
+
+class UnsafeClearanceAuthorisation(models.Model):
+    """BR-16, SA-3, SE-6: a technician an Administrator has authorised to clear an
+    Unsafe flag. One row per authorised technician; revoking deletes it, and the
+    audit log keeps both decisions."""
+
+    technician = models.OneToOneField(
+        "accounts.MaintenanceTechnician",
+        on_delete=models.CASCADE,
+        related_name="unsafe_clearance_authorisation",
+    )
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    granted_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self) -> str:
+        return f"{self.technician} may clear Unsafe flags"

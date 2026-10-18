@@ -45,6 +45,10 @@ def _vehicle():
     return MaintenanceJobFactory().vehicle_id
 
 
+def _technician():
+    return MaintenanceJobFactory().technician_id
+
+
 def job_url(name):
     return lambda: reverse(f"maintenance:{name}", args=[_job()])
 
@@ -59,9 +63,22 @@ ENDPOINTS = [
     ("job-start", "post", job_url("job-start"), {"technician"}),
     ("job-record", "put", job_url("job-record"), {"technician"}),
     ("job-complete", "post", job_url("job-complete"), {"technician", "admin"}),
+    ("job-invoice", "put", job_url("job-invoice"), {"technician"}),
     ("job-approve-clearance", "post", job_url("job-approve-clearance"), {"admin"}),
     ("clearance-queue", "get", lambda: reverse("maintenance:clearance-queue"), {"admin"}),
     ("technician-list", "get", lambda: reverse("maintenance:technician-list"), MANAGERS),
+    (
+        "technician-authorisation-put",
+        "put",
+        lambda: reverse("maintenance:technician-authorisation", args=[_technician()]),
+        {"admin"},
+    ),
+    (
+        "technician-authorisation-delete",
+        "delete",
+        lambda: reverse("maintenance:technician-authorisation", args=[_technician()]),
+        {"admin"},
+    ),
     ("vehicle-list", "get", lambda: reverse("maintenance:vehicle-list"), MANAGERS),
     (
         "vehicle-history",
@@ -95,5 +112,8 @@ def test_every_maintenance_route_is_in_the_matrix():
     from apps.maintenance.urls import urlpatterns
 
     named = {pattern.name for pattern in urlpatterns}
-    covered = {name.removesuffix("-get").removesuffix("-post") for name, *_ in ENDPOINTS}
+    covered = {
+        name.removesuffix("-get").removesuffix("-post").removesuffix("-put").removesuffix("-delete")
+        for name, *_ in ENDPOINTS
+    }
     assert named == covered

@@ -30,6 +30,27 @@ TEMPLATES: dict[tuple[str, int], Template] = {
             "Work performed: {work}\n\n{agency}"
         ),
     ),
+    # Send Maintenance Alert (SRS 3.6.2, DFD 7.3): a Preventive job raised by BR-15.
+    ("maintenance_service_due", 1): Template(
+        subject="{agency}: preventive service due for vehicle {registration_no}",
+        body=(
+            "Hello {name},\n\n"
+            "Vehicle {registration_no} has reached its preventive service interval (BR-15): "
+            "due at {due}. Its odometer reads {odometer} km.\n"
+            "Preventive maintenance job {job_id} has been raised; schedule it and assign a "
+            "technician.\n\n{agency}"
+        ),
+    ),
+    # Context diagram "document expiry alert" (SA-3).
+    ("vehicle_documents_expiring", 1): Template(
+        subject="{agency}: {count} vehicle documents expired or expiring",
+        body=(
+            "Hello {name},\n\n"
+            "These statutory documents have expired or expire soon. A vehicle cannot be "
+            "handed over unless each is valid for the whole rental (SA-3):\n"
+            "{documents}\n\nRecord the renewals on the fleet screen.\n\n{agency}"
+        ),
+    ),
 }
 
 
@@ -44,6 +65,10 @@ SAMPLE_CONTEXT = {
     "scheduled_to": "14 Oct 2026 18:00",
     "technician": "Ravi",
     "work": "Replaced brake pads.",
+    "due": "25,000 km or 01 Apr 2027, whichever comes first",
+    "odometer": "25,120",
+    "count": 2,
+    "documents": "- MH01AB1234: Insurance expires on 01 Nov 2026",
 }
 
 
