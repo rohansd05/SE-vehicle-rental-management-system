@@ -61,6 +61,24 @@ PREVENTIVE_SERVICE_INTERVAL_KM_CAR = 5000
 PREVENTIVE_SERVICE_INTERVAL_MONTHS_CAR = 6
 PREVENTIVE_SERVICE_INTERVAL_KM_TWO_WHEELER = 3000
 PREVENTIVE_SERVICE_INTERVAL_MONTHS_TWO_WHEELER = 4
+# Maint.Auto.Km / Maint.Auto.Time: the severity of a job the system raises.
+# Proposed (N3-P3; the SRS names no severity for it).
+PREVENTIVE_JOB_SEVERITY = "Medium"
+
+# Fleet.Add: at least four photographs of every vehicle. Image types and size
+# proposed (N3-P5): the licence image limits (D20).
+VEHICLE_PHOTOS_MINIMUM = 4
+VEHICLE_PHOTO_EXTENSIONS = ("jpg", "jpeg", "png")
+VEHICLE_PHOTO_MAX_BYTES = 5 * 1024 * 1024
+
+# Context diagram "document expiry alert" (SA-3): documents expiring within this
+# window are listed in the daily alert to Administrators. Proposed (N3-P4).
+DOCUMENT_EXPIRY_ALERT_WINDOW = timedelta(days=30)
+
+# Maint.Record "permit the workshop invoice to be attached". Proposed (N3-P6):
+# a PDF or a photo of it, at most 5 MB.
+WORKSHOP_INVOICE_EXTENSIONS = ("pdf", "jpg", "jpeg", "png")
+WORKSHOP_INVOICE_MAX_BYTES = 5 * 1024 * 1024
 
 # Book.Hold / Book.Hold.Expire: temporary hold while the customer pays.
 PAYMENT_HOLD_DURATION = timedelta(minutes=15)

@@ -28,8 +28,31 @@ def _stored_snapshot(obj) -> dict | None:
     return snapshot(stored) if stored is not None else None
 
 
+# Models whose `status` changes only through its state machine (bookings/states.py,
+# fleet/services/status.py, maintenance/services.py), never by an admin edit. A
+# subclass (Car, TwoWheeler) is covered through its parent.
+STATE_MACHINE_MODELS = frozenset(
+    {"bookings.Booking", "fleet.Vehicle", "maintenance.MaintenanceJob"}
+)
+
+
+def has_state_machine_status(model) -> bool:
+    return any(
+        cls._meta.label in STATE_MACHINE_MODELS for cls in [model, *model._meta.get_parent_list()]
+    )
+
+
 class AuditedModelAdmin(admin.ModelAdmin):
-    """Writes an AuditLog entry for every admin create, update and delete."""
+    """Writes an AuditLog entry for every admin create, update and delete.
+
+    A state-machine status is shown read-only, so nobody bypasses the transitions.
+    """
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = tuple(super().get_readonly_fields(request, obj))
+        if has_state_machine_status(self.model) and "status" not in fields:
+            fields += ("status",)
+        return fields
 
     def save_model(self, request, obj, form, change):
         before = _stored_snapshot(obj) if change else None

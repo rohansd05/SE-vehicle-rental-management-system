@@ -6,8 +6,9 @@ Implements the vehicle state machine of SRS Appendix B, Figure 4 (Fleet.Status):
 - On Rent -> Available (return) or Under Maintenance (flagged during the return)
 - Under Maintenance -> Available (job completed and the vehicle released)
 - any status -> Unsafe (Maint.Unsafe)
-- Unsafe -> Available only when an Administrator clears the flag
-  (BR-16, SA-3, SE-6; Administrator only per Exp 4 sequence 3, Proposed M1)
+- Unsafe -> Available only when an Administrator or an authorised technician
+  clears the flag (BR-16, SA-3, SE-6; an Administrator authorises a technician,
+  Module N3, which settles Proposed M1)
 - any status -> Retired, by an Administrator, when no future booking exists
   (Fleet.Retire)
 
@@ -75,6 +76,22 @@ def _is_administrator(actor) -> bool:
     )
 
 
+def may_clear_unsafe(actor) -> bool:
+    """BR-16, SA-3, SE-6: an Administrator, or a technician an Administrator has
+    authorised (maintenance.UnsafeClearanceAuthorisation)."""
+    if _is_administrator(actor):
+        return True
+    from apps.maintenance.models import UnsafeClearanceAuthorisation
+
+    return bool(
+        actor is not None
+        and getattr(actor, "is_authenticated", False)
+        and actor.is_active
+        and actor.role == User.Role.MAINTENANCE_TECHNICIAN
+        and UnsafeClearanceAuthorisation.objects.filter(technician__user=actor).exists()
+    )
+
+
 def _has_future_booking(vehicle: Vehicle) -> bool:
     """Fleet.Retire: an Active booking, or a held or Confirmed one not yet over (Proposed M4)."""
     from apps.bookings.models import Booking
@@ -93,9 +110,11 @@ def check_transition(vehicle: Vehicle, current: str, new: str, actor) -> None:
     """Raise a VehicleStatusError if `actor` may not move `vehicle` from `current` to `new`."""
     if new not in ALLOWED_TRANSITIONS.get(current, ()):
         raise IllegalTransitionError(current, new)
-    if current == Status.UNSAFE and new == Status.AVAILABLE and not _is_administrator(actor):
+    if current == Status.UNSAFE and new == Status.AVAILABLE and not may_clear_unsafe(actor):
         # BR-16, SA-3, SE-6, Maint.Unsafe.
-        raise ActorNotPermittedError("Only an Administrator can clear an Unsafe flag (BR-16).")
+        raise ActorNotPermittedError(
+            "Only an Administrator or an authorised technician can clear an Unsafe flag (BR-16)."
+        )
     if new == Status.RETIRED:
         if not _is_administrator(actor):
             raise ActorNotPermittedError("Only an Administrator can retire a vehicle.")

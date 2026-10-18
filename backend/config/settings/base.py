@@ -220,6 +220,8 @@ SPECTACULAR_SETTINGS = {
         "HealthStatusEnum": ["ok", "degraded"],
         "ExtraChargeMethodEnum": ["card", "online"],  # Book.Modify.Price, Book.Extend
         "SeverityEnum": "apps.maintenance.models.MaintenanceJob.Severity",  # Return.Flag too
+        "RoleEnum": "apps.accounts.models.User.Role",
+        "StaffRoleEnum": "apps.accounts.admin_serializers.STAFF_ROLE_CHOICES",  # N3
     },
     "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",

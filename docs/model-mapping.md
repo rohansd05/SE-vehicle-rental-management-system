@@ -238,6 +238,10 @@ customers (Book.Hold). `blocked_period` = `[pickup, return + 60 min)`.
 | `downtime_hours` (Module 2) | Maint.History "downtime"; entered by the technician with the record |
 | `started_at` (Module 2) | Appendix B Scheduled → In Progress |
 | `clearance_requested_at` (Module 2) | BR-16; Exp 4 sequence 3 "request clearance of Unsafe flag" |
+| `reported_by` empty (Module N3) | Maint.Auto.Km, Maint.Auto.Time: the system raises the Preventive job |
+| `due_odometer`, `due_date` (Module N3) | UC 9 extension 2a "pre-fills ... the due distance or date" |
+| `cancelled_by`, `cancelled_at`, `cancel_reason` (Module N3) | Appendix B Cancelled; who cancelled, when and why, shown on the job |
+| `UnsafeClearanceAuthorisation` (Module N3): technician, granted_by, granted_at | BR-16, SA-3, SE-6 "authorised technician"; one row per authorised technician, revoked by deleting it (both audited) |
 
 **Close Maintenance Job and the Unsafe clearance (Exp 4 sequence 3, BR-16).**
 The diagram shows the Administrator clearing the flag inside the
@@ -332,6 +336,14 @@ choosing something. Each needs a yes/no or a correction from the team.
 | P32 | Actual return time (N2-P8) | `rentals.services._check_return_time()` | Entered by staff, not in the future, not before the handover |
 | P33 | Customer acknowledgement (N2-P9) | `ConditionReport.signature` of the return report | The customer signs after seeing the settlement |
 | P34 | Settle idempotency (N2-P10) | `rentals.services.return_vehicle()` | One return per booking; a repeated Settle returns the first result |
+| P35 | Branch Manager and the audit log (N3-P1) | `core.services.audit_entries_for()` | A Branch Manager reads their branch's entries (bookings, vehicles, jobs, reports, payments, refunds, invoices, ledger, the branch) and their branch people's actions; Fleet.Audit says "Administrators", SRS 2.2 makes the manager a restricted Administrator |
+| P36 | Blacklist reason (N3-P2) | `accounts.admin_services` | Kept in the append-only "Customer Blacklisted" audit entry, read back for the screens; no accounts migration (Rohan's app) |
+| P37 | Automatic Preventive job (N3-P3) | `maintenance.services.raise_preventive_job_if_due()` | Severity `PREVENTIVE_JOB_SEVERITY` (Medium); none while an open Preventive job exists, before a service is on record, or on a retired vehicle |
+| P38 | Document expiry alert window (N3-P4) | `DOCUMENT_EXPIRY_ALERT_WINDOW` | 30 days; the latest document of each type counts |
+| P39 | Vehicle photo types (N3-P5) | `VEHICLE_PHOTO_*` | JPG or PNG, 5 MB, as the licence images (D20) |
+| P40 | Workshop invoice (N3-P6) | `WORKSHOP_INVOICE_*` | PDF or JPG/PNG, 5 MB |
+| P41 | Tariff deposit (N3-P7) | `pricing.admin_services.define_tariff()` | The deposit is BR-3's for the category's vehicle type, never an input (Fleet.Tariff lists it; BR-3 fixes it) |
+| P42 | First staff password (N3-P8) | `accounts.admin_services.create_staff_account()` | Set by the Administrator, never shown again; the user changes it after signing in |
 
 Proposed values for authentication, OTPs and licence uploads (Phase 1B)
 are listed in `docs/decisions.md`, D20 (A1–A16).
@@ -343,5 +355,5 @@ are listed in `docs/decisions.md`, D20 (A1–A16).
 | G1 | **Vehicle ratings.** The SRS shows an average rating and filters by it, but has no requirement that captures a rating. | Search.Detail, Search.Filter | D13: `bookings.Rating` per Completed booking; average computed, never stored |
 | G2 | **Tax rate.** BR-6 adds "taxes" but gives no rate. | BR-6, Pay.Invoice | D14: `TAX_RATE_PERCENT = 18.00`, **a placeholder awaiting confirmation** |
 | G3 | **OTP lifetime and attempt limit.** | SE-7 | D15: 10 minutes, 5 attempts |
-| G4 | **Odometer plausibility limit.** | Return.Odometer | D16: none beyond "not lower than at handover" (AS-4) |
+| G4 | **Odometer plausibility limit.** | Return.Odometer | D16 (amended in N3): `ODOMETER_PLAUSIBILITY_KM_PER_DAY` = 1,000 km per started day, above it a supervisor override with a recorded reason (N2-P7) |
 | G5 | **Discounts.** BR-6 subtracts "any discount" but no source is defined. | BR-6 | D17: `pricing.DiscountCode`; Booking records the code and amount |

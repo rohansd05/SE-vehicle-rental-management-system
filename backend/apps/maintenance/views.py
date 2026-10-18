@@ -17,6 +17,7 @@ from drf_spectacular.utils import (
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,6 +37,7 @@ from . import services
 from .models import MaintenanceJob
 from .serializers import (
     CancelJobSerializer,
+    CompleteJobSerializer,
     MaintenanceJobSerializer,
     MaintenanceVehicleSerializer,
     RecordWorkSerializer,
@@ -44,6 +46,7 @@ from .serializers import (
     ScheduleJobSerializer,
     TechnicianSerializer,
     WorkIncompleteSerializer,
+    WorkshopInvoiceSerializer,
 )
 
 TAG = "Maintenance"
@@ -58,15 +61,20 @@ class ReadOnly(BasePermission):
         return request.method in SAFE_METHODS
 
 
+JOB_RELATED = (
+    "vehicle__category",
+    "vehicle__home_branch",
+    "technician__user",
+    "technician__unsafe_clearance_authorisation",
+    "reported_by",
+    "closed_by",
+    "cancelled_by",
+)
+
+
 def scoped_jobs(user):
     """The jobs `user` may see (SE-5)."""
-    jobs = MaintenanceJob.objects.select_related(
-        "vehicle__category",
-        "vehicle__home_branch",
-        "technician__user",
-        "reported_by",
-        "closed_by",
-    ).prefetch_related("parts")
+    jobs = MaintenanceJob.objects.select_related(*JOB_RELATED).prefetch_related("parts")
     if user.is_authenticated and user.role == User.Role.MAINTENANCE_TECHNICIAN:
         return jobs.filter(technician__user=user)
     return scope_queryset(jobs, user, branch_lookup="vehicle__home_branch_id")
@@ -327,16 +335,45 @@ class JobCompleteView(_JobActionView):
             "Validates the recorded work, parts and cost; if incomplete the answer is 400 "
             'with `code: work_incomplete` ("record work first"). If the vehicle is flagged '
             "Unsafe the job stays In Progress with `awaiting_clearance: true` until an "
-            "Administrator approves it (BR-16). Otherwise the vehicle becomes Available, the "
-            "next service due is computed (BR-15) and the job is Completed."
+            "Administrator approves it (BR-16), unless the caller may clear the flag "
+            "(`can_clear_unsafe`: an Administrator or an authorised technician) and sends "
+            "`clear_unsafe: true`; the flag is then cleared as the job closes and the caller is "
+            "recorded (UC 10 extension 1a). Otherwise the vehicle becomes Available, the next "
+            "service due is computed (BR-15) and the job is Completed."
         ),
-        request=None,
+        request=CompleteJobSerializer,
         responses={200: MaintenanceJobSerializer, 400: WorkIncompleteSerializer},
     )
     def post(self, request, pk: int):
         job = self.get_job(request, pk)
+        serializer = CompleteJobSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         try:
-            job = services.complete_job(job.pk, request.user, request)
+            job = services.complete_job(job.pk, request.user, request, **serializer.validated_data)
+        except services.MaintenanceError as exc:
+            return _bad_request(exc)
+        return _job_response(job, request)
+
+
+class JobInvoiceView(_JobActionView):
+    permission_classes = [IsMaintenanceTechnician]
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Attach the workshop invoice (Maint.Record, UC 9 step 3)",
+        description="A PDF, JPG or PNG of at most 5 MB; a new upload replaces the previous one.",
+        request={"multipart/form-data": WorkshopInvoiceSerializer},
+        responses={200: MaintenanceJobSerializer, 400: DetailSerializer},
+    )
+    def put(self, request, pk: int):
+        job = self.get_job(request, pk)
+        serializer = WorkshopInvoiceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            job = services.attach_invoice(
+                job.pk, request.user, serializer.validated_data["workshop_invoice"], request
+            )
         except services.MaintenanceError as exc:
             return _bad_request(exc)
         return _job_response(job, request)
@@ -392,13 +429,53 @@ class TechnicianListView(ListAPIView):
     def get_queryset(self):
         return (
             MaintenanceTechnician.objects.filter(user__is_active=True)
-            .select_related("user")
+            .select_related("user", "unsafe_clearance_authorisation")
             .order_by("user__name")
         )
 
     @extend_schema(tags=[TAG], summary="Active maintenance technicians")
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class TechnicianAuthorisationView(APIView):
+    """BR-16: an Administrator authorises a technician to clear an Unsafe flag, or revokes it."""
+
+    permission_classes = [IsAdministrator]
+
+    def _technician(self, pk: int) -> MaintenanceTechnician:
+        return get_object_or_404(MaintenanceTechnician.objects.select_related("user"), pk=pk)
+
+    def _answer(self, technician: MaintenanceTechnician) -> Response:
+        technician = MaintenanceTechnician.objects.select_related(
+            "user", "unsafe_clearance_authorisation"
+        ).get(pk=technician.pk)
+        return Response(TechnicianSerializer(technician).data)
+
+    @extend_schema(
+        tags=[CLEARANCE_TAG],
+        summary="Authorise the technician to clear Unsafe flags (BR-16)",
+        request=None,
+        responses={200: TechnicianSerializer, 400: DetailSerializer},
+    )
+    def put(self, request, pk: int):
+        technician = self._technician(pk)
+        try:
+            services.authorise_technician(technician, request.user, request)
+        except services.MaintenanceError as exc:
+            return _bad_request(exc)
+        return self._answer(technician)
+
+    @extend_schema(
+        tags=[CLEARANCE_TAG],
+        summary="Revoke the technician's authorisation (BR-16)",
+        request=None,
+        responses={200: TechnicianSerializer},
+    )
+    def delete(self, request, pk: int):
+        technician = self._technician(pk)
+        services.revoke_authorisation(technician, request.user, request)
+        return self._answer(technician)
 
 
 class VehicleListView(ListAPIView):
@@ -438,13 +515,7 @@ class VehicleHistoryView(ListAPIView):
             vehicle = get_object_or_404(scoped_vehicles(user), pk=self.kwargs["pk"])
         return (
             MaintenanceJob.objects.filter(vehicle=vehicle)
-            .select_related(
-                "vehicle__category",
-                "vehicle__home_branch",
-                "technician__user",
-                "reported_by",
-                "closed_by",
-            )
+            .select_related(*JOB_RELATED)
             .prefetch_related("parts")
             .order_by("-created_at")
         )

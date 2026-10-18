@@ -4,6 +4,224 @@
  */
 
 export interface paths {
+    "/api/v1/admin/customers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customers and the blacklist (BR-4)
+         * @description BR-4: customers, to find one to blacklist, or the blacklist itself.
+         */
+        get: operations["api_v1_admin_customers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A customer with their Confirmed and Active bookings */
+        get: operations["api_v1_admin_customers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/blacklist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Blacklist a customer with the reason (BR-4, UC 12 step 2)
+         * @description New bookings are refused from now on. The answer lists the customer's Confirmed bookings, to decide on each (UC 12 extension 2a), and Active ones (return pending).
+         */
+        post: operations["api_v1_admin_customers_blacklist_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/bookings/{booking_id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The refund if this booking is cancelled now (R2, BR-8)
+         * @description UC 12 extension 2a: cancel one Confirmed booking of a blacklisted customer,
+         *     through R2's cancellation (BR-8).
+         */
+        get: operations["api_v1_admin_customers_bookings_cancel_retrieve"];
+        put?: never;
+        /**
+         * Cancel the booking (R2's cancel_booking(), BR-8)
+         * @description SE-9: the Administrator's password. `expected_refund` is the total shown; 409 `refund_changed` if BR-8 now gives another amount. An Active booking is never cancelled here (409 `invalid_state`).
+         */
+        post: operations["api_v1_admin_customers_bookings_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/lift-blacklist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a customer off the blacklist, with the reason */
+        post: operations["api_v1_admin_customers_lift_blacklist_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Staff accounts (Fleet.Users)
+         * @description Fleet.Users: Branch Staff, Maintenance Technician and Branch Manager accounts.
+         */
+        get: operations["api_v1_admin_users_list"];
+        put?: never;
+        /**
+         * Create a staff account (Fleet.Users, UC 12 step 1)
+         * @description Branch Staff and Branch Managers need a `branch`, a technician a `workshop`. The password is the first one; the user may change it after signing in.
+         */
+        post: operations["api_v1_admin_users_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A staff account */
+        get: operations["api_v1_admin_users_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a staff account */
+        patch: operations["api_v1_admin_users_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/disable/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable a staff account (Fleet.Users)
+         * @description Every session ends at once and sign-in is refused; past actions stay.
+         */
+        post: operations["api_v1_admin_users_disable_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/enable/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Re-enable a staff account (Fleet.Users) */
+        post: operations["api_v1_admin_users_enable_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the audit log (Fleet.Audit)
+         * @description Filter with `actor` (part of a name or e-mail, or `system`), `action`, `entity_type`, `entity_id`, and `date_from` / `date_to` (local dates).
+         */
+        get: operations["api_v1_audit_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/filters/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Actions and entity types to filter the audit log by
+         * @description The actions and entity types the caller's entries hold, for the filter lists.
+         */
+        get: operations["api_v1_audit_filters_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login/": {
         parameters: {
             query?: never;
@@ -412,6 +630,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fleet/admin/branches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Branches and their serviceable areas
+         * @description UC 11 "branches": every branch with its serviceable areas.
+         */
+        get: operations["api_v1_fleet_admin_branches_list"];
+        put?: never;
+        /**
+         * Add a branch
+         * @description UC 11 "branches": every branch with its serviceable areas.
+         */
+        post: operations["api_v1_fleet_admin_branches_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/branches/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a branch */
+        patch: operations["api_v1_fleet_admin_branches_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/branches/{id}/areas/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a serviceable area (Book.Deliver.Location) */
+        post: operations["api_v1_fleet_admin_branches_areas_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/branches/{id}/areas/{area_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a serviceable area */
+        delete: operations["api_v1_fleet_admin_branches_areas_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The fleet (Fleet.Status)
+         * @description Fleet.Status: every vehicle with its current status; Fleet.Add (POST).
+         */
+        get: operations["api_v1_fleet_admin_vehicles_list"];
+        put?: never;
+        /**
+         * Add a vehicle (Fleet.Add, UC 11 step 1)
+         * @description multipart/form-data. `photos` repeated, at least four images; `documents` a JSON list with each statutory document's type and expiry date. A registration or chassis number already on record is refused (UC 11 extension 1a).
+         */
+        post: operations["api_v1_fleet_admin_vehicles_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A vehicle with its photos and documents */
+        get: operations["api_v1_fleet_admin_vehicles_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit a vehicle's master data (UC 11 step 1)
+         * @description Status is not editable here: it changes only through the state machine.
+         */
+        patch: operations["api_v1_fleet_admin_vehicles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a statutory document or its renewal (Fleet.Add, SA-3) */
+        post: operations["api_v1_fleet_admin_vehicles_documents_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/documents/{document_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a document entered in error */
+        delete: operations["api_v1_fleet_admin_vehicles_documents_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/photos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a photograph (Fleet.Add) */
+        post: operations["api_v1_fleet_admin_vehicles_photos_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/photos/{photo_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a photograph (at least four stay) */
+        delete: operations["api_v1_fleet_admin_vehicles_photos_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/admin/vehicles/{id}/retire/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retire a vehicle (Fleet.Retire)
+         * @description Through the vehicle state machine: 409 while the vehicle has a booking that is not over (cancel or reassign it first). History is kept and reportable.
+         */
+        post: operations["api_v1_fleet_admin_vehicles_retire_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/fleet/branches/": {
         parameters: {
             query?: never;
@@ -706,9 +1132,29 @@ export interface paths {
         put?: never;
         /**
          * Complete a job (Exp 4 sequence 3, MaintenanceJob.complete_job())
-         * @description Validates the recorded work, parts and cost; if incomplete the answer is 400 with `code: work_incomplete` ("record work first"). If the vehicle is flagged Unsafe the job stays In Progress with `awaiting_clearance: true` until an Administrator approves it (BR-16). Otherwise the vehicle becomes Available, the next service due is computed (BR-15) and the job is Completed.
+         * @description Validates the recorded work, parts and cost; if incomplete the answer is 400 with `code: work_incomplete` ("record work first"). If the vehicle is flagged Unsafe the job stays In Progress with `awaiting_clearance: true` until an Administrator approves it (BR-16), unless the caller may clear the flag (`can_clear_unsafe`: an Administrator or an authorised technician) and sends `clear_unsafe: true`; the flag is then cleared as the job closes and the caller is recorded (UC 10 extension 1a). Otherwise the vehicle becomes Available, the next service due is computed (BR-15) and the job is Completed.
          */
         post: operations["api_v1_maintenance_jobs_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/jobs/{id}/invoice/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Attach the workshop invoice (Maint.Record, UC 9 step 3)
+         * @description A PDF, JPG or PNG of at most 5 MB; a new upload replaces the previous one.
+         */
+        put: operations["api_v1_maintenance_jobs_invoice_update"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -790,6 +1236,30 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/technicians/{id}/authorisation/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Authorise the technician to clear Unsafe flags (BR-16)
+         * @description BR-16: an Administrator authorises a technician to clear an Unsafe flag, or revokes it.
+         */
+        put: operations["api_v1_maintenance_technicians_authorisation_update"];
+        post?: never;
+        /**
+         * Revoke the technician's authorisation (BR-16)
+         * @description BR-16: an Administrator authorises a technician to clear an Unsafe flag, or revokes it.
+         */
+        delete: operations["api_v1_maintenance_technicians_authorisation_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1064,6 +1534,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pricing/admin/add-ons/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Add-ons, active or not (Book.Addons) */
+        get: operations["api_v1_pricing_admin_add_ons_list"];
+        put?: never;
+        /** Add an add-on (BR-7: charged at its daily rate) */
+        post: operations["api_v1_pricing_admin_add_ons_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/admin/add-ons/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change an add-on's name, rate, vehicle type or availability
+         * @description Confirmed bookings keep the rate they were priced at (BR-13).
+         */
+        patch: operations["api_v1_pricing_admin_add_ons_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/pricing/admin/discount-codes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Discount codes (D17) */
+        get: operations["api_v1_pricing_admin_discount_codes_list"];
+        put?: never;
+        /** Create a discount code (D17) */
+        post: operations["api_v1_pricing_admin_discount_codes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/admin/discount-codes/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a discount code's value, window, limit or availability
+         * @description The code text itself cannot change.
+         */
+        patch: operations["api_v1_pricing_admin_discount_codes_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/pricing/admin/tariffs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tariff history (Fleet.Tariff.History)
+         * @description Fleet.Tariff.History: every tariff, newest first per category.
+         */
+        get: operations["api_v1_pricing_admin_tariffs_list"];
+        put?: never;
+        /**
+         * Define a tariff from an effective date (Fleet.Tariff, BR-13)
+         * @description The previous tariff stays; bookings and invoices keep the tariff they were priced at (UC 11 extension 2a). `effective_from` empty means now; a past date is refused.
+         */
+        post: operations["api_v1_pricing_admin_tariffs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/admin/tariffs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a scheduled tariff before it takes effect */
+        delete: operations["api_v1_pricing_admin_tariffs_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pricing/quote/": {
         parameters: {
             query?: never;
@@ -1260,6 +1847,206 @@ export interface components {
             /** @default 1 */
             quantity: number;
         };
+        AdminAddOn: {
+            readonly id: number;
+            name: string;
+            /** Format: decimal */
+            daily_rate: string;
+            /** @description Car, Two-Wheeler, or empty for any. */
+            vehicle_type?: string;
+            is_active?: boolean;
+        };
+        AdminArea: {
+            readonly id: number;
+            pincode: string;
+            locality?: string;
+        };
+        AdminBranch: {
+            readonly branch_id: number;
+            branch_name: string;
+            address: string;
+            readonly serviceable_areas: components["schemas"]["AdminArea"][];
+            readonly vehicle_count: number;
+        };
+        /** @description A customer, with the latest blacklisting (BR-4) taken from the audit log. */
+        AdminCustomer: {
+            readonly customer_id: number;
+            readonly name: string;
+            /** Format: email */
+            readonly email: string;
+            readonly mobile_no: string;
+            readonly is_blacklisted: boolean;
+            /** Format: decimal */
+            readonly outstanding_due: string;
+            readonly blacklist_reason: string | null;
+            /** Format: date-time */
+            readonly blacklisted_at: string | null;
+            readonly blacklisted_by: string | null;
+        };
+        /** @description A customer, with the latest blacklisting (BR-4) taken from the audit log. */
+        AdminCustomerDetail: {
+            readonly customer_id: number;
+            readonly name: string;
+            /** Format: email */
+            readonly email: string;
+            readonly mobile_no: string;
+            readonly is_blacklisted: boolean;
+            /** Format: decimal */
+            readonly outstanding_due: string;
+            readonly blacklist_reason: string | null;
+            /** Format: date-time */
+            readonly blacklisted_at: string | null;
+            readonly blacklisted_by: string | null;
+            readonly open_bookings: components["schemas"]["OpenBooking"][];
+        };
+        AdminDiscountCode: {
+            readonly id: number;
+            code: string;
+            discount_type: components["schemas"]["DiscountTypeEnum"];
+            /** Format: decimal */
+            value: string;
+            /** Format: date-time */
+            valid_from: string;
+            /** Format: date-time */
+            valid_to: string;
+            is_active?: boolean;
+            /** @description Empty for unlimited use. */
+            usage_limit?: number | null;
+            readonly times_used: number;
+        };
+        AdminDocument: {
+            readonly id: number;
+            readonly document_type: components["schemas"]["DocumentTypeEnum"];
+            readonly document_number: string;
+            /** Format: date */
+            readonly valid_from: string | null;
+            /** Format: date */
+            readonly expiry_date: string;
+            readonly state: string;
+            /** @description The latest document of its type; older rows are history. */
+            readonly current: boolean;
+            readonly file_url: string | null;
+        };
+        AdminPhoto: {
+            readonly id: number;
+            readonly position: number;
+            readonly url: string | null;
+        };
+        /** @description Fleet.Tariff.History: one tariff with whether it is in force. */
+        AdminTariff: {
+            readonly id: number;
+            readonly vehicle_category: number;
+            readonly category_name: string;
+            readonly vehicle_type: string;
+            /** Format: decimal */
+            readonly hourly_rate: string;
+            /** Format: decimal */
+            readonly daily_rate: string;
+            /** Format: decimal */
+            readonly weekly_rate: string;
+            /** Format: decimal */
+            readonly security_deposit: string;
+            /** @description Kilometres per rental day. */
+            readonly free_km_allowance: number;
+            /** Format: decimal */
+            readonly excess_km_rate: string;
+            /** Format: date-time */
+            readonly effective_from: string;
+            readonly defined_by: string;
+            readonly state: string;
+            /** @description Bookings priced at this tariff; a later tariff never reprices them (BR-13). */
+            readonly booking_count: number;
+        };
+        /** @description One row of the fleet display (Fleet.Status: every vehicle's current status). */
+        AdminVehicle: {
+            readonly id: number;
+            readonly registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: number;
+            readonly category_name: string;
+            readonly brand: string;
+            readonly model: string;
+            readonly year: number;
+            readonly colour: string;
+            readonly fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            readonly chassis_number: string;
+            readonly home_branch: number;
+            readonly home_branch_name: string;
+            readonly odometer: number;
+            /** Format: decimal */
+            readonly fuel_capacity: string | null;
+            /** Format: date */
+            readonly available_from: string;
+            readonly status: components["schemas"]["MaintenanceVehicleStatusEnum"];
+            readonly photo_count: number;
+            /** @description SA-3: statutory documents missing, expired or expiring soon. */
+            readonly document_alerts: components["schemas"]["DocumentAlert"][];
+        };
+        /** @description One row of the fleet display (Fleet.Status: every vehicle's current status). */
+        AdminVehicleDetail: {
+            readonly id: number;
+            readonly registration_no: string;
+            readonly vehicle_type: string;
+            readonly category: number;
+            readonly category_name: string;
+            readonly brand: string;
+            readonly model: string;
+            readonly year: number;
+            readonly colour: string;
+            readonly fuel_type: components["schemas"]["FuelTypeEnum"];
+            readonly transmission: string | null;
+            readonly seating_capacity: number | null;
+            readonly engine_cc: number | null;
+            readonly chassis_number: string;
+            readonly home_branch: number;
+            readonly home_branch_name: string;
+            readonly odometer: number;
+            /** Format: decimal */
+            readonly fuel_capacity: string | null;
+            /** Format: date */
+            readonly available_from: string;
+            readonly status: components["schemas"]["MaintenanceVehicleStatusEnum"];
+            readonly photo_count: number;
+            /** @description SA-3: statutory documents missing, expired or expiring soon. */
+            readonly document_alerts: components["schemas"]["DocumentAlert"][];
+            /** Format: date */
+            readonly last_service_date: string | null;
+            readonly last_service_odometer: number | null;
+            readonly photos: components["schemas"]["AdminPhoto"][];
+            readonly documents: components["schemas"]["AdminDocument"][];
+        };
+        AreaInput: {
+            pincode: string;
+            /** @default  */
+            locality: string;
+        };
+        AuditActor: {
+            readonly id: number;
+            readonly name: string;
+            /** Format: email */
+            readonly email: string;
+            readonly role: components["schemas"]["RoleEnum"];
+        };
+        /** @description Fleet.Audit: the user, the date and time, and the previous and new values. */
+        AuditEntry: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly timestamp: string;
+            readonly actor: components["schemas"]["AuditActor"] | null;
+            readonly action: string;
+            readonly entity_type: string;
+            readonly entity_id: string;
+            readonly before: unknown;
+            readonly after: unknown;
+            readonly ip_address: string | null;
+        };
+        AuditFilterOptions: {
+            actions: string[];
+            entity_types: string[];
+        };
         /** @description One search result: the specification a customer chooses by (Search.Filter fields). */
         AvailableVehicle: {
             readonly id: number;
@@ -1413,6 +2200,10 @@ export interface components {
             readonly customer_mobile: string;
             readonly vehicle: components["schemas"]["BookingVehicle"];
         };
+        BranchInput: {
+            branch_name: string;
+            address: string;
+        };
         CancelBooking: {
             /**
              * Format: decimal
@@ -1509,6 +2300,14 @@ export interface components {
             /** Format: decimal */
             amount: string;
         };
+        /**
+         * @description BR-16, UC 10 extension 1a: an Administrator or an authorised technician may
+         *     clear the Unsafe flag as part of closing the job.
+         */
+        CompleteJob: {
+            /** @default false */
+            clear_unsafe: boolean;
+        };
         ConditionPhotoOut: {
             caption: string;
             readonly url: string | null;
@@ -1572,6 +2371,38 @@ export interface components {
         DatabaseEnum: "ok" | "unreachable";
         Detail: {
             detail: string;
+        };
+        /**
+         * @description * `Percent` - Percent
+         *     * `Fixed` - Fixed
+         * @enum {string}
+         */
+        DiscountTypeEnum: "Percent" | "Fixed";
+        DocumentAlert: {
+            document_type: string;
+            state: components["schemas"]["StateEnum"];
+            /** Format: date */
+            expiry_date: string | null;
+        };
+        /**
+         * @description * `Insurance` - Insurance
+         *     * `Pollution Certificate` - Pollution Certificate
+         *     * `Fitness Certificate` - Fitness Certificate
+         *     * `Road Tax` - Road Tax
+         * @enum {string}
+         */
+        DocumentTypeEnum: "Insurance" | "Pollution Certificate" | "Fitness Certificate" | "Road Tax";
+        /** @description The same, as multipart/form-data with an optional scan (SI-3). */
+        DocumentUpload: {
+            document_type: components["schemas"]["DocumentTypeEnum"];
+            /** @default  */
+            document_number: string;
+            /** Format: date */
+            valid_from?: string | null;
+            /** Format: date */
+            expiry_date: string;
+            /** Format: uri */
+            file?: string | null;
         };
         /** @description Pay.Dues, BR-4: what the customer owes; above zero, no new booking is accepted. */
         Due: {
@@ -1844,7 +2675,11 @@ export interface components {
             readonly vehicle: components["schemas"]["MaintenanceVehicle"];
             readonly technician: components["schemas"]["Technician"] | null;
             readonly reported_problem: string;
-            readonly reported_by: string;
+            /** @description Empty for a Preventive job the system raised (Maint.Auto.Km, Maint.Auto.Time). */
+            readonly reported_by: string | null;
+            readonly due_odometer: number | null;
+            /** Format: date */
+            readonly due_date: string | null;
             /** Format: date-time */
             readonly scheduled_from: string | null;
             /** Format: date-time */
@@ -1870,6 +2705,14 @@ export interface components {
             readonly closed_by: string | null;
             /** Format: date-time */
             readonly closed_at: string | null;
+            readonly cancelled_by: string | null;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            readonly cancel_reason: string;
+            /** @description Maint.Record: a signed link to the attached workshop invoice (SI-3). */
+            readonly workshop_invoice_url: string | null;
+            /** @description BR-16: the caller may clear the vehicle's Unsafe flag while closing the job. */
+            readonly can_clear_unsafe: boolean;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -1897,6 +2740,8 @@ export interface components {
             readonly last_service_date: string | null;
             readonly last_service_odometer: number | null;
             readonly next_service_due: components["schemas"]["NextServiceDue"];
+            /** @description BR-15, SA-2: the service is due by distance or date; no handover until done. */
+            readonly service_overdue: boolean;
         };
         /**
          * @description * `Available` - Available
@@ -1973,8 +2818,70 @@ export interface components {
             event_id: string;
             duplicate: boolean;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         OTPCode: {
             code: string;
+        };
+        /** @description UC 12 extension 2a: a Confirmed booking to decide on, or an Active one (return pending). */
+        OpenBooking: {
+            id: number;
+            booking_reference: string;
+            status: string;
+            registration_no: string;
+            readonly vehicle: string;
+            pickup_branch: string;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            /** @description Active: the vehicle is out; it is returned as usual, never cancelled here. */
+            readonly return_pending: boolean;
+        };
+        PaginatedAdminCustomerList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AdminCustomer"][];
+        };
+        PaginatedAdminVehicleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AdminVehicle"][];
+        };
+        PaginatedAuditEntryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AuditEntry"][];
         };
         PaginatedAvailableVehicleList: {
             /** @example 123 */
@@ -2081,6 +2988,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Refund"][];
         };
+        PaginatedStaffAccountList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StaffAccount"][];
+        };
         /** @description A rental charge paid before the return (Pay.Ledger), e.g. an extension (Book.Extend). */
         PaidCharge: {
             description: string;
@@ -2108,10 +3030,71 @@ export interface components {
             current_password: string;
             new_password: string;
         };
+        PatchedAdminAddOn: {
+            readonly id?: number;
+            name?: string;
+            /** Format: decimal */
+            daily_rate?: string;
+            /** @description Car, Two-Wheeler, or empty for any. */
+            vehicle_type?: string;
+            is_active?: boolean;
+        };
+        PatchedAdminDiscountCode: {
+            readonly id?: number;
+            code?: string;
+            discount_type?: components["schemas"]["DiscountTypeEnum"];
+            /** Format: decimal */
+            value?: string;
+            /** Format: date-time */
+            valid_from?: string;
+            /** Format: date-time */
+            valid_to?: string;
+            is_active?: boolean;
+            /** @description Empty for unlimited use. */
+            usage_limit?: number | null;
+            readonly times_used?: number;
+        };
+        PatchedBranchInput: {
+            branch_name?: string;
+            address?: string;
+        };
         PatchedProfileUpdate: {
             name?: string;
             mobile_no?: string;
             address?: string;
+        };
+        /** @description Send only what changes. The role never changes. */
+        PatchedStaffUpdate: {
+            /** Format: email */
+            email?: string;
+            name?: string;
+            mobile_no?: string;
+            address?: string;
+            branch?: number;
+            workshop?: string;
+        };
+        /** @description UC 11 "edit": any of the master data fields (send only those that change). */
+        PatchedVehicleUpdate: {
+            registration_no?: string;
+            category?: number;
+            brand?: string;
+            model?: string;
+            year?: number;
+            colour?: string;
+            fuel_type?: components["schemas"]["FuelTypeEnum"];
+            transmission?: (components["schemas"]["TransmissionEnum"] | components["schemas"]["NullEnum"]) | null;
+            seating_capacity?: number | null;
+            engine_cc?: number | null;
+            chassis_number?: string;
+            home_branch?: number;
+            odometer?: number;
+            /**
+             * Format: decimal
+             * @description Litres (petrol, diesel), kg (CNG) or kWh (electric): BR-12 needs it.
+             */
+            fuel_capacity?: string;
+            /** Format: date */
+            available_from?: string;
         };
         /**
          * @description Pay.Method and Pay.Authorize with a gateway token (CO-2: never card details); SE-9.
@@ -2164,6 +3147,10 @@ export interface components {
             customer_acknowledged: boolean;
             /** @description SE-9: re-authentication before a payment or a refund. */
             password: string;
+        };
+        PhotoUpload: {
+            /** Format: uri */
+            image: string;
         };
         Profile: {
             readonly id: number;
@@ -2241,6 +3228,9 @@ export interface components {
             cancellation_refunds: components["schemas"]["CancellationRefund"][];
             /** Format: decimal */
             no_show_retained_percent: string;
+        };
+        Reason: {
+            reason: string;
         };
         Reauthenticated: {
             /** @description SE-9: re-authentication before a payment or a refund. */
@@ -2354,6 +3344,9 @@ export interface components {
          * @enum {string}
          */
         ReportTypeEnum: "Handover" | "Return";
+        Retire: {
+            reason: string;
+        };
         /**
          * @description Return.Checklist, Return.Settle, Return.Flag and Return.Odometer, as multipart/form-data.
          *
@@ -2544,6 +3537,73 @@ export interface components {
          * @enum {string}
          */
         SeverityEnum: "Low" | "Medium" | "High" | "Critical";
+        /** @description A staff account with its branch (or workshop) and, for a technician, BR-16. */
+        StaffAccount: {
+            readonly id: number;
+            /** Format: email */
+            readonly email: string;
+            readonly name: string;
+            readonly mobile_no: string;
+            readonly address: string;
+            readonly role: components["schemas"]["RoleEnum"];
+            readonly is_active: boolean;
+            /** Format: date-time */
+            readonly date_joined: string;
+            /** Format: date-time */
+            readonly last_login: string | null;
+            readonly branch: number | null;
+            readonly branch_name: string | null;
+            readonly workshop: string | null;
+            readonly technician_id: number | null;
+            /** @description BR-16 */
+            readonly authorised_to_clear_unsafe: boolean;
+        };
+        StaffCreate: {
+            role: components["schemas"]["StaffRoleEnum"];
+            /** Format: email */
+            email: string;
+            name: string;
+            mobile_no: string;
+            /** @default  */
+            address: string;
+            password: string;
+            branch?: number | null;
+            /** @default  */
+            workshop: string;
+        };
+        /**
+         * @description * `BRANCH_STAFF` - Branch Staff
+         *     * `MAINTENANCE_TECHNICIAN` - Maintenance Technician
+         *     * `BRANCH_MANAGER` - Branch Manager
+         * @enum {string}
+         */
+        StaffRoleEnum: "BRANCH_STAFF" | "MAINTENANCE_TECHNICIAN" | "BRANCH_MANAGER";
+        /**
+         * @description * `Missing` - Missing
+         *     * `Expired` - Expired
+         *     * `Expiring` - Expiring
+         * @enum {string}
+         */
+        StateEnum: "Missing" | "Expired" | "Expiring";
+        /**
+         * @description Fleet.Tariff: the rates for a category from an effective date (now if empty).
+         *     The security deposit is BR-3's for the category's type, not an input.
+         */
+        TariffInput: {
+            vehicle_category: number;
+            /** Format: decimal */
+            hourly_rate: string;
+            /** Format: decimal */
+            daily_rate: string;
+            /** Format: decimal */
+            weekly_rate: string;
+            /** @description Kilometres per rental day. */
+            free_km_allowance: number;
+            /** Format: decimal */
+            excess_km_rate: string;
+            /** Format: date-time */
+            effective_from?: string | null;
+        };
         /** @description Search.Detail "the applicable tariff" (PR3: the weekly rate is not applied, so not shown). */
         TariffSummary: {
             /** Format: decimal */
@@ -2558,7 +3618,15 @@ export interface components {
             readonly technician_id: number;
             readonly name: string;
             readonly workshop: string;
+            /** @description BR-16 */
+            readonly authorised_to_clear_unsafe: boolean;
         };
+        /**
+         * @description * `Manual` - Manual
+         *     * `Automatic` - Automatic
+         * @enum {string}
+         */
+        TransmissionEnum: "Manual" | "Automatic";
         UserSummary: {
             readonly id: number;
             /** Format: email */
@@ -2570,6 +3638,34 @@ export interface components {
             readonly id: number;
             name: string;
             readonly vehicle_type: string;
+        };
+        /**
+         * @description Fleet.Add as multipart/form-data: `photos` repeated (at least four images) and
+         *     `documents` a JSON list of the four statutory documents with their expiry dates.
+         */
+        VehicleCreate: {
+            registration_no: string;
+            category: number;
+            brand: string;
+            model: string;
+            year: number;
+            colour: string;
+            fuel_type: components["schemas"]["FuelTypeEnum"];
+            transmission?: (components["schemas"]["TransmissionEnum"] | components["schemas"]["NullEnum"]) | null;
+            seating_capacity?: number | null;
+            engine_cc?: number | null;
+            chassis_number: string;
+            home_branch: number;
+            odometer: number;
+            /**
+             * Format: decimal
+             * @description Litres (petrol, diesel), kg (CNG) or kWh (electric): BR-12 needs it.
+             */
+            fuel_capacity: string;
+            /** Format: date */
+            available_from: string;
+            photos: string[];
+            documents: unknown;
         };
         /** @description Search.Detail: photos, specification, tariff, deposit, policies, rating, last service. */
         VehicleDetail: {
@@ -2608,6 +3704,11 @@ export interface components {
             code: string;
             missing: string[];
         };
+        /** @description Maint.Record "permit the workshop invoice to be attached", as multipart/form-data. */
+        WorkshopInvoice: {
+            /** Format: uri */
+            workshop_invoice: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -2617,6 +3718,431 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    api_v1_admin_customers_list: {
+        parameters: {
+            query?: {
+                blacklisted?: "false" | "true";
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Name, e-mail or mobile */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAdminCustomerList"];
+                };
+            };
+        };
+    };
+    api_v1_admin_customers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCustomerDetail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_customers_blacklist_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCustomerDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_customers_bookings_cancel_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancellationQuote"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_admin_customers_bookings_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["CancelBooking"];
+                "multipart/form-data": components["schemas"]["CancelBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenBooking"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_admin_customers_lift_blacklist_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCustomerDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_list: {
+        parameters: {
+            query?: {
+                is_active?: "false" | "true";
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Name, e-mail or mobile */
+                q?: string;
+                /** @description BRANCH_STAFF, MAINTENANCE_TECHNICIAN or BRANCH_MANAGER */
+                role?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStaffAccountList"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["StaffCreate"];
+                "multipart/form-data": components["schemas"]["StaffCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAccount"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAccount"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedStaffUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedStaffUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedStaffUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAccount"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_disable_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAccount"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_admin_users_enable_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAccount"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_audit_list: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                entity_id?: string;
+                entity_type?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAuditEntryList"];
+                };
+            };
+        };
+    };
+    api_v1_audit_filters_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditFilterOptions"];
+                };
+            };
+        };
+    };
     api_v1_auth_login_create: {
         parameters: {
             query?: never;
@@ -3396,6 +4922,419 @@ export interface operations {
             };
         };
     };
+    api_v1_fleet_admin_branches_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBranch"][];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_branches_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["BranchInput"];
+                "multipart/form-data": components["schemas"]["BranchInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBranch"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_branches_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBranchInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBranchInput"];
+                "multipart/form-data": components["schemas"]["PatchedBranchInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBranch"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_branches_areas_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AreaInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["AreaInput"];
+                "multipart/form-data": components["schemas"]["AreaInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminArea"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_branches_areas_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                area_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_list: {
+        parameters: {
+            query?: {
+                home_branch?: number;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Registration, brand, model */
+                q?: string;
+                status?: "Available" | "On Rent" | "Retired" | "Under Maintenance" | "Unsafe";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAdminVehicleList"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["VehicleCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVehicleDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVehicleDetail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedVehicleUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVehicleDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_documents_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["DocumentUpload"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDocument"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_documents_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_photos_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["PhotoUpload"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPhoto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_photos_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                photo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_admin_vehicles_retire_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Retire"];
+                "application/x-www-form-urlencoded": components["schemas"]["Retire"];
+                "multipart/form-data": components["schemas"]["Retire"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVehicleDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
     api_v1_fleet_branches_list: {
         parameters: {
             query?: never;
@@ -3852,7 +5791,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CompleteJob"];
+                "application/x-www-form-urlencoded": components["schemas"]["CompleteJob"];
+                "multipart/form-data": components["schemas"]["CompleteJob"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3868,6 +5813,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkIncomplete"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_jobs_invoice_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["WorkshopInvoice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceJob"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
                 };
             };
         };
@@ -3994,6 +5972,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Technician"][];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_technicians_authorisation_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Technician"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_maintenance_technicians_authorisation_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Technician"];
                 };
             };
         };
@@ -4521,6 +6549,262 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AddOn"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_add_ons_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAddOn"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_add_ons_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminAddOn"];
+                "application/x-www-form-urlencoded": components["schemas"]["AdminAddOn"];
+                "multipart/form-data": components["schemas"]["AdminAddOn"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAddOn"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_add_ons_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAdminAddOn"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAdminAddOn"];
+                "multipart/form-data": components["schemas"]["PatchedAdminAddOn"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAddOn"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_discount_codes_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDiscountCode"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_discount_codes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminDiscountCode"];
+                "application/x-www-form-urlencoded": components["schemas"]["AdminDiscountCode"];
+                "multipart/form-data": components["schemas"]["AdminDiscountCode"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDiscountCode"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_discount_codes_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAdminDiscountCode"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAdminDiscountCode"];
+                "multipart/form-data": components["schemas"]["PatchedAdminDiscountCode"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDiscountCode"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_tariffs_list: {
+        parameters: {
+            query?: {
+                vehicle_category?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTariff"][];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_tariffs_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TariffInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["TariffInput"];
+                "multipart/form-data": components["schemas"]["TariffInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTariff"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    api_v1_pricing_admin_tariffs_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
                 };
             };
         };

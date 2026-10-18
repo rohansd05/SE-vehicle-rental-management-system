@@ -64,9 +64,26 @@ export const startJob = (id: number) =>
 export const recordWork = (id: number, data: RecordWorkRequest) =>
   apiRequest<MaintenanceJob>(`${BASE}/jobs/${id}/record/`, { method: 'PUT', json: data })
 
-/** Exp 4 sequence 3: MaintenanceJob.complete_job(). */
-export const completeJob = (id: number) =>
-  apiRequest<MaintenanceJob>(`${BASE}/jobs/${id}/complete/`, { method: 'POST' })
+/**
+ * Exp 4 sequence 3: MaintenanceJob.complete_job(). With `clearUnsafe`, an Administrator or an
+ * authorised technician clears the Unsafe flag as the job closes (BR-16, UC 10 extension 1a).
+ */
+export const completeJob = (id: number, clearUnsafe = false) =>
+  apiRequest<MaintenanceJob>(`${BASE}/jobs/${id}/complete/`, {
+    method: 'POST',
+    json: { clear_unsafe: clearUnsafe },
+  })
+
+/** Maint.Record: attach the workshop invoice (a PDF or a photo of it). */
+export function attachInvoice(id: number, file: File) {
+  const form = new FormData()
+  form.append('workshop_invoice', file)
+  return apiRequest<MaintenanceJob>(`${BASE}/jobs/${id}/invoice/`, { method: 'PUT', form })
+}
+
+/** Maint.History: every job on a vehicle, newest first. */
+export const vehicleHistory = (vehicleId: number) =>
+  apiRequest<PaginatedJobs>(`${BASE}/vehicles/${vehicleId}/history/`)
 
 export const listClearances = () => apiRequest<PaginatedJobs>(`${BASE}/clearances/`)
 

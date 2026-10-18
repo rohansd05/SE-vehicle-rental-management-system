@@ -227,15 +227,31 @@ delivery) without leaving a code usable for long. Five attempts against a
 six-digit code gives an attacker a 1-in-200,000 chance per code, and
 matches the five-failure threshold of SE-8.
 
-## D16 — Odometer plausibility (closes G4)
+## D16 — Odometer plausibility (closes G4; amended 18 Oct 2026, Module N3)
 
-**Decision.** No plausibility limit beyond Return.Odometer itself: a
-return reading lower than the handover reading is rejected.
+**Decision (as amended).** A return reading lower than the handover reading
+is rejected (Return.Odometer, UC 8 extension 2a). In addition, a distance
+above the plausibility limit, `ODOMETER_PLAUSIBILITY_KM_PER_DAY` (default
+1,000 km) for every started day the vehicle was out, needs a supervisor
+override with a recorded reason: a Branch Manager of the branch or an
+Administrator signs in on the branch device and gives the reason, which is
+stored on the return condition report (`odometer_override_by`,
+`odometer_override_reason`) and audited ("Odometer Override Approved",
+with the supervisor as actor). This was proposed in Module N2 as N2-P7
+(`docs/traceability-return.md`, section 9; model-mapping P31) and built in
+`rentals/settlement.py` `plausibility_limit()` and `rentals/services.py`
+`_odometer_override()`.
 
-**Rationale.** Return.Odometer mentions "the configured plausibility limit"
-but never configures one, and AS-4 assumes staff enter readings honestly.
-The supervisor-override fields on ConditionReport stay available if a limit
-is introduced later.
+**Rationale.** Return.Odometer itself asks for "a supervisor override with
+a recorded reason if the distance travelled exceeds the configured
+plausibility limit"; the original D16 left that limit unconfigured. A
+per-day figure scales with the rental's length, and one setting in
+`config/settings/business_rules.py` lets the team change it. The value is
+still proposed; the SRS gives none.
+
+*Originally (before N3):* no plausibility limit beyond Return.Odometer
+itself, since AS-4 assumes staff enter readings honestly; the supervisor
+override fields on ConditionReport were kept for a later limit.
 
 ## D17 — Discount codes (closes G5)
 
@@ -454,7 +470,7 @@ The SRS does not settle these; `apps/fleet/services/status.py` and
 
 | # | Item | Proposal |
 |---|---|---|
-| M1 | Who clears an Unsafe flag | **Administrator only** (role Administrator, active). **Conflicts with the SRS wording:** BR-16, SA-3 and SE-6 also allow "an authorised technician". Exp 4 sequence diagram 3 shows only the Administrator clearing the flag, and the system has no way to mark a technician as authorised. Proposal: keep Administrator only until the team defines what makes a technician authorised. |
+| M1 | Who clears an Unsafe flag | **Settled in Module N3:** an Administrator, or a technician an Administrator has marked "authorised to clear Unsafe" on the Users screen (`maintenance.UnsafeClearanceAuthorisation`; granting and revoking are audited). The authorised technician clears the flag while closing their own job (UC 10 extension 1a) and is recorded as `closed_by` and as the actor of the status change (BR-16); they may still ask an Administrator instead. Exp 4 sequence 3's Administrator path is unchanged. Was: Administrator only, because nothing marked a technician as authorised. |
 | M2 | Retired is terminal | No transition leaves Retired, including to Unsafe. Appendix B's "any status → Unsafe" read literally would let a retired vehicle be flagged and then cleared back to Available. |
 | M3 | Branch Manager and the status rules | A Branch Manager is not treated as an Administrator for clearing an Unsafe flag (BR-16) or retiring a vehicle (Fleet.Retire); both name the Administrator. |
 | M4 | "Future booking" for Fleet.Retire | A booking that is Active (even if overdue), or Pending Payment or Confirmed with a return time still ahead. |
@@ -469,11 +485,29 @@ The SRS does not settle these; `apps/fleet/services/status.py` and
 | M13 | Starting a job | Refused while the vehicle is On Rent or Retired. |
 | M14 | Maint.History for technicians | A technician can read the history of any vehicle, not only those of their own jobs. |
 
-**Not built yet (SRS requirements outside Module 2):** Maint.Auto.Km and
-Maint.Auto.Time (automatic Preventive jobs); the Maint.Conflict offer to
-notify affected customers and propose an alternative vehicle (the warning,
-the list and the explicit confirmation are built); attaching the workshop
-invoice (Maint.Record "permit"); an Administrator declining a clearance.
+**Built in Module N3:** Maint.Auto.Km (at every return) and Maint.Auto.Time
+(daily) through one function, `raise_preventive_job_if_due()`; the
+workshop invoice (Maint.Record "permit"); Maint.History as a screen; the
+cancellation record; BR-16's authorised technician (M1).
+
+**Not built yet:** the Maint.Conflict offer to notify affected customers and
+propose an alternative vehicle (the warning, the list and the explicit
+confirmation are built); an Administrator declining a clearance.
+
+## Module N3 (administration): proposed items (awaiting team approval)
+
+| # | Item | Proposal |
+|---|---|---|
+| N3-P1 | Branch Manager and the audit log | Fleet.Audit says the log is "readable only by Administrators"; SRS 2.2 makes the Branch Manager a restricted Administrator, so they read their own branch's entries: about its bookings, vehicles, jobs, condition reports, payments, refunds, invoices and ledger, about the branch itself, and what its staff and manager did. Customer-level entries (a due paid on-line, a licence) stay with Administrators. |
+| N3-P2 | Where the blacklist reason is kept | In the append-only "Customer Blacklisted" audit entry, read back for the screens, so no accounts migration is needed (the app is Rohan's). Proposal for later: a `Customer.blacklist_reason` field. |
+| N3-P3 | Automatic Preventive jobs | Severity Medium (`PREVENTIVE_JOB_SEVERITY`); reported by the system; none while an open Preventive job exists, before any service is on record, or on a retired vehicle; the alert goes to every active technician and Administrator. |
+| N3-P4 | Document expiry alert | Daily, to every active Administrator, listing each vehicle's latest document of each type that has expired or expires within 30 days (`DOCUMENT_EXPIRY_ALERT_WINDOW`). |
+| N3-P5 | Vehicle photographs | JPG or PNG up to 5 MB, as the licence images (D20); at least four, always (Fleet.Add). |
+| N3-P6 | Workshop invoice | A PDF (checked by its header) or a JPG/PNG photo of it, up to 5 MB; a new upload replaces the previous one, and the audit keeps the old key. |
+| N3-P7 | Security deposit on a tariff | Fleet.Tariff lists the deposit among the tariff's values, but BR-3 fixes it per vehicle type, so a new tariff takes BR-3's amount and the form does not ask for it. |
+| N3-P8 | First staff password | The Administrator sets it when creating the account and passes it on in person; it is never shown or e-mailed (SE-2), and the user can change it after signing in. Forcing a change at first sign-in is not built. |
+| N3-P9 | "Next service overdue" (SA-2) | Due when the odometer has reached the BR-15 distance, or the date its time interval gives has come, from the last service on record; unknown (never overdue) before any service is recorded. Handover is refused with its own reason (`service_overdue`). Search and booking (SA-2's other two) are the catalogue's, Rohan's. |
+| N3-P10 | Booking links on the blacklist screen | There is no staff or Administrator booking detail screen yet, so each booking links to its audit history (`/app/audit?entity_type=bookings.Booking&entity_id=…`). |
 
 ---
 

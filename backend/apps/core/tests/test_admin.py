@@ -30,7 +30,12 @@ VRMS_APPS = [
     "notifications",
 ]
 APPEND_ONLY = ["core.AuditLog", "payments.Invoice", "payments.InvoiceLine",
-               "payments.InvoiceAdjustment", "payments.LedgerEntry"]  # fmt: skip
+               "payments.InvoiceAdjustment", "payments.LedgerEntry",
+               "payments.RefundRequest", "rentals.ConditionReport",
+               "rentals.ConditionPhoto"]  # fmt: skip
+# Module N3: a status that only its state machine moves.
+STATE_MACHINE = ["bookings.Booking", "fleet.Vehicle", "fleet.Car", "fleet.TwoWheeler",
+                 "maintenance.MaintenanceJob"]  # fmt: skip
 
 
 @pytest.fixture
@@ -109,3 +114,29 @@ def test_signed_condition_report_is_view_only(admin_request):
     model_admin = ConditionReportAdmin(ConditionReport, admin.site)
     assert not model_admin.has_change_permission(admin_request, report)
     assert not model_admin.has_delete_permission(admin_request, report)
+
+
+@pytest.mark.parametrize("label", STATE_MACHINE)
+def test_a_state_machine_status_is_read_only_in_admin(admin_request, label):
+    """Nobody bypasses bookings/states.py, fleet/services/status.py or the maintenance
+    services by editing the status in the Django admin."""
+    model = apps.get_model(label)
+    model_admin = admin.site._registry[model]
+    assert "status" in model_admin.get_readonly_fields(admin_request)
+    assert "status" not in model_admin.get_form(admin_request).base_fields
+
+
+def test_other_statuses_stay_editable(admin_request):
+    from apps.payments.models import Payment
+
+    assert "status" not in admin.site._registry[Payment].get_readonly_fields(admin_request)
+
+
+@pytest.mark.parametrize("signed", [True, False], ids=["signed", "unsigned"])
+def test_a_condition_report_is_view_only_signed_or_not(admin_request, signed):
+    report = ConditionReport.objects.get(pk=ConditionReportFactory(signed=signed).pk)
+    model_admin = ConditionReportAdmin(ConditionReport, admin.site)
+    assert not model_admin.has_add_permission(admin_request)
+    assert not model_admin.has_change_permission(admin_request, report)
+    assert not model_admin.has_delete_permission(admin_request, report)
+    assert model_admin.has_view_permission(admin_request, report)

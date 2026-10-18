@@ -124,9 +124,10 @@ supersede section 7 ("Open decisions") of `docs/VRMS_Handoff.md`.
 - **D14 Tax rate (G2):** `TAX_RATE_PERCENT = Decimal("18.00")` is a
   PLACEHOLDER awaiting confirmation.
 - **D15 OTP (G3):** `OTP_LIFETIME` = 10 minutes, `OTP_MAX_ATTEMPTS` = 5 (SE-7).
-- **D16 Odometer (G4):** no plausibility limit beyond Return.Odometer
-  (a return reading may not be lower than the handover reading); AS-4
-  assumes staff enter readings honestly.
+- **D16 Odometer (G4, amended in N3):** a return reading may not be lower
+  than the handover reading; above `ODOMETER_PLAUSIBILITY_KM_PER_DAY`
+  (1,000 km per started day) a supervisor override with a recorded reason
+  is required (proposed in N2-P7).
 - **D17 Discounts (G5):** a `pricing.DiscountCode` model managed by admins.
 - **D18 Categories:** licence categories are Car and Two-Wheeler (BR-2,
   BR-3); `VehicleCategory` (Hatchback, SUV, ...) is the tariff category.

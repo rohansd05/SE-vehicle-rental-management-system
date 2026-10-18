@@ -121,7 +121,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Fleet',
     icon: Car,
     roles: ['ADMINISTRATOR'],
-    available: false,
+    available: true,
     description: 'Vehicles, branches and statutory documents.',
   },
   {
@@ -129,7 +129,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Tariffs',
     icon: Tags,
     roles: ['ADMINISTRATOR'],
-    available: false,
+    available: true,
     description: 'Tariffs, add-ons and discount codes.',
   },
   {
@@ -137,7 +137,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Users',
     icon: Users,
     roles: ['ADMINISTRATOR'],
-    available: false,
+    available: true,
     description: 'Staff accounts and the customer blacklist.',
   },
   {
@@ -152,8 +152,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
     to: '/app/audit',
     label: 'Audit log',
     icon: ScrollText,
-    roles: ['ADMINISTRATOR'],
-    available: false,
+    roles: ['ADMINISTRATOR', 'BRANCH_MANAGER'],
+    available: true,
     description: 'Every change to fleet, tariff, branch and user data.',
   },
   {
