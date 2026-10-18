@@ -377,7 +377,7 @@ export interface paths {
         put?: never;
         /**
          * Create a booking and hold the vehicle (Booking.create_booking())
-         * @description Exp 4 sequence 1: checks the period (BR-5), the terms (Book.Quote.Terms, SA-1), eligibility (Licence.is_valid(): BR-2, BR-3, BR-4), availability (Vehicle.check_availability(), BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified, licence_expired, licence_expires_before_return, licence_category, under_age, customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`.
+         * @description Exp 4 sequence 1: checks the period (BR-5), the terms (Book.Quote.Terms, SA-1), eligibility (Licence.is_valid(): BR-2, BR-3, BR-4), availability (Vehicle.check_availability(), BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified, licence_expired, licence_expires_before_return, licence_category, under_age, customer_blacklisted or outstanding_due; 409 `vehicle_unavailable` or `service_overdue` (SA-2). With the doorstep delivery add-on, `delivery_address` and a `delivery_pincode` in the branch's serviceable areas are required (Book.Deliver.Location); a refusal is a 400 on that field.
          */
         post: operations["api_v1_bookings_create"];
         delete?: never;
@@ -585,6 +585,30 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/rating/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate a completed booking (UC 6 steps 2-3)
+         * @description Only the customer's own Completed booking, within 14 days of its return, once. Vehicle and service are scored 1 to 5; the comment is optional. The vehicle's average rating is computed from the ratings, so it is current at once (D13). 409 `rating_refused` (with the reason) for a Cancelled, No-show or Active booking, one returned more than 14 days ago, or one already rated.
+         */
+        post: operations["api_v1_bookings_rating_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit the review of a booking (UC 6 extension 2a)
+         * @description Only within 24 hours of submitting it; otherwise 409 `rating_refused`.
+         */
+        patch: operations["api_v1_bookings_rating_partial_update"];
         trace?: never;
     };
     "/api/v1/bookings/awaiting-cash/": {
@@ -887,9 +911,29 @@ export interface paths {
         };
         /**
          * Search available vehicles (Search.Available)
-         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field. Each result carries `estimate` (Search.Price): the base charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based charges; null if no tariff is in force.
+         * @description Vehicles at the pickup branch that can be booked for the whole period: status Available (Appendix B; so never Under Maintenance, Unsafe or Retired), no Pending Payment, Confirmed or Active booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance window in the period, not overdue for its preventive service by date or distance (SA-2, BR-15), and an availability date on or before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the answer is 400 with the message on the field. Search.Filter narrows the results and `sort` orders them by price or rating. Each result carries `estimate` (Search.Price): the base charge plus tax at the tariff in force on the pickup date, excluding add-ons, discounts and usage-based charges; null if no tariff is in force. `min_price`/`max_price` apply to that estimate.
          */
         get: operations["api_v1_fleet_search_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fleet/search/alternatives/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nearest alternatives when nothing matches (UC 2 extension 3a)
+         * @description The same query as the search. Returns the other branches with matching vehicles for the same period (by name), then the same branch for the same length of rental moved by up to SEARCH_ALTERNATIVE_DAYS days either way, nearest first, at most SEARCH_ALTERNATIVE_DATES_SHOWN of them. Each entry gives how many vehicles match there.
+         */
+        get: operations["api_v1_fleet_search_alternatives_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -907,7 +951,7 @@ export interface paths {
         };
         /**
          * A vehicle in detail (Search.Detail)
-         * @description Photographs (signed links), specification, the tariff in force, the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating and the last service date. `tariff` and `terms` are null while the category has no tariff in force.
+         * @description Photographs (signed links), specification, the tariff in force, the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating and how many ratings it has, and the last service date from the maintenance history. `service_overdue` (SA-2) marks a vehicle that cannot be booked until it is serviced. `tariff` and `terms` are null while the category has no tariff in force.
          */
         get: operations["api_v1_fleet_vehicles_retrieve"];
         put?: never;
@@ -2153,8 +2197,9 @@ export interface components {
             readonly engine_cc: number | null;
             /** Format: decimal */
             readonly average_rating: string | null;
+            readonly rating_count: number;
             /** Format: date */
-            last_service_date?: string | null;
+            readonly last_service_date: string | null;
             readonly estimate: components["schemas"]["Estimate"] | null;
         };
         /**
@@ -2196,6 +2241,8 @@ export interface components {
             readonly terms_accepted_at: string | null;
             /** Format: date-time */
             readonly safety_notice_acknowledged_at: string | null;
+            readonly delivery_address: string;
+            readonly delivery_pincode: string;
             readonly invoice_number: string | null;
             /** Format: date-time */
             readonly created_at: string;
@@ -2207,7 +2254,10 @@ export interface components {
             /** Format: decimal */
             daily_rate: string;
         };
-        /** @description Adds the itemised price (Book.Quote.Display) and the payment transaction (Pay.Confirm.OK). */
+        /**
+         * @description Adds the itemised price (Book.Quote.Display), the payment transaction (Pay.Confirm.OK)
+         *     and the review (UC 6): `rating_open_until` invites a rating while it can be given.
+         */
         BookingDetail: {
             readonly id: number;
             readonly booking_reference: string;
@@ -2238,12 +2288,17 @@ export interface components {
             readonly terms_accepted_at: string | null;
             /** Format: date-time */
             readonly safety_notice_acknowledged_at: string | null;
+            readonly delivery_address: string;
+            readonly delivery_pincode: string;
             readonly invoice_number: string | null;
             /** Format: date-time */
             readonly created_at: string;
             readonly price: components["schemas"]["Quote"];
             readonly transaction_id: string | null;
             readonly refunds: components["schemas"]["Refund"][];
+            readonly rating: components["schemas"]["Rating"] | null;
+            /** Format: date-time */
+            readonly rating_open_until: string | null;
         };
         /** @description A refusal with a stable code, e.g. licence_not_verified, vehicle_unavailable. */
         BookingError: {
@@ -2362,6 +2417,8 @@ export interface components {
             readonly terms_accepted_at: string | null;
             /** Format: date-time */
             readonly safety_notice_acknowledged_at: string | null;
+            readonly delivery_address: string;
+            readonly delivery_pincode: string;
             readonly invoice_number: string | null;
             /** Format: date-time */
             readonly created_at: string;
@@ -2443,6 +2500,16 @@ export interface components {
              * @default false
              */
             safety_notice_acknowledged: boolean;
+            /**
+             * @description Book.Deliver.Location: required with the doorstep delivery add-on.
+             * @default
+             */
+            delivery_address: string;
+            /**
+             * @description Six digits, within the pickup branch's serviceable areas.
+             * @default
+             */
+            delivery_pincode: string;
         };
         CustomerDue: {
             customer_id: number;
@@ -3233,6 +3300,13 @@ export interface components {
             mobile_no?: string;
             address?: string;
         };
+        /** @description Exp 2 UC 6 step 2: vehicle and service rated separately, 1 to 5, optional comment. */
+        PatchedRateBooking: {
+            vehicle_rating?: number;
+            service_rating?: number;
+            /** @default  */
+            comment: string;
+        };
         /** @description Send only what changes. The role never changes. */
         PatchedStaffUpdate: {
             /** Format: email */
@@ -3405,6 +3479,23 @@ export interface components {
             cancellation_refunds: components["schemas"]["CancellationRefund"][];
             /** Format: decimal */
             no_show_retained_percent: string;
+        };
+        /** @description Exp 2 UC 6 step 2: vehicle and service rated separately, 1 to 5, optional comment. */
+        RateBooking: {
+            vehicle_rating: number;
+            service_rating: number;
+            /** @default  */
+            comment: string;
+        };
+        /** @description Exp 2 UC 6: the review, and until when it may still be edited (extension 2a). */
+        Rating: {
+            readonly vehicle_rating: number;
+            readonly service_rating: number;
+            readonly comment: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly editable_until: string;
         };
         Reason: {
             reason: string;
@@ -3750,6 +3841,16 @@ export interface components {
             /** @default false */
             confirm_conflicts: boolean;
         };
+        /** @description Exp 2 UC 2 extension 3a: a branch or a nearby period with matching vehicles. */
+        SearchAlternative: {
+            branch: number;
+            branch_name: string;
+            /** Format: date-time */
+            pickup_datetime: string;
+            /** Format: date-time */
+            return_datetime: string;
+            vehicles: number;
+        };
         /** @description Return.Complete: the signed settlement and where its money went. */
         SettlementRecord: {
             lines: components["schemas"]["ReturnCharge"][];
@@ -3975,9 +4076,11 @@ export interface components {
             readonly engine_cc: number | null;
             /** Format: decimal */
             readonly average_rating: string | null;
+            readonly rating_count: number;
             /** Format: date */
-            last_service_date?: string | null;
+            readonly last_service_date: string | null;
             readonly status: string;
+            readonly service_overdue: boolean;
             readonly photos: string[];
             readonly tariff: components["schemas"]["TariffSummary"] | null;
             /** Format: decimal */
@@ -5163,6 +5266,92 @@ export interface operations {
             };
         };
     };
+    api_v1_bookings_rating_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["RateBooking"];
+                "multipart/form-data": components["schemas"]["RateBooking"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_rating_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedRateBooking"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedRateBooking"];
+                "multipart/form-data": components["schemas"]["PatchedRateBooking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingError"];
+                };
+            };
+        };
+    };
     api_v1_bookings_awaiting_cash_list: {
         parameters: {
             query?: {
@@ -5667,11 +5856,42 @@ export interface operations {
         parameters: {
             query: {
                 branch: number;
+                brand?: string;
                 category?: number | null;
+                /**
+                 * @description * `Petrol` - Petrol
+                 *     * `Diesel` - Diesel
+                 *     * `CNG` - CNG
+                 *     * `Electric` - Electric
+                 */
+                fuel_type?: "Petrol" | "Diesel" | "CNG" | "Electric";
+                max_price?: string;
+                min_price?: string;
+                min_rating?: string;
+                min_seats?: number;
+                model?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 pickup_datetime: string;
                 return_datetime: string;
+                /**
+                 * @description price (lowest first), -price, or rating.
+                 *
+                 *     * `price` - price
+                 *     * `-price` - -price
+                 *     * `rating` - rating
+                 */
+                sort?: "price" | "-price" | "rating";
+                /**
+                 * @description * `Manual` - Manual
+                 *     * `Automatic` - Automatic
+                 */
+                transmission?: "Manual" | "Automatic";
+                /**
+                 * @description * `Car` - Car
+                 *     * `Two-Wheeler` - Two-Wheeler
+                 */
+                vehicle_type?: "Car" | "Two-Wheeler";
             };
             header?: never;
             path?: never;
@@ -5685,6 +5905,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedAvailableVehicleList"];
+                };
+            };
+        };
+    };
+    api_v1_fleet_search_alternatives_list: {
+        parameters: {
+            query: {
+                branch: number;
+                brand?: string;
+                category?: number | null;
+                /**
+                 * @description * `Petrol` - Petrol
+                 *     * `Diesel` - Diesel
+                 *     * `CNG` - CNG
+                 *     * `Electric` - Electric
+                 */
+                fuel_type?: "Petrol" | "Diesel" | "CNG" | "Electric";
+                max_price?: string;
+                min_price?: string;
+                min_rating?: string;
+                min_seats?: number;
+                model?: string;
+                pickup_datetime: string;
+                return_datetime: string;
+                /**
+                 * @description price (lowest first), -price, or rating.
+                 *
+                 *     * `price` - price
+                 *     * `-price` - -price
+                 *     * `rating` - rating
+                 */
+                sort?: "price" | "-price" | "rating";
+                /**
+                 * @description * `Manual` - Manual
+                 *     * `Automatic` - Automatic
+                 */
+                transmission?: "Manual" | "Automatic";
+                /**
+                 * @description * `Car` - Car
+                 *     * `Two-Wheeler` - Two-Wheeler
+                 */
+                vehicle_type?: "Car" | "Two-Wheeler";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAlternative"][];
                 };
             };
         };
