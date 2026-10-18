@@ -1,5 +1,6 @@
 """Bookings API serializers. Money is Decimal, sent as strings (CO-6)."""
 
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -9,7 +10,8 @@ from apps.payments.serializers import RefundSerializer
 from apps.pricing.serializers import AddOnRequestSerializer, QuoteSerializer
 
 from .lifecycle import booking_quote
-from .models import Booking
+from .models import Booking, Rating
+from .services import rating_editable_until, rating_open_until
 
 
 class CreateBookingSerializer(serializers.Serializer):
@@ -27,6 +29,20 @@ class CreateBookingSerializer(serializers.Serializer):
     terms_accepted = serializers.BooleanField(help_text="Book.Quote.Terms: must be true.")
     safety_notice_acknowledged = serializers.BooleanField(
         default=False, help_text="SA-1: must be true for a two-wheeler."
+    )
+    delivery_address = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=500,
+        help_text="Book.Deliver.Location: required with the doorstep delivery add-on.",
+    )
+    delivery_pincode = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=6,
+        help_text="Six digits, within the pickup branch's serviceable areas.",
     )
 
 
@@ -127,6 +143,8 @@ class BookingSerializer(serializers.ModelSerializer):
             "discount_amount",
             "terms_accepted_at",
             "safety_notice_acknowledged_at",
+            "delivery_address",  # Book.Deliver.Location; blank when collected at the branch
+            "delivery_pincode",
             "invoice_number",
             "created_at",
         ]
@@ -149,16 +167,66 @@ class BookingSerializer(serializers.ModelSerializer):
         return invoice.invoice_number if invoice else None
 
 
+class RatingSerializer(serializers.ModelSerializer):
+    """Exp 2 UC 6: the review, and until when it may still be edited (extension 2a)."""
+
+    editable_until = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Rating
+        fields = ["vehicle_rating", "service_rating", "comment", "created_at", "editable_until"]
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.DateTimeField())
+    def get_editable_until(self, rating: Rating) -> str:
+        return serializers.DateTimeField().to_representation(rating_editable_until(rating))
+
+
+class RateBookingSerializer(serializers.Serializer):
+    """Exp 2 UC 6 step 2: vehicle and service rated separately, 1 to 5, optional comment."""
+
+    vehicle_rating = serializers.IntegerField(min_value=1, max_value=5)
+    service_rating = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
+
+
 class BookingDetailSerializer(BookingSerializer):
-    """Adds the itemised price (Book.Quote.Display) and the payment transaction (Pay.Confirm.OK)."""
+    """Adds the itemised price (Book.Quote.Display), the payment transaction (Pay.Confirm.OK)
+    and the review (UC 6): `rating_open_until` invites a rating while it can be given."""
 
     price = serializers.SerializerMethodField()
     transaction_id = serializers.SerializerMethodField()
     refunds = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    rating_open_until = serializers.SerializerMethodField()
 
     class Meta(BookingSerializer.Meta):
-        fields = [*BookingSerializer.Meta.fields, "price", "transaction_id", "refunds"]
+        fields = [
+            *BookingSerializer.Meta.fields,
+            "price",
+            "transaction_id",
+            "refunds",
+            "rating",
+            "rating_open_until",
+        ]
         read_only_fields = fields
+
+    @extend_schema_field(RatingSerializer(allow_null=True))
+    def get_rating(self, booking: Booking) -> dict | None:
+        rating = Rating.objects.filter(booking=booking).first()
+        return RatingSerializer(rating).data if rating else None
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_rating_open_until(self, booking: Booking) -> str | None:
+        """UC 6 step 1: set only while an unrated Completed booking may still be rated."""
+        until = rating_open_until(booking)
+        if (
+            until is None
+            or until < timezone.now()
+            or Rating.objects.filter(booking=booking).exists()
+        ):
+            return None
+        return serializers.DateTimeField().to_representation(until)
 
     @extend_schema_field(QuoteSerializer)
     def get_price(self, booking: Booking) -> dict:

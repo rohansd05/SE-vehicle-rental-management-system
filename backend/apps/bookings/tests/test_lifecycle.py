@@ -113,13 +113,12 @@ def test_a_two_wheeler_needs_the_safety_notice(customer, scooter, pickup, return
     assert booking.safety_notice_acknowledged_at is not None  # SA-1: stored with the booking
 
 
-def test_doorstep_delivery_is_refused_until_the_address_check_exists(
-    customer, car, pickup, return_
-):
+def test_doorstep_delivery_needs_an_address(customer, car, pickup, return_):
+    """Book.Deliver.Location (Module R4): no longer refused outright; the address is asked."""
     delivery = AddOnFactory(name="Doorstep delivery")
     with pytest.raises(lifecycle.BookingError) as error:
         create(customer, car, pickup, return_, add_ons=[(delivery.pk, 1)])
-    assert (error.value.code, error.value.field) == ("delivery_unavailable", "add_ons")
+    assert error.value.field == "delivery_address"
 
 
 def test_a_bad_period_is_refused(customer, car, pickup):

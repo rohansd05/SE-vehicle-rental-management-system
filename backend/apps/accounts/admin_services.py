@@ -35,7 +35,10 @@ USER_FIELDS = ("email", "name", "mobile_no", "address")
 
 BLACKLISTED = "Customer Blacklisted"
 BLACKLIST_LIFTED = "Blacklist Lifted"
-CANCELLED_FOR_BLACKLIST = "Booking Cancelled For Blacklist"
+CANCELLED_FOR_BLACKLIST_REASON = (
+    "An Administrator cancelled the booking of a blacklisted customer (UC 12 extension 2a); "
+    "refund per BR-8."
+)
 
 
 class UserAdminError(Exception):
@@ -236,28 +239,20 @@ def cancel_for_blacklist(
     customer: Customer, booking_id: int, actor, *, expected_refund, request=None
 ):
     """UC 12 extension 2a: cancel one Confirmed booking of a blacklisted customer through
-    R2's cancel_booking() (BR-8 refund, vehicle released, customer and branch told).
-    R2 records the customer as its actor, so the Administrator's decision is audited too."""
+    R2's cancel_booking() (BR-8 refund, vehicle released, customer and branch told), with
+    the Administrator recorded as the actor of every entry and the reason on the status
+    change."""
     from apps.bookings import services as bookings
-    from apps.bookings.models import Booking
 
     if not Customer.objects.filter(pk=customer.pk, is_blacklisted=True).exists():
         raise UserAdminError(
             "Only a blacklisted customer's bookings are cancelled here (UC 12 extension 2a)."
         )
-    with transaction.atomic():
-        repeated = Booking.objects.filter(
-            pk=booking_id, customer=customer, status=Booking.Status.CANCELLED
-        ).exists()
-        booking = bookings.cancel_booking(
-            customer, booking_id, expected_refund=expected_refund, request=request
-        )
-        if not repeated:  # R2 changes nothing on a repeated confirmation; neither do we
-            record_audit(
-                actor,
-                CANCELLED_FOR_BLACKLIST,
-                booking,
-                after={"booking_reference": booking.booking_reference, "status": booking.status},
-                request=request,
-            )
-    return booking
+    return bookings.cancel_booking(
+        customer,
+        booking_id,
+        expected_refund=expected_refund,
+        actor=actor,
+        reason=CANCELLED_FOR_BLACKLIST_REASON,
+        request=request,
+    )

@@ -36,6 +36,7 @@ Owner: Rohan (WBS 1.4.3).
 
 from __future__ import annotations
 
+import re
 import secrets
 from datetime import datetime
 
@@ -47,8 +48,8 @@ from django.utils import timezone
 from apps.accounts.models import Customer
 from apps.core.audit import record_audit, snapshot
 from apps.core.choices import VehicleType
-from apps.fleet.models import Vehicle
-from apps.fleet.services.availability import check_period, is_available
+from apps.fleet.models import BranchServiceableArea, Vehicle
+from apps.fleet.services.availability import check_period, is_available, service_overdue
 from apps.payments import services as payments
 from apps.pricing.models import AddOn, DiscountCode
 from apps.pricing.services import PricingError, Quote, calculate_price, quote
@@ -60,8 +61,8 @@ from .states import transition
 
 Status = Booking.Status
 
-# BK11: doorstep delivery needs the address check of Book.Deliver.Location,
-# which is not built yet; until then the add-on cannot be booked online.
+# Book.Addons / BR-7: the doorstep delivery add-on (managed by Administrators, N3) is
+# known by its name. Book.Deliver.Location (Module R4) checks its address.
 DOORSTEP_DELIVERY = "doorstep delivery"
 
 
@@ -106,6 +107,10 @@ class PaymentDeclinedError(BookingError):
 
 
 UNAVAILABLE = "Sorry, this vehicle has just been taken for these dates. Please choose another."
+SERVICE_OVERDUE = (
+    "This vehicle is overdue for its safety service, so it can't be booked (SA-2). "
+    "Please choose another."
+)
 
 
 # ─── Shared steps ─────────────────────────────────────────────────────────
@@ -163,14 +168,35 @@ def _check_terms(vehicle_type: str, terms_accepted: bool, safety_acknowledged: b
         )
 
 
-def _refuse_delivery(add_on_ids: list[int]) -> None:
+def is_delivery(add_on_ids: list[int]) -> bool:
+    """Book.Addons: whether the doorstep delivery add-on is among `add_on_ids`."""
     names = AddOn.objects.filter(pk__in=add_on_ids).values_list("name", flat=True)
-    if any(name.strip().lower() == DOORSTEP_DELIVERY for name in names):
+    return any(name.strip().lower() == DOORSTEP_DELIVERY for name in names)
+
+
+def check_delivery(branch_id: int, add_on_ids: list[int], address: str, pincode: str):
+    """Book.Deliver.Location (Exp 2 UC 3 extend "Add Doorstep Delivery"; Exp 5 "Address
+    serviceable?"): with doorstep delivery the customer gives an address whose pincode is
+    one of the branch's serviceable areas. Returns (address, pincode) to store, blank
+    when the vehicle is collected at the branch. Each refusal names its field."""
+    if not is_delivery(add_on_ids):
+        return "", ""
+    address = address.strip()
+    if not address:
         raise BookingError(
-            "Doorstep delivery can't be booked online yet. Collect the vehicle at the branch.",
-            code="delivery_unavailable",
-            field="add_ons",
+            "Enter the address we should deliver the vehicle to.", field="delivery_address"
         )
+    if not re.fullmatch(r"[0-9]{6}", pincode):
+        raise BookingError(
+            "Enter the six-digit pincode of the delivery address.", field="delivery_pincode"
+        )
+    if not BranchServiceableArea.objects.filter(branch_id=branch_id, pincode=pincode).exists():
+        raise BookingError(
+            f"We don't deliver to {pincode} from this branch. Choose another address, or "
+            "remove doorstep delivery and collect the vehicle at the branch.",
+            field="delivery_pincode",
+        )
+    return address, pincode
 
 
 def _price(vehicle, pickup, return_, add_ons, discount_code) -> Quote:
@@ -276,6 +302,8 @@ def create_booking(
     discount_code: str = "",
     terms_accepted: bool,
     safety_notice_acknowledged: bool = False,
+    delivery_address: str = "",
+    delivery_pincode: str = "",
     request=None,
 ) -> Booking:
     """Exp 3 Booking.create_booking(): check, price and hold the vehicle for 15 minutes."""
@@ -285,7 +313,14 @@ def create_booking(
     check_period(pickup, return_)  # BR-5 (raises RentalPeriodError)
     _check_terms(vehicle_type, terms_accepted, safety_notice_acknowledged)
     check_eligibility(customer, vehicle_type, pickup, return_)  # Licence.is_valid()
-    _refuse_delivery([add_on_id for add_on_id, _ in add_ons])
+    if service_overdue(vehicle):  # SA-2: no booking of a vehicle overdue for its service
+        raise VehicleUnavailableError(SERVICE_OVERDUE, code="service_overdue")
+    delivery = check_delivery(  # Book.Deliver.Location
+        vehicle.home_branch_id,
+        [add_on_id for add_on_id, _ in add_ons],
+        delivery_address,
+        delivery_pincode,
+    )
 
     with transaction.atomic():
         # One booking at a time per vehicle; the exclusion constraint backs this up.
@@ -304,6 +339,8 @@ def create_booking(
             status=Status.DRAFT,
             terms_accepted_at=now,
             safety_notice_acknowledged_at=now if vehicle_type == VehicleType.TWO_WHEELER else None,
+            delivery_address=delivery[0],
+            delivery_pincode=delivery[1],
         )
         _store_price(booking, priced)
         booking.save()
@@ -337,9 +374,17 @@ def hold_again(customer: Customer, booking_id: int, *, request=None) -> Booking:
             .get(pk=booking.vehicle_id)
         )
         release_expired_holds(vehicle=locked, request=request)
+        if service_overdue(locked):  # SA-2
+            raise VehicleUnavailableError(SERVICE_OVERDUE, code="service_overdue")
         if not is_available(locked, booking.pickup_datetime, booking.return_datetime):
             raise VehicleUnavailableError(UNAVAILABLE)
         add_ons = list(booking.add_ons.values_list("add_on_id", "quantity"))
+        check_delivery(  # Book.Deliver.Location: the area may have changed meanwhile
+            locked.home_branch_id,
+            [add_on_id for add_on_id, _ in add_ons],
+            booking.delivery_address,
+            booking.delivery_pincode,
+        )
         code = booking.discount_code.code if booking.discount_code_id else ""
         priced = _price(locked, booking.pickup_datetime, booking.return_datetime, add_ons, code)
         _store_price(booking, priced)

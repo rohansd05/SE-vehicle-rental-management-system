@@ -1,6 +1,10 @@
 """Bookings business logic. Views stay thin; every write is audited (SE-10).
 
-- Ratings (D13).
+- Ratings (D13; Module R4, Exp 2 UC 6 Rate Vehicle): a customer rates their own
+  Completed booking once, within RATING_WINDOW of its completion, and may edit
+  the review within RATING_EDIT_WINDOW of submitting it. A vehicle's average
+  rating and count are computed on every query, never stored (D13), so they
+  are always up to date (UC 6 step 3).
 - Module R2, Exp 2 UC 4 Modify / Cancel Booking and Book.Extend: Exp 3
   Booking.modify_booking(), cancel_booking() and extend_booking(), and the
   Appendix B No-show (declare_no_shows(), a Celery Beat task). Each action
@@ -19,7 +23,17 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import Avg, DecimalField, Q, QuerySet
+from django.db.models import (
+    Avg,
+    Count,
+    DecimalField,
+    IntegerField,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+)
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.accounts.models import Customer, Licence, User
@@ -49,8 +63,9 @@ from .lifecycle import (
     InvalidBookingStateError,
     PaymentDeclinedError,
     VehicleUnavailableError,
-    _refuse_delivery,
     booking_quote,
+    check_delivery,
+    is_delivery,
 )
 from .models import Booking, BookingAddOn, Rating
 
@@ -66,6 +81,42 @@ class RatingError(Exception):
     """The rating is not allowed; the message says why."""
 
 
+REFUSED_STATUS = {
+    Booking.Status.CANCELLED: "A cancelled booking can't be rated.",
+    Booking.Status.NO_SHOW: "A booking that was not collected (no-show) can't be rated.",
+    Booking.Status.ACTIVE: "You can rate this rental once the vehicle has been returned.",
+}
+
+
+def completed_at(booking: Booking) -> datetime:
+    """When N2's complete_booking() closed the rental: the recorded return time."""
+    return booking.returned_at or booking.return_datetime
+
+
+def rating_open_until(booking: Booking) -> datetime | None:
+    """UC 6 precondition: a Completed booking may be rated until this moment."""
+    if booking.status != Booking.Status.COMPLETED:
+        return None
+    return completed_at(booking) + settings.RATING_WINDOW
+
+
+def rating_editable_until(rating: Rating) -> datetime:
+    """UC 6 extension 2a: the review may be edited until this moment."""
+    return rating.created_at + settings.RATING_EDIT_WINDOW
+
+
+def _check_ratable(customer, booking: Booking) -> None:
+    if booking.customer_id != customer.pk:
+        raise RatingError("You can rate only your own bookings.")
+    if booking.status != Booking.Status.COMPLETED:
+        raise RatingError(
+            REFUSED_STATUS.get(booking.status, "Only a completed booking can be rated.")
+        )
+    if timezone.now() > rating_open_until(booking):
+        days = settings.RATING_WINDOW.days
+        raise RatingError(f"A rental can be rated only within {days} days of its return.")
+
+
 @transaction.atomic
 def submit_rating(
     customer,
@@ -76,12 +127,10 @@ def submit_rating(
     comment: str = "",
     request=None,
 ) -> Rating:
-    """D13: a customer rates their own Completed booking, once."""
+    """Exp 2 UC 6 steps 2-3 (D13): a customer rates their own Completed booking, once,
+    within RATING_WINDOW of its completion; the vehicle's average is then current."""
     booking = Booking.objects.select_for_update().get(pk=booking_id)
-    if booking.customer_id != customer.pk:
-        raise RatingError("You can rate only your own bookings.")
-    if booking.status != Booking.Status.COMPLETED:
-        raise RatingError("Only a completed booking can be rated.")
+    _check_ratable(customer, booking)
     if Rating.objects.filter(booking=booking).exists():
         raise RatingError("This booking has already been rated.")
     rating = Rating.objects.create(
@@ -94,6 +143,38 @@ def submit_rating(
     return rating
 
 
+@transaction.atomic
+def edit_rating(
+    customer,
+    booking_id: int,
+    *,
+    vehicle_rating: int,
+    service_rating: int,
+    comment: str = "",
+    request=None,
+) -> Rating:
+    """Exp 2 UC 6 extension 2a: the existing review is edited, only within
+    RATING_EDIT_WINDOW of its submission."""
+    rating = (
+        Rating.objects.select_for_update()
+        .filter(booking_id=booking_id, booking__customer=customer)
+        .first()
+    )
+    if rating is None:
+        raise RatingError("This booking has not been rated yet.")
+    if timezone.now() > rating_editable_until(rating):
+        hours = int(settings.RATING_EDIT_WINDOW.total_seconds() // 3600)
+        raise RatingError(f"A review can be edited only within {hours} hours of submitting it.")
+    before = snapshot(rating)
+    rating.vehicle_rating, rating.service_rating = vehicle_rating, service_rating
+    rating.comment = comment
+    rating.save(update_fields=["vehicle_rating", "service_rating", "comment"])
+    record_audit(
+        customer.user, "Update", rating, before=before, after=snapshot(rating), request=request
+    )
+    return rating
+
+
 def average_vehicle_rating(vehicle) -> Decimal | None:
     """Search.Detail: the vehicle's average rating, computed and never stored (D13)."""
     value = Rating.objects.filter(booking__vehicle=vehicle).aggregate(
@@ -103,9 +184,19 @@ def average_vehicle_rating(vehicle) -> Decimal | None:
 
 
 def with_average_rating(vehicles: QuerySet) -> QuerySet:
-    """Annotate `average_rating` for Search.Filter (minimum rating) and sorting."""
+    """Annotate `average_rating` and `rating_count` for Search.Filter (minimum rating),
+    sorting and Search.Detail. Subqueries, so other joins never skew them."""
+    ratings = Rating.objects.filter(booking__vehicle=OuterRef("pk")).values("booking__vehicle")
     return vehicles.annotate(
-        average_rating=Avg("bookings__rating__vehicle_rating", output_field=_AVERAGE)
+        average_rating=Subquery(
+            ratings.annotate(value=Avg("vehicle_rating", output_field=_AVERAGE)).values("value"),
+            output_field=_AVERAGE,
+        ),
+        rating_count=Coalesce(
+            Subquery(ratings.annotate(value=Count("pk")).values("value")),
+            0,
+            output_field=IntegerField(),
+        ),
     )
 
 
@@ -303,11 +394,11 @@ def notification_context(booking: Booking) -> dict:
     }
 
 
-def _notify(booking: Booking, template: str, *, branches=(), **extra) -> None:
+def _notify(booking: Booking, template: str, *, branches=(), email_version=1, **extra) -> None:
     """Notify.Booking by e-mail and SMS (customer) and, where UC 4 step 6 or Book.Done.Branch
     says so, the branch; sent by Celery after commit."""
     context = {**notification_context(booking), **extra}
-    queue_email(booking.customer.user, template, context, booking=booking)
+    queue_email(booking.customer.user, template, context, booking=booking, version=email_version)
     queue_sms(booking.customer.user, f"{template}_sms", context, booking=booking)
     staff = User.objects.filter(
         role=User.Role.BRANCH_STAFF, is_active=True, branch_staff__branch_id__in=branches
@@ -329,8 +420,22 @@ def notify_booking_confirmed(booking: Booking) -> None:
         f"Total: {_money(invoice.total_amount)}",
         f"Refundable security deposit, held apart: {_money(booking.security_deposit)}",
     ]
+    # Book.Deliver.Location (Module R4): a delivered booking names its address instead.
+    branch, pickup = booking.pickup_branch, _local(booking.pickup_datetime)
+    if booking.delivery_address:
+        collection = (
+            f"Doorstep delivery: we bring the vehicle to {booking.delivery_address}, "
+            f"{booking.delivery_pincode}, from our {branch.branch_name} branch on {pickup}."
+        )
+    else:
+        collection = f"Collection: our {branch.branch_name} branch, {branch.address}, on {pickup}."
     _notify(
-        booking, "booking_confirmed", branches=[booking.pickup_branch_id], price="\n".join(price)
+        booking,
+        "booking_confirmed",
+        branches=[booking.pickup_branch_id],
+        email_version=2,
+        price="\n".join(price),
+        collection=collection,
     )
 
 
@@ -392,7 +497,13 @@ def cancellation_quote(customer: Customer, booking_id: int) -> CancellationQuote
 
 
 def cancel_booking(
-    customer: Customer, booking_id: int, *, expected_refund: Decimal, request=None
+    customer: Customer,
+    booking_id: int,
+    *,
+    expected_refund: Decimal,
+    actor: User | None = None,
+    reason: str = "",
+    request=None,
 ) -> Booking:
     """Exp 3 Booking.cancel_booking(): Book.Cancel and Book.Cancel.Release in one transaction.
 
@@ -400,8 +511,10 @@ def cancel_booking(
     the customer and the branch notified. `expected_refund` is the total the
     customer confirmed; if BR-8 now gives another amount (the notice crossed
     48 or 12 hours), nothing changes and 409 `refund_changed` says so.
+    `actor` (default: the customer) is recorded on every audit entry, and
+    `reason` on the status change, e.g. an Administrator's blacklist decision.
     """
-    actor = customer.user
+    actor = actor or customer.user
     with transaction.atomic():
         booking = _customer_booking(customer, booking_id, lock=True)
         if booking.status == Status.CANCELLED:
@@ -414,7 +527,7 @@ def cancel_booking(
                 code="refund_changed",
             )
         paid = quote.deposit_refund > 0
-        states.mark_cancelled(booking, actor, request=request)
+        states.mark_cancelled(booking, actor, reason=reason, request=request)
         _audit_release(booking, actor, request)
         if paid:
             _settle(
@@ -488,7 +601,6 @@ def _chosen_add_ons(booking: Booking, requested, vehicle_type) -> list[tuple[Add
         raise BookingError("Choose each add-on only once.", field="add_ons")
     booked = {line.add_on_id: line for line in booking.add_ons.select_related("add_on")}
     new = [(add_on_id, quantity) for add_on_id, quantity in requested if add_on_id not in booked]
-    _refuse_delivery([add_on_id for add_on_id, _ in new])
     try:
         fresh = {add_on.pk: add_on for add_on, _ in resolve_add_ons(new, vehicle_type)}
     except PricingError as exc:
@@ -518,8 +630,27 @@ def _vehicle_free(booking: Booking, vehicle: Vehicle, change: Modification) -> b
     return not _held_by_others(booking, vehicle, change.pickup, change.return_)
 
 
+def _check_delivery_change(booking: Booking, change: Modification) -> None:
+    """Book.Deliver.Location on a change. Proposed R4-P2: a change has no address, so
+    doorstep delivery is neither added nor removed by it; a delivery kept across a new
+    pickup branch must lie in that branch's serviceable area."""
+    requested = [add_on_id for add_on_id, _ in change.add_ons]
+    if is_delivery(requested) != bool(booking.delivery_address):
+        raise BookingError(
+            "Doorstep delivery can't be added or removed when changing a booking. Cancel the "
+            "booking and book again to change it.",
+            code="delivery_unchangeable",
+            field="add_ons",
+        )
+    if booking.delivery_address and change.branch.pk != booking.pickup_branch_id:
+        check_delivery(
+            change.branch.pk, requested, booking.delivery_address, booking.delivery_pincode
+        )
+
+
 def _plan(booking: Booking, vehicle: Vehicle, change: Modification):
     check_period(change.pickup, change.return_)  # BR-5
+    _check_delivery_change(booking, change)
     if vehicle.category_id != booking.vehicle.category_id:
         raise BookingError(
             "Choose a vehicle of the same category, at the same tariff.", field="vehicle"
