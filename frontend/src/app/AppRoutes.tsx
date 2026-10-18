@@ -6,6 +6,7 @@ import { PublicLayout } from '@/components/layout/PublicLayout'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { VerifyOtpPage } from '@/features/auth/VerifyOtpPage'
+import { adminRoutes } from '@/features/admin/routes'
 import { bookingRoutes } from '@/features/booking/routes'
 import { handoverRoutes } from '@/features/handover/routes'
 import { LicenceQueuePage } from '@/features/licence/LicenceQueuePage'
@@ -100,6 +101,7 @@ export function AppRoutes() {
         {bookingRoutes()}
         {handoverRoutes()}
         {paymentRoutes()}
+        {adminRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}
