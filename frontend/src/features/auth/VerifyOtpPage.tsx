@@ -27,6 +27,8 @@ interface VerifyState {
   email?: string
   mobile?: string
   sentAt?: number
+  /** Where sign-in returns to (Search.Browse "Book"), passed on from registration. */
+  from?: unknown
 }
 
 
@@ -71,7 +73,7 @@ export function VerifyOtpPage() {
     setFormError(null)
     try {
       await verifyOtp(email, code)
-      navigate('/login', { state: { verifiedEmail: email } })
+      navigate('/login', { state: { verifiedEmail: email, from: state.from } })
     } catch (error) {
       if (!(error instanceof ApiError) || error.status !== 400) {
         setFormError(error instanceof Error ? error.message : 'Something went wrong.')

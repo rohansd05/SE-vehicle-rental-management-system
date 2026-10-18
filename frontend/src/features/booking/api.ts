@@ -63,6 +63,9 @@ export interface CreateBookingRequest extends Period {
   discount_code: string
   terms_accepted: boolean
   safety_notice_acknowledged: boolean
+  /** Book.Deliver.Location: with the doorstep delivery add-on only. */
+  delivery_address: string
+  delivery_pincode: string
 }
 
 /** Booking.create_booking(): eligibility, availability, price, then a 15-minute hold. */

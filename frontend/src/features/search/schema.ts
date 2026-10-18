@@ -12,6 +12,10 @@ export const MAX_RENTAL_MS = 30 * 24 * HOUR
 
 const time = (value: string) => new Date(value).getTime()
 
+const amount = z.string().refine((value) => value === '' || Number(value) >= 0, {
+  error: 'Enter an amount of zero or more.',
+})
+
 export const searchSchema = z
   .object({
     branch: z.string().min(1, { error: 'Choose a pickup branch.' }),
@@ -21,8 +25,26 @@ export const searchSchema = z
       .min(1, { error: 'Enter the pickup date and time.' })
       .refine((value) => time(value) > now(), { error: 'Choose a pickup time in the future.' }),
     return_datetime: z.string().min(1, { error: 'Enter the return date and time.' }),
+    // Search.Filter (Module R4).
+    vehicle_type: z.string(),
+    brand: z.string(),
+    model: z.string(),
+    fuel_type: z.string(),
+    transmission: z.string(),
+    min_seats: z.string(),
+    min_price: amount,
+    max_price: amount,
+    min_rating: z.string(),
+    sort: z.string(),
   })
   .superRefine((data, ctx) => {
+    if (data.min_price && data.max_price && Number(data.max_price) < Number(data.min_price)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['max_price'],
+        message: 'The highest price must not be below the lowest.',
+      })
+    }
     if (!data.pickup_datetime || !data.return_datetime) return
     const length = time(data.return_datetime) - time(data.pickup_datetime)
     const message =

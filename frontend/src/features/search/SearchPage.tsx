@@ -12,12 +12,14 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { formatDateTime } from '@/lib/dates'
 import { describedBy } from '@/lib/form'
 
-import { listBranches, listCategories, type SearchQuery, searchVehicles } from './api'
+import { Alternatives } from './Alternatives'
+import { FILTER_KEYS, listBranches, listCategories, type SearchQuery, searchVehicles } from './api'
 import { BRANCHES_KEY, CATEGORIES_KEY, searchKey } from './keys'
+import { useCatalogueBase } from './paths'
 import { isoToLocal, localToISO, type SearchValues, searchSchema } from './schema'
 import { VehicleResults } from './VehicleResults'
 
-const FIELDS = ['branch', 'category', 'pickup_datetime', 'return_datetime'] as const
+const FIELDS = ['branch', 'pickup_datetime', 'return_datetime', ...FILTER_KEYS] as const
 type FieldName = (typeof FIELDS)[number]
 
 /** The search kept in the address, so a reload or the back button shows it again. */
@@ -27,13 +29,17 @@ function readQuery(params: URLSearchParams): SearchQuery | null {
   const ret = params.get('return_datetime')
   if (!branch || !pickup || !ret) return null
   const page = Number(params.get('page') ?? '1')
-  return {
+  const query: SearchQuery = {
     branch,
     pickup_datetime: pickup,
     return_datetime: ret,
-    category: params.get('category') ?? undefined,
     page: Number.isInteger(page) && page > 1 ? page : 1,
   }
+  for (const key of FILTER_KEYS) {
+    const value = params.get(key)
+    if (value) query[key] = value
+  }
+  return query
 }
 
 function writeQuery(query: SearchQuery): Record<string, string> {
@@ -42,7 +48,10 @@ function writeQuery(query: SearchQuery): Record<string, string> {
     pickup_datetime: query.pickup_datetime,
     return_datetime: query.return_datetime,
   }
-  if (query.category) next.category = query.category
+  for (const key of FILTER_KEYS) {
+    const value = query[key]?.trim()
+    if (value) next[key] = value
+  }
   if (query.page && query.page > 1) next.page = String(query.page)
   return next
 }
@@ -58,10 +67,27 @@ function formLevelMessage(error: ApiError): string | null {
   return Object.keys(error.fieldErrors).some(isField) ? null : error.message
 }
 
-/** SRS 3.2: choose a branch and a period; see the vehicles free for all of it (Search.Available). */
+/** Search.Filter options; the values are the server's (CO-3 re-checks them). */
+const VEHICLE_TYPES = ['Car', 'Two-Wheeler']
+const FUELS = ['Petrol', 'Diesel', 'CNG', 'Electric']
+const TRANSMISSIONS = ['Manual', 'Automatic']
+const RATINGS = ['4', '3', '2', '1']
+const SORTS = [
+  { value: '', label: 'Brand and model' },
+  { value: 'price', label: 'Price, lowest first' },
+  { value: '-price', label: 'Price, highest first' },
+  { value: 'rating', label: 'Rating, highest first' },
+]
+
+/**
+ * SRS 3.2: choose a branch and a period; see the vehicles free for all of it
+ * (Search.Available), narrowed and sorted (Search.Filter). Public at /search
+ * for a guest (Search.Browse) and at /app/search for a customer.
+ */
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const query = readQuery(params)
+  const base = useCatalogueBase()
 
   const branches = useQuery({ queryKey: BRANCHES_KEY, queryFn: listBranches, staleTime: 5 * 60_000 })
   const categories = useQuery({
@@ -83,9 +109,9 @@ export function SearchPage() {
     resolver: zodResolver(searchSchema),
     defaultValues: {
       branch: query?.branch ?? '',
-      category: query?.category ?? '',
       pickup_datetime: query ? isoToLocal(query.pickup_datetime) : '',
       return_datetime: query ? isoToLocal(query.return_datetime) : '',
+      ...Object.fromEntries(FILTER_KEYS.map((key) => [key, query?.[key] ?? ''])),
     },
   })
 
@@ -98,8 +124,8 @@ export function SearchPage() {
   const onSubmit = handleSubmit((values) => {
     setParams(
       writeQuery({
+        ...Object.fromEntries(FILTER_KEYS.map((key) => [key, values[key]])),
         branch: values.branch,
-        category: values.category || undefined,
         pickup_datetime: localToISO(values.pickup_datetime),
         return_datetime: localToISO(values.return_datetime),
       }),
@@ -114,6 +140,19 @@ export function SearchPage() {
     'aria-invalid': errorFor(field) ? true : undefined,
     'aria-describedby': describedBy(`search-${field}`, { hint, error: Boolean(errorFor(field)) }),
   })
+  const select = (field: FieldName, label: string, any: string, options: { value: string; label: string }[]) => (
+    <Field id={`search-${field}`} label={label} error={errorFor(field)}>
+      <NativeSelect id={`search-${field}`} {...fieldProps(field)} {...register(field)}>
+        <option value="">{any}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </NativeSelect>
+    </Field>
+  )
+  const asOptions = (values: string[]) => values.map((value) => ({ value, label: value }))
 
   return (
     <section className="stage">
@@ -150,16 +189,15 @@ export function SearchPage() {
                   ))}
                 </NativeSelect>
               </Field>
-              <Field id="search-category" label="Vehicle category" error={errorFor('category')}>
-                <NativeSelect id="search-category" {...fieldProps('category')} {...register('category')}>
-                  <option value="">Any category</option>
-                  {categories.data.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name} ({category.vehicle_type})
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
+              {select(
+                'category',
+                'Vehicle category',
+                'Any category',
+                categories.data.map((category) => ({
+                  value: String(category.id),
+                  label: `${category.name} (${category.vehicle_type})`,
+                })),
+              )}
               <Field id="search-pickup_datetime" label="Pickup" error={errorFor('pickup_datetime')}>
                 <Input
                   id="search-pickup_datetime"
@@ -187,6 +225,65 @@ export function SearchPage() {
                 </SubmitButton>
               </div>
             </div>
+
+            {/* Search.Filter: the remaining criteria and the sort order. */}
+            <fieldset className="grid gap-5 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+              <legend className="heading float-left mb-1 w-full text-subsection">Refine</legend>
+              {select('vehicle_type', 'Vehicle type', 'Any type', asOptions(VEHICLE_TYPES))}
+              <Field id="search-brand" label="Brand" error={errorFor('brand')}>
+                <Input id="search-brand" autoComplete="off" {...fieldProps('brand')} {...register('brand')} />
+              </Field>
+              <Field id="search-model" label="Model" error={errorFor('model')}>
+                <Input id="search-model" autoComplete="off" {...fieldProps('model')} {...register('model')} />
+              </Field>
+              {select('fuel_type', 'Fuel', 'Any fuel', asOptions(FUELS))}
+              {select('transmission', 'Transmission', 'Any transmission', asOptions(TRANSMISSIONS))}
+              <Field id="search-min_seats" label="Seats, at least" error={errorFor('min_seats')}>
+                <Input
+                  id="search-min_seats"
+                  type="number"
+                  min={1}
+                  step={1}
+                  {...fieldProps('min_seats')}
+                  {...register('min_seats')}
+                />
+              </Field>
+              <Field id="search-min_price" label="Estimated price from" error={errorFor('min_price')}>
+                <Input
+                  id="search-min_price"
+                  type="number"
+                  min={0}
+                  step={100}
+                  {...fieldProps('min_price')}
+                  {...register('min_price')}
+                />
+              </Field>
+              <Field id="search-max_price" label="Estimated price up to" error={errorFor('max_price')}>
+                <Input
+                  id="search-max_price"
+                  type="number"
+                  min={0}
+                  step={100}
+                  {...fieldProps('max_price')}
+                  {...register('max_price')}
+                />
+              </Field>
+              {select(
+                'min_rating',
+                'Rating, at least',
+                'Any rating',
+                RATINGS.map((value) => ({ value, label: `${value} out of 5 or more` })),
+              )}
+              <Field id="search-sort" label="Sort by" error={errorFor('sort')}>
+                <NativeSelect id="search-sort" {...fieldProps('sort')} {...register('sort')}>
+                  {SORTS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            </fieldset>
           </form>
         </div>
       )}
@@ -212,15 +309,18 @@ export function SearchPage() {
             </p>
           </div>
           {results.data.count === 0 ? (
-            <EmptyState
-              title="No vehicles are free for these dates"
-              description="Try different dates, another category or another branch."
-            />
+            <>
+              <EmptyState
+                title="No vehicles are free for these dates"
+                description="Try different dates, another category or another branch."
+              />
+              <Alternatives query={query} base={base} />
+            </>
           ) : (
             <VehicleResults
               vehicles={results.data.results}
               hrefFor={(vehicle) =>
-                `/app/vehicles/${vehicle.id}?${new URLSearchParams({
+                `${base}/vehicles/${vehicle.id}?${new URLSearchParams({
                   pickup_datetime: query.pickup_datetime,
                   return_datetime: query.return_datetime,
                 })}`

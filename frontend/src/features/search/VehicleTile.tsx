@@ -65,6 +65,9 @@ export function VehicleTile({ vehicle, href }: { vehicle: AvailableVehicle; href
               <>
                 <Star className="size-3.5 fill-current text-signal" aria-hidden="true" />
                 {Number(vehicle.average_rating).toFixed(1)} out of 5
+                <span className="text-muted-foreground">
+                  ({vehicle.rating_count === 1 ? '1 rating' : `${vehicle.rating_count} ratings`})
+                </span>
               </>
             ) : (
               'No ratings yet'

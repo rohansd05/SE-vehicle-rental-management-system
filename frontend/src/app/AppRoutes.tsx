@@ -8,6 +8,7 @@ import { RegisterPage } from '@/features/auth/RegisterPage'
 import { VerifyOtpPage } from '@/features/auth/VerifyOtpPage'
 import { adminRoutes } from '@/features/admin/routes'
 import { bookingRoutes } from '@/features/booking/routes'
+import { VehicleDetailPage } from '@/features/booking/VehicleDetailPage'
 import { handoverRoutes } from '@/features/handover/routes'
 import { LicenceQueuePage } from '@/features/licence/LicenceQueuePage'
 import { LicenceReviewPage } from '@/features/licence/LicenceReviewPage'
@@ -17,6 +18,7 @@ import { ProfilePage } from '@/features/profile/ProfilePage'
 import { paymentRoutes } from '@/features/refunds/routes'
 import { reportRoutes } from '@/features/reports/routes'
 import { searchRoutes } from '@/features/search/routes'
+import { SearchPage } from '@/features/search/SearchPage'
 import { CreditsPage } from '@/pages/CreditsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { HelpPage } from '@/pages/HelpPage'
@@ -60,6 +62,9 @@ export function AppRoutes() {
         />
         <Route path="help" element={<HelpPage />} />
         <Route path="credits" element={<CreditsPage />} />
+        {/* Search.Browse (Module R4): the guest catalogue; booking needs a sign-in. */}
+        <Route path="search" element={<SearchPage />} />
+        <Route path="vehicles/:id" element={<VehicleDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
