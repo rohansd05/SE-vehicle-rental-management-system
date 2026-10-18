@@ -1,0 +1,52 @@
+# Caddy (D1, CO-1): automatic HTTPS for SITE_HOSTNAME (e.g. 20-40-60-80.sslip.io),
+# HTTP redirected to HTTPS, TLS 1.2 or higher (Caddy's default minimum).
+# Serves the React build (/srv) and Django's collected static files, and
+# reverse-proxies /api and /admin to gunicorn. Uploaded media are never served
+# as files: they leave only through the signed /api/v1/files/<token>/ links (SI-3).
+
+{$SITE_HOSTNAME} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
+
+	# The API (with the signed media links) and the Django admin. Caddy replaces any
+	# X-Forwarded-For/-Proto/-Host the client sent with its own values.
+	@django path /api/* /admin /admin/*
+	handle @django {
+		reverse_proxy django:8000
+	}
+
+	# Admin and Swagger UI assets, collected by `manage.py collectstatic`.
+	handle_path /static/* {
+		root * /srv/django-static
+		header Cache-Control "public, max-age=604800"
+		file_server
+	}
+
+	# SI-3: photos, signatures and workshop invoices are never public files.
+	handle /media/* {
+		respond 404
+	}
+
+	# The React app (D8 PWA). Only the app may run here: no inline scripts, no
+	# other origin, no framing.
+	handle {
+		root * /srv
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		# Hashed bundles never change; the shell, the service worker and the manifest
+		# are checked on every load so an update reaches every phone.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@shell path / /index.html /sw.js /manifest.webmanifest /offline.html
+		header @shell Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
