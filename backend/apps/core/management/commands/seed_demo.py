@@ -29,6 +29,7 @@ from apps.accounts.models import (
 )
 from apps.bookings.seed import delete_demo_booking_data, seed_demo_booking_data
 from apps.bookings.seed_changes import delete_demo_change_data, seed_demo_change_data
+from apps.bookings.seed_ratings import seed_demo_rating_data
 from apps.core.audit import entity_type, snapshot
 from apps.core.choices import FuelType, VehicleType
 from apps.core.models import AuditLog
@@ -42,6 +43,7 @@ from apps.fleet.models import (
     VehicleCategory,
     VehicleDocument,
 )
+from apps.fleet.seed import seed_demo_photos
 from apps.maintenance.seed import delete_demo_jobs, seed_demo_jobs
 from apps.maintenance.seed_n3 import delete_demo_n3_maintenance, seed_demo_n3_maintenance
 from apps.payments.seed import delete_demo_payment_data, seed_demo_payment_data
@@ -207,8 +209,9 @@ class Command(BaseCommand):
             "--reports",
             action="store_true",
             help="Also load three months of past bookings, invoices and ledger entries for "
-            "the reports (apps/reports/seed.py). They are append-only: afterwards --reset "
-            "refuses, as after any demo that moved money.",
+            "the reports (apps/reports/seed.py) and the rating demo (bookings/seed_ratings.py). "
+            "They are append-only: afterwards --reset refuses, as after any demo that moved "
+            "money.",
         )
 
     def handle(self, *args, **options):
@@ -219,6 +222,7 @@ class Command(BaseCommand):
             self._seed()
             if options["reports"]:
                 seed_demo_report_data(self._count)
+                seed_demo_rating_data(self._count)  # Module R4, UC 6
         created = ", ".join(f"{n} {label}" for label, n in self.created.items()) or "nothing"
         self.stdout.write(self.style.SUCCESS(f"Demo data ready. Created: {created}."))
         self.stdout.write(f"Demo accounts use the password {DEMO_PASSWORD}: ")
@@ -258,6 +262,7 @@ class Command(BaseCommand):
         seed_demo_n3_maintenance(self._count)
         seed_demo_blacklist_data(self._count)
         self._seed_fuel_capacities()
+        seed_demo_photos(self._count)  # Module R4: Search.Detail's four photographs
 
     def _seed_fuel_capacities(self) -> None:
         """Every demo vehicle gets its tank or battery capacity, so N2's fuel shortfall

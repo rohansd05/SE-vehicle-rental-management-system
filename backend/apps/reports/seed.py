@@ -93,16 +93,24 @@ def _at(days_ago: int) -> datetime:
     )
 
 
-def _seed_customer(count) -> Customer:
+def _seed_customer(
+    count,
+    *,
+    email: str = CUSTOMER_EMAIL,
+    name: str = CUSTOMER_NAME,
+    mobile_no: str = CUSTOMER_MOBILE,
+    licence_number: str = LICENCE_NUMBER,
+) -> Customer:
+    """The reports customer; Module R4's rating demo reuses it with its own details."""
     from apps.core.management.commands.seed_demo import DEMO_PASSWORD, STAFF
 
-    user = User.objects.filter(email=CUSTOMER_EMAIL).first()
+    user = User.objects.filter(email=email).first()
     if user is None:
         user = User.objects.create_user(
-            email=CUSTOMER_EMAIL,
+            email=email,
             password=DEMO_PASSWORD,
-            name=CUSTOMER_NAME,
-            mobile_no=CUSTOMER_MOBILE,
+            name=name,
+            mobile_no=mobile_no,
             role=User.Role.CUSTOMER,
             address="22 Demo Lane, Bandra (W), Mumbai 400050",
             date_joined=_at(88),
@@ -121,7 +129,7 @@ def _seed_customer(count) -> Customer:
     licence, created = Licence.objects.get_or_create(
         customer=customer,
         defaults={
-            "licence_number": LICENCE_NUMBER,
+            "licence_number": licence_number,
             "issuing_authority": "RTO Mumbai (West)",
             "issue_date": date(2016, 5, 2),
             "expiry_date": date(2036, 5, 1),

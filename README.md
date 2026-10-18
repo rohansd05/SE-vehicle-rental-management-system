@@ -146,8 +146,10 @@ loads it again; it refuses if bookings or other records already use it. To
 create your own administrator instead, run `manage.py createsuperuser`.
 
 `seed_demo --reports` also loads three months of past bookings at Andheri and
-Bandra for the Reports screen (customer `reports@vrms.test`, password as below).
-Their invoices and ledger entries are append-only, so afterwards `--reset`
+Bandra for the Reports screen (customer `reports@vrms.test`, password as below),
+and the Rate Vehicle demo: `reports@vrms.test` has rated five rentals, and
+`rating@vrms.test` has one rental returned three days ago to rate and one
+returned 23 days ago (refused, outside the 14 days). Their invoices and ledger entries are append-only, so afterwards `--reset`
 refuses; load it last, on a database you will not reset.
 
 Always call the venv's interpreter (`.\venv\Scripts\python.exe`) or activate
