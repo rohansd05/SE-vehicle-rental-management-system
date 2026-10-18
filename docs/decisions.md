@@ -125,6 +125,11 @@ OE-3 already requires the web client to work from 360 px to 1920 px. The
 final report will state that the PWA fulfils OE-2 for this release. The PWA
 manifest and service worker are marked as a TODO in the frontend.
 
+**Built in Module N4 (19 Oct 2026):** `frontend/public/manifest.webmanifest`,
+`frontend/public/icons/`, `frontend/public/sw.js` (app shell and static files
+only, never an API response) and `frontend/public/offline.html`; traceability
+in `docs/traceability-deploy.md`.
+
 ## D9 — Scope and schedule
 
 **Decision.** Release 1.0 contains every feature in the SRS and Experiments
@@ -518,6 +523,17 @@ photo cards, the serviceable area matched by pincode, 409 for a refused rating,
 SA-2 judged today, and search priced at the pickup date's tariff while the
 quote still prices at today's. D13 stands: the average rating and count are
 computed on every query, never stored.
+
+## Module N4 (deployment, PWA, hardening): proposed items (awaiting team approval)
+
+N4-P1 to N4-P10 are listed with their reasons in `docs/traceability-deploy.md`,
+section 7: a VM smaller than OE-4's 4 vCPU / 8 GB is a deviation to record;
+SE-1 "at rest" relies on Azure's disk encryption; the SE-9 re-check is
+throttled with the SE-8 numbers (5 wrong passwords, 15 minutes, 429); CORS stays
+closed (one origin behind Caddy, D1); the PWA caches nothing personal and shows
+an offline page; the offline page's new copy; nightly backups of the database
+and the media on the VM itself; the Content Security Policy covers only the
+React app; OE-3 and WCAG were reviewed statically; the public demo accounts.
 
 ---
 

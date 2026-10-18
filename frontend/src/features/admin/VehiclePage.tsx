@@ -235,56 +235,58 @@ function DocumentsCard({ vehicle, onChanged }: { vehicle: AdminVehicleDetail; on
       </CardHeader>
       <CardContent className="grid gap-6">
         {vehicle.documents.length ? (
-          <table className="w-full text-sm">
-            <caption className="sr-only">Statutory documents</caption>
-            <thead>
-              <tr className="border-b text-left text-label text-muted-foreground">
-                <th scope="col" className="py-2.5 pr-3 font-normal">Document</th>
-                <th scope="col" className="py-2.5 pr-3 font-normal">Number</th>
-                <th scope="col" className="py-2.5 pr-3 font-normal">Expires</th>
-                <th scope="col" className="py-2.5 pr-3 font-normal">State</th>
-                <th scope="col" className="py-2.5 font-normal">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicle.documents.map((document) => (
-                <tr key={document.id} className={cn('border-b', !document.current && 'text-muted-foreground')}>
-                  <td className="py-2.5 pr-3">
-                    {document.document_type}
-                    {document.current ? null : ' (history)'}
-                    {document.file_url ? (
-                      <>
-                        {' · '}
-                        <a href={document.file_url} target="_blank" rel="noreferrer" className="text-primary underline">
-                          Scan
-                        </a>
-                      </>
-                    ) : null}
-                  </td>
-                  <td className="num py-2.5 pr-3">{document.document_number || '—'}</td>
-                  <td className="num py-2.5 pr-3 whitespace-nowrap">{formatDate(document.expiry_date)}</td>
-                  <td className={cn('py-2.5 pr-3', document.current && document.state !== 'Valid' && 'font-medium text-status-unsafe')}>
-                    {document.state}
-                  </td>
-                  <td className="py-2.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        await removeDocument(vehicle.id, document.id)
-                        onChanged(`${document.document_type} removed.`)
-                      }}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      <span className="sr-only">Remove {document.document_type} {document.document_number}</span>
-                    </Button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Statutory documents</caption>
+              <thead>
+                <tr className="border-b text-left text-label text-muted-foreground">
+                  <th scope="col" className="py-2.5 pr-3 font-normal">Document</th>
+                  <th scope="col" className="py-2.5 pr-3 font-normal">Number</th>
+                  <th scope="col" className="py-2.5 pr-3 font-normal">Expires</th>
+                  <th scope="col" className="py-2.5 pr-3 font-normal">State</th>
+                  <th scope="col" className="py-2.5 font-normal">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {vehicle.documents.map((document) => (
+                  <tr key={document.id} className={cn('border-b', !document.current && 'text-muted-foreground')}>
+                    <td className="py-2.5 pr-3">
+                      {document.document_type}
+                      {document.current ? null : ' (history)'}
+                      {document.file_url ? (
+                        <>
+                          {' · '}
+                          <a href={document.file_url} target="_blank" rel="noreferrer" className="text-primary underline">
+                            Scan
+                          </a>
+                        </>
+                      ) : null}
+                    </td>
+                    <td className="num py-2.5 pr-3">{document.document_number || '—'}</td>
+                    <td className="num py-2.5 pr-3 whitespace-nowrap">{formatDate(document.expiry_date)}</td>
+                    <td className={cn('py-2.5 pr-3', document.current && document.state !== 'Valid' && 'font-medium text-status-unsafe')}>
+                      {document.state}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          await removeDocument(vehicle.id, document.id)
+                          onChanged(`${document.document_type} removed.`)
+                        }}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        <span className="sr-only">Remove {document.document_type} {document.document_number}</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">No documents are on record.</p>
         )}

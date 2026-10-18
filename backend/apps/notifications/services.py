@@ -90,7 +90,7 @@ def send_pickup_reminders(now: datetime | None = None) -> int:
     and seen on the next run. Must run inside a transaction.
     """
     from apps.bookings.models import Booking
-    from apps.bookings.services import notification_context
+    from apps.bookings.services import collection_details, notification_context
     from apps.rentals.models import ConditionReport
 
     now = now or timezone.now()
@@ -111,8 +111,9 @@ def send_pickup_reminders(now: datetime | None = None) -> int:
     count = 0
     for booking in due:
         user = booking.customer.user
-        context = notification_context(booking)
-        queue_email(user, PICKUP_REMINDER, context, booking=booking)
-        queue_sms(user, f"{PICKUP_REMINDER}_sms", context, booking=booking)
+        # Version 2 says a delivered booking is brought to its address (Book.Deliver.Location).
+        context = {**notification_context(booking), "collection": collection_details(booking)}
+        queue_email(user, PICKUP_REMINDER, context, booking=booking, version=2)
+        queue_sms(user, f"{PICKUP_REMINDER}_sms", context, booking=booking, version=2)
         count += 1
     return count

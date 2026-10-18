@@ -69,6 +69,27 @@ def test_a_booking_collected_within_24_hours_is_reminded_by_e_mail_and_sms(outbo
     assert all(booking.pickup_code not in str(n.context) for n in Notification.objects.all())
 
 
+def test_the_reminder_is_template_version_2():
+    """Version 1 stays as it was sent; new reminders use version 2 (N4)."""
+    due()
+    remind()
+    assert set(Notification.objects.values_list("template_version", flat=True)) == {2}
+
+
+def test_a_delivered_booking_is_reminded_of_its_delivery_address(outbox):
+    """Book.Deliver.Location: the vehicle is delivered, so the reminder never says to collect it
+    at the branch (Module N4, R4 follow-up)."""
+    booking = due(delivery_address="12 Demo Lane, Andheri (W)", delivery_pincode="400053")
+    assert remind() == 1
+    for message in outbox:
+        assert "Doorstep delivery: we bring the vehicle to 12 Demo Lane, Andheri (W), 400053" in (
+            message.body
+        )
+        assert booking.pickup_branch.address not in message.body
+        assert "collect" not in message.body.lower()
+        assert booking.pickup_code in message.body
+
+
 def test_a_booking_is_never_reminded_twice():
     booking = due()
     assert remind() == 1

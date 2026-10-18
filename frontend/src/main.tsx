@@ -16,9 +16,15 @@ import App from './App.tsx'
 // The UI is light only, whatever the operating system setting
 // (docs/design/ui-brief.md, section 0); there is no theme switch.
 
-// TODO(D8, OE-2): ship as a Progressive Web App (web app manifest, icons and
-// a service worker) so the responsive client installs on Android 9+ and
-// iOS 14+. A responsive PWA meets OE-2 for Release 1.0.
+// D8, OE-2: a Progressive Web App (public/manifest.webmanifest, public/icons,
+// public/sw.js) that installs on Android 9+ and iOS 14+. The service worker
+// caches only the app shell and static files, never an API answer. Not in
+// development, where it would get in the way of Vite's hot reload.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js')
+  })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

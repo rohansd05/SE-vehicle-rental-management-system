@@ -1,11 +1,12 @@
 import { CircleHelp, LogOut, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 
 import { ROLE_LABELS } from '@/api/types'
 import { navItemsFor } from '@/app/navigation'
 import { Brand, Tagline } from '@/components/brand'
 import { SkipLink } from '@/components/page'
+import { LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -134,7 +135,10 @@ export function AppShell() {
           tabIndex={-1}
           className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
         >
-          <Outlet />
+          {/* Feature screens load on demand (admin, maintenance, handover, reports; PE-6). */}
+          <Suspense fallback={<LoadingState />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

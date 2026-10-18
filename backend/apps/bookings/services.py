@@ -420,23 +420,26 @@ def notify_booking_confirmed(booking: Booking) -> None:
         f"Total: {_money(invoice.total_amount)}",
         f"Refundable security deposit, held apart: {_money(booking.security_deposit)}",
     ]
-    # Book.Deliver.Location (Module R4): a delivered booking names its address instead.
-    branch, pickup = booking.pickup_branch, _local(booking.pickup_datetime)
-    if booking.delivery_address:
-        collection = (
-            f"Doorstep delivery: we bring the vehicle to {booking.delivery_address}, "
-            f"{booking.delivery_pincode}, from our {branch.branch_name} branch on {pickup}."
-        )
-    else:
-        collection = f"Collection: our {branch.branch_name} branch, {branch.address}, on {pickup}."
     _notify(
         booking,
         "booking_confirmed",
         branches=[booking.pickup_branch_id],
         email_version=2,
         price="\n".join(price),
-        collection=collection,
+        collection=collection_details(booking),
     )
+
+
+def collection_details(booking: Booking) -> str:
+    """Book.Deliver.Location (Module R4): where the customer gets the vehicle, for the
+    confirmation and the pickup reminder; a delivered booking names its address instead."""
+    branch, pickup = booking.pickup_branch, _local(booking.pickup_datetime)
+    if booking.delivery_address:
+        return (
+            f"Doorstep delivery: we bring the vehicle to {booking.delivery_address}, "
+            f"{booking.delivery_pincode}, from our {branch.branch_name} branch on {pickup}."
+        )
+    return f"Collection: our {branch.branch_name} branch, {branch.address}, on {pickup}."
 
 
 # ─── Cancel (Book.Cancel, Book.Cancel.Release; Booking.cancel_booking()) ──

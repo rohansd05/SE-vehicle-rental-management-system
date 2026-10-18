@@ -15,7 +15,13 @@ from apps.bookings.models import Booking
 from apps.fleet.models import Vehicle
 from apps.maintenance.models import MaintenanceJob
 from apps.rentals import services
-from apps.rentals.seed import PICKUP_CODE, REGISTRATION
+from apps.rentals.seed import (
+    DELIVERY_ADDRESS,
+    DELIVERY_PICKUP_CODE,
+    DELIVERY_REGISTRATION,
+    PICKUP_CODE,
+    REGISTRATION,
+)
 from apps.rentals.seed_return import LATE_CAR, ON_TIME_CAR
 from apps.rentals.services import ReturnReadings
 
@@ -98,6 +104,28 @@ def test_a_later_day_gets_a_booking_once_the_last_one_is_over():
     with freeze_time(DEMO_DAY.replace(day=24)):
         _seed()
         assert _demo_bookings().count() == 2
+
+
+@freeze_time(DEMO_DAY)
+def test_a_delivered_booking_is_upcoming_with_its_address_and_gets_its_reminder(outbox):
+    """Module N4 (R4 follow-up): the branch list shows the delivery address, and the pickup
+    reminder (Notify.Remind, version 2) says the vehicle is delivered there."""
+    from apps.notifications import tasks
+
+    _seed()
+    booking = Booking.objects.get(vehicle__registration_no=DELIVERY_REGISTRATION)
+    assert booking.status == Booking.Status.CONFIRMED
+    assert (booking.delivery_address, booking.delivery_pincode) == (DELIVERY_ADDRESS, "400053")
+    assert booking.add_ons.get().add_on.name == "Doorstep delivery"
+    assert booking.pickup_datetime == DEMO_DAY + timedelta(hours=24, minutes=10)
+    andheri = Booking.objects.filter(pickup_branch__branch_name="Andheri")
+    assert booking in services.branch_collections(andheri, when="upcoming")
+    assert services.branch_collections(andheri, query=DELIVERY_PICKUP_CODE).get() == booking
+    with freeze_time(DEMO_DAY + timedelta(minutes=15)):  # Beat runs every 5 minutes
+        tasks.send_pickup_reminders.delay().get()
+    reminders = [m for m in outbox if booking.booking_reference in m.body]
+    assert len(reminders) == 2  # e-mail and SMS
+    assert all(DELIVERY_ADDRESS in m.body for m in reminders)
 
 
 def test_the_maintenance_demo_jobs_are_untouched():

@@ -2342,6 +2342,7 @@ export interface components {
             readonly customer_name: string;
             readonly customer_mobile: string;
             readonly vehicle: components["schemas"]["BookingVehicle"];
+            readonly delivery_address: string;
         };
         BranchInput: {
             branch_name: string;
@@ -2701,6 +2702,7 @@ export interface components {
             readonly customer_name: string;
             readonly customer_mobile: string;
             readonly vehicle: components["schemas"]["HandoverVehicle"];
+            readonly delivery_address: string;
             /** Format: date-time */
             readonly handed_over_at: string | null;
             readonly licence: components["schemas"]["HandoverLicence"] | null;
@@ -3686,6 +3688,7 @@ export interface components {
             readonly customer_name: string;
             readonly customer_mobile: string;
             readonly vehicle: components["schemas"]["ReturnVehicle"];
+            readonly delivery_address: string;
             /** Format: date-time */
             readonly handed_over_at: string | null;
             /** Format: date-time */

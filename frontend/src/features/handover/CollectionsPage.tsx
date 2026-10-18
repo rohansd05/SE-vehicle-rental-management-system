@@ -47,6 +47,12 @@ function CollectionList({
           <span className="grid min-w-0 gap-1.5 text-sm">
             <span>{booking.customer_name}</span>
             <span className="num whitespace-nowrap text-muted-foreground">{booking.customer_mobile}</span>
+            {/* Book.Deliver.Location (R4): staff take a delivered booking to this address. */}
+            {booking.delivery_address ? (
+              <span className="text-muted-foreground">
+                Doorstep delivery: <span className="text-foreground">{booking.delivery_address}</span>
+              </span>
+            ) : null}
           </span>
           {returns ? (
             <span className="text-sm text-muted-foreground @xl:text-right">

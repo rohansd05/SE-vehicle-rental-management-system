@@ -35,7 +35,7 @@ function ScorePicker({
         {SCORES.map((score) => (
           <label
             key={score}
-            className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 text-sm has-checked:border-primary has-checked:bg-primary-tint"
+            className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 text-sm has-checked:border-primary has-checked:bg-primary-tint has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
           >
             <input
               type="radio"

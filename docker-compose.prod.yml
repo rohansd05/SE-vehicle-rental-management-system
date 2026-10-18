@@ -1,0 +1,127 @@
+# Production stack (D1, WBS 1.6.1): one Ubuntu VM running PostgreSQL 16, Valkey,
+# Django on gunicorn, a Celery worker, Celery Beat and Caddy. Only Caddy is
+# published (ports 80 and 443); everything else talks on the compose network.
+# Every setting comes from backend/.env (copied from backend/.env.example);
+# deploy/README-deploy.md has the commands and the list of variables.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+name: veyora
+
+x-backend: &backend
+  build: ./backend
+  image: veyora-backend
+  restart: unless-stopped
+  env_file: [backend/.env]
+  environment:
+    # Never the development settings: no DEBUG, no debug toolbar (it is not installed).
+    DJANGO_SETTINGS_MODULE: config.settings.production
+  volumes:
+    # Handover and return photos, signatures, workshop invoices and the demo photos.
+    # Served only through signed links (SI-3), never by Caddy.
+    - media:/app/media
+  depends_on:
+    postgres:
+      condition: service_healthy
+    valkey:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: [backend/.env] # POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+    # Reliability-1: R2's two 100-way concurrency tests need more than the default 100.
+    command: postgres -c max_connections=200
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  django:
+    <<: *backend
+    # Migrations run on every deploy before gunicorn starts; collectstatic fills the
+    # static volume Caddy serves /static/ from (admin and Swagger UI assets).
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             exec gunicorn -c /etc/gunicorn.conf.py config.wsgi"
+    volumes:
+      - media:/app/media
+      - static:/app/staticfiles
+      - ./deploy/gunicorn.conf.py:/etc/gunicorn.conf.py:ro
+    healthcheck:
+      # GET /api/v1/health/: one SELECT 1, no writes, no personal data.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/api/v1/health/', headers={'Host': os.environ['SITE_HOSTNAME']}), timeout=5)"
+      interval: 10s
+      timeout: 6s
+      retries: 6
+      start_period: 60s
+
+  worker:
+    <<: *backend
+    command: celery -A config worker -l info --concurrency 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      django:
+        condition: service_healthy # the migrations have run
+
+  beat:
+    <<: *backend
+    # The PeriodicTasks registered by the migrations (bookings 0003 and 0005,
+    # notifications 0002, maintenance 0004) live in the database.
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  caddy:
+    build: ./frontend # the React build, copied into the Caddy image
+    image: veyora-caddy
+    restart: unless-stopped
+    env_file: [backend/.env] # SITE_HOSTNAME
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/srv/django-static:ro
+      - caddy_data:/data # the HTTPS certificates; keep it, or Let's Encrypt rate-limits
+      - caddy_config:/config
+    depends_on:
+      django:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  valkey_data:
+  media:
+  static:
+  caddy_data:
+  caddy_config:

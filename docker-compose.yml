@@ -1,11 +1,14 @@
 # Development services only (D3): PostgreSQL and Valkey for a natively run
-# Django. The production stack (D1) is a separate compose file, not built yet.
+# Django. The production stack (D1) is docker-compose.prod.yml (deploy/README-deploy.md).
 # Credentials match backend/.env.example (DATABASE_URL, REDIS_URL).
 
 services:
   postgres:
     image: postgres:16
     restart: unless-stopped
+    # Reliability-1: R2's two 100-way concurrency tests need more than the default
+    # 100 connections; with fewer they skip. Recreate the container after a change.
+    command: postgres -c max_connections=200
     environment:
       POSTGRES_DB: vrms
       POSTGRES_USER: vrms

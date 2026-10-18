@@ -132,6 +132,26 @@ TEMPLATES: dict[tuple[str, int], Template] = {
             "Status: {status}\n\n{agency}"
         ),
     ),
+    # Module N4 (R4 follow-up), Notify.Remind with Book.Deliver.Location: {collection} is the
+    # branch collection or the doorstep delivery address, as in booking_confirmed 2.
+    ("pickup_reminder", 2): Template(
+        subject="{agency}: reminder for booking {reference} on {pickup}",
+        body=(
+            "Hello {name},\n\n"
+            "A reminder about booking {reference}: {vehicle} ({registration_no}).\n"
+            "{collection}\n"
+            "Pickup code: {pickup_code}\n"
+            "Please bring {documents}.\n\n"
+            "Status: {status}\n\n{agency}"
+        ),
+    ),
+    ("pickup_reminder_sms", 2): Template(
+        subject="",
+        body=(
+            "{agency}: reminder, booking {reference}, {vehicle}. {collection} "
+            "Pickup code {pickup_code}. Bring {documents}."
+        ),
+    ),
 }
 
 

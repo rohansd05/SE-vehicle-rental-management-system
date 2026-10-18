@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Veyora app icon (D8): primary petrol (the primary token) with an on-primary V, full bleed so
+       it also serves as the maskable icon (the V sits inside the central 80 % safe zone).
+       icon-180.png, icon-192.png, icon-512.png and icon-maskable-512.png are this file
+       rendered with sharp. -->
+  <rect width="512" height="512" fill="#0F5866"/>
+  <path d="M140 140h78l38 148 38-148h78l-80 232h-72z" fill="#FFFFFF"/>
+  <rect x="216" y="392" width="80" height="12" rx="6" fill="#E5A21A"/>
+</svg>
