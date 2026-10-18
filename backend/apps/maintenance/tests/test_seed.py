@@ -57,3 +57,39 @@ def test_reset_removes_and_reloads_the_demo_jobs():
     _seed()
     _seed("--reset")
     assert _demo_jobs().count() == 3
+
+
+# ─── Module N3 demo (maintenance/seed_n3.py) ──────────────────────────────
+
+
+def test_n3_demo_has_an_authorised_technician_and_a_car_due_for_service(outbox):
+    from apps.accounts.models import User
+    from apps.fleet.services.status import may_clear_unsafe
+    from apps.maintenance import tasks
+    from apps.maintenance.seed_n3 import SERVICE_DUE_CAR
+
+    _seed()
+    tech2 = User.objects.get(email="tech2@vrms.test")
+    assert tech2.check_password("Demo@1234") and may_clear_unsafe(tech2)  # BR-16
+    assert not may_clear_unsafe(User.objects.get(email="tech@vrms.test"))  # jobs 1-3 as before
+    car = Vehicle.objects.get(registration_no=SERVICE_DUE_CAR)
+    assert services.service_due(car) is not None  # SA-2 refuses its handover
+    assert MaintenanceJob.objects.count() == 3  # no job is seeded
+
+    tasks.raise_preventive_jobs.delay()  # the daily Beat task (Maint.Auto.Time / Km)
+    job = MaintenanceJob.objects.get(vehicle=car)
+    assert (job.job_type, job.reported_by, job.due_odometer) == ("Preventive", None, 25100)
+    assert services.alert_expiring_documents() >= 1  # its insurance expires in ten days
+    assert any(SERVICE_DUE_CAR in m.body for m in outbox if "documents" in m.subject)
+
+
+def test_n3_reset_removes_untouched_system_jobs_and_their_alerts():
+    from apps.maintenance import tasks
+    from apps.notifications.models import Notification
+
+    _seed()
+    tasks.raise_preventive_jobs.delay()
+    assert Notification.objects.filter(template="maintenance_service_due").exists()
+    _seed("--reset")  # the system's jobs and alerts do not block the reset
+    assert not MaintenanceJob.objects.filter(reported_by__isnull=True).exists()
+    assert _demo_jobs().count() == 3

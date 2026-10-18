@@ -32,6 +32,7 @@ from apps.bookings.seed_changes import delete_demo_change_data, seed_demo_change
 from apps.core.audit import entity_type, snapshot
 from apps.core.choices import FuelType, VehicleType
 from apps.core.models import AuditLog
+from apps.core.seed_admin import delete_demo_blacklist_data, seed_demo_blacklist_data
 from apps.fleet.models import (
     Branch,
     BranchServiceableArea,
@@ -42,6 +43,7 @@ from apps.fleet.models import (
     VehicleDocument,
 )
 from apps.maintenance.seed import delete_demo_jobs, seed_demo_jobs
+from apps.maintenance.seed_n3 import delete_demo_n3_maintenance, seed_demo_n3_maintenance
 from apps.payments.seed import delete_demo_payment_data, seed_demo_payment_data
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 from apps.rentals.seed import delete_demo_handover_data, seed_demo_handover_data
@@ -130,6 +132,17 @@ CARS = [
     ("Toyota", "Innova Crysta", "SUV", FuelType.DIESEL, "Manual", 7, "Silver"),
     ("Mahindra", "Thar", "SUV", FuelType.DIESEL, "Manual", 4, "Green"),
 ]
+# BR-12 (N2-P3) needs a tank (litres), CNG (kg) or battery (kWh) capacity to charge a
+# fuel or charge shortfall. Demo values, by category, then by fuel where it differs.
+FUEL_CAPACITIES = {"Hatchback": "37.00", "Sedan": "40.00", "SUV": "55.00", "Scooter": "5.30",
+                   "Motorcycle": "13.00"}  # fmt: skip
+FUEL_CAPACITIES_BY_FUEL = {FuelType.ELECTRIC: "24.00", FuelType.CNG: "12.00"}
+
+
+def demo_fuel_capacity(category: str, fuel_type: str) -> Decimal:
+    return Decimal(FUEL_CAPACITIES_BY_FUEL.get(fuel_type) or FUEL_CAPACITIES.get(category, "40.00"))
+
+
 # (brand, model, category, engine cc, colour)
 TWO_WHEELERS = [
     ("Honda", "Activa 6G", "Scooter", 110, "Grey"),
@@ -232,6 +245,29 @@ class Command(BaseCommand):
         seed_demo_return_data(self._count)
         seed_demo_payment_data(self._count)
         seed_demo_change_data(self._count)
+        seed_demo_n3_maintenance(self._count)
+        seed_demo_blacklist_data(self._count)
+        self._seed_fuel_capacities()
+
+    def _seed_fuel_capacities(self) -> None:
+        """Every demo vehicle gets its tank or battery capacity, so N2's fuel shortfall
+        (BR-12) is charged at any return; also fills vehicles seeded before it was set."""
+        missing = Vehicle.objects.filter(
+            chassis_number__startswith="DEMO", fuel_capacity__isnull=True
+        ).select_related("category")
+        for vehicle in missing:
+            before = snapshot(vehicle)
+            vehicle.fuel_capacity = demo_fuel_capacity(vehicle.category.name, vehicle.fuel_type)
+            vehicle.save(update_fields=["fuel_capacity", "updated_at"])
+            self._count("fuel capacities", True)
+            AuditLog.objects.record(
+                actor=None,
+                action="Update",
+                entity_type=entity_type(vehicle),
+                entity_id=vehicle.pk,
+                before=before,
+                after=snapshot(vehicle),
+            )
 
     def _seed_branches(self) -> dict[str, Branch]:
         branches = {}
@@ -425,6 +461,7 @@ class Command(BaseCommand):
                         "colour": colour,
                         "transmission": transmission,
                         "seating_capacity": seats,
+                        "fuel_capacity": demo_fuel_capacity(category, fuel),
                     },
                 )
             else:
@@ -439,6 +476,7 @@ class Command(BaseCommand):
                         "fuel_type": FuelType.PETROL,
                         "colour": colour,
                         "engine_cc": engine_cc,
+                        "fuel_capacity": demo_fuel_capacity(category, FuelType.PETROL),
                     },
                 )
             self._count("vehicles", created)
@@ -475,6 +513,8 @@ class Command(BaseCommand):
         """Remove only what _seed() creates. Other data is never touched."""
         demo_emails = [account.email for account in DEMO_ACCOUNTS]
         try:
+            delete_demo_n3_maintenance()  # its grant protects the demo administrator
+            delete_demo_blacklist_data()  # its bookings protect a demo tariff
             delete_demo_handover_data()  # its booking protects a demo tariff
             delete_demo_return_data()  # so do these, and their reports the staff account
             delete_demo_payment_data()  # so do these bookings

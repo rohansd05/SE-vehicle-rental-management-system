@@ -42,18 +42,21 @@ EXPECTED = {
     # + the cash and refund demo cars (payments/seed.py)
     # + the two booking-changes cars (bookings/seed_changes.py)
     # + the two return demo cars (rentals/seed_return.py)
-    Vehicle: 31,
-    Car: 21,
+    # + the service-due car (maintenance/seed_n3.py) and the two blacklist cars (core/seed_admin.py)
+    Vehicle: 34,
+    Car: 24,
     TwoWheeler: 10,
-    VehicleDocument: 32,  # one each, and the handover car's four (SA-3)
+    # one each, and the four of the handover car and of the service-due car (SA-3)
+    VehicleDocument: 38,
     # 5 + pending@ (bookings/seed.py) + handover@ (rentals/seed.py) + payments@ (payments/seed.py)
     # + changes@ (bookings/seed_changes.py) + return@ (rentals/seed_return.py)
-    User: 10,
-    Customer: 6,
-    Licence: 6,
-    LicenceCategory: 10,
+    # + tech2@ (maintenance/seed_n3.py) + blacklist@ (core/seed_admin.py)
+    User: 12,
+    Customer: 7,
+    Licence: 7,
+    LicenceCategory: 11,
     BranchStaff: 1,
-    MaintenanceTechnician: 1,
+    MaintenanceTechnician: 2,
     Administrator: 2,  # the administrator and the branch manager
     BranchManager: 1,
 }
@@ -70,8 +73,8 @@ def _counts():
 def test_seed_creates_the_expected_demo_data():
     _seed()
     assert _counts() == EXPECTED
-    # Fleet.Audit: 5 branches, 10 users, 5 tariffs and 31 vehicles were audited.
-    assert AuditLog.objects.filter(action="Create").count() == 51
+    # Fleet.Audit: 5 branches, 12 users, 5 tariffs and 34 vehicles were audited.
+    assert AuditLog.objects.filter(action="Create").count() == 56
     assert AuditLog.objects.verify_chain()
 
 
@@ -87,7 +90,7 @@ def test_reset_reloads_the_same_data():
     _seed()
     _seed("--reset")
     assert _counts() == EXPECTED
-    assert AuditLog.objects.filter(action="Delete").count() == 51
+    assert AuditLog.objects.filter(action="Delete").count() == 56
     assert AuditLog.objects.verify_chain()
 
 
@@ -151,3 +154,20 @@ def test_reset_refuses_when_demo_data_is_in_use():
     with pytest.raises(CommandError):
         _seed("--reset")
     assert _counts() == EXPECTED
+
+
+def test_every_demo_vehicle_has_its_fuel_capacity():
+    """BR-12 (N2-P3): N2's fuel shortfall can be charged on any demo vehicle."""
+    _seed()
+    assert not Vehicle.objects.filter(fuel_capacity__isnull=True).exists()
+    assert str(Car.objects.get(model="Tiago EV").fuel_capacity) == "24.00"  # kWh
+    assert str(Car.objects.get(model="Dzire").fuel_capacity) == "12.00"  # kg of CNG
+
+
+def test_fuel_capacity_is_filled_on_vehicles_seeded_before_it_was_set():
+    _seed()
+    Vehicle.objects.filter(registration_no="MH02DH3001").update(fuel_capacity=None)
+    _seed()
+    assert str(Vehicle.objects.get(registration_no="MH02DH3001").fuel_capacity) == "37.00"
+    entry = AuditLog.objects.filter(action="Update", entity_type="fleet.Vehicle").last()
+    assert entry.after["fuel_capacity"] == "37.00"
