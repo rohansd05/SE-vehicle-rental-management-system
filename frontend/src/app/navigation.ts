@@ -145,7 +145,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Reports',
     icon: ChartColumn,
     roles: ['ADMINISTRATOR', 'BRANCH_MANAGER'],
-    available: false,
+    available: true,
     description: 'Utilisation, revenue and maintenance-cost reports.',
   },
   {

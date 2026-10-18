@@ -15,6 +15,7 @@ import { MyLicencePage } from '@/features/licence/MyLicencePage'
 import { maintenanceRoutes } from '@/features/maintenance/routes'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { paymentRoutes } from '@/features/refunds/routes'
+import { reportRoutes } from '@/features/reports/routes'
 import { searchRoutes } from '@/features/search/routes'
 import { CreditsPage } from '@/pages/CreditsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
@@ -102,6 +103,7 @@ export function AppRoutes() {
         {handoverRoutes()}
         {paymentRoutes()}
         {adminRoutes()}
+        {reportRoutes()}
         {UPCOMING_ITEMS.map((item) => (
           <Route
             key={item.to}
