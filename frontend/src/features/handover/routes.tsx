@@ -8,9 +8,7 @@ import { Route } from 'react-router-dom'
 import type { Role } from '@/api/types'
 import { RequireRole } from '@/app/guards'
 
-import { BranchBookingsPage, HandoverDeskPage } from './CollectionsPage'
-import { HandoverPage } from './HandoverPage'
-import { ReturnPage } from './ReturnPage'
+import { BranchBookingsPage, HandoverDeskPage, HandoverPage, ReturnPage } from './lazy'
 
 /** Exp 2 UC 7 and UC 8: Branch Staff hand vehicles over and take them back. */
 const STAFF: readonly Role[] = ['BRANCH_STAFF']

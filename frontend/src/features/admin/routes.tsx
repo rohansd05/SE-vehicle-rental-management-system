@@ -8,15 +8,18 @@ import { Route } from 'react-router-dom'
 import type { Role } from '@/api/types'
 import { RequireRole } from '@/app/guards'
 
-import { AuditPage } from './AuditPage'
-import { BranchesPage } from './BranchesPage'
-import { CustomerPage } from './CustomerPage'
-import { FleetPage } from './FleetPage'
-import { StaffFormPage, StaffPage } from './StaffPages'
-import { TariffsPage } from './TariffsPage'
-import { UsersPage } from './UsersPage'
-import { VehicleFormPage } from './VehicleFormPage'
-import { VehiclePage } from './VehiclePage'
+import {
+  AuditPage,
+  BranchesPage,
+  CustomerPage,
+  FleetPage,
+  StaffFormPage,
+  StaffPage,
+  TariffsPage,
+  UsersPage,
+  VehicleFormPage,
+  VehiclePage,
+} from './lazy'
 
 const ADMINISTRATOR: readonly Role[] = ['ADMINISTRATOR']
 /** Fleet.Audit: Administrators; a Branch Manager reads their own branch's entries. */

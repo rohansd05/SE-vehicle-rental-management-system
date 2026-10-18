@@ -8,11 +8,7 @@ import { Route } from 'react-router-dom'
 import type { Role } from '@/api/types'
 import { RequireRole } from '@/app/guards'
 
-import { ClearanceQueuePage } from './ClearanceQueuePage'
-import { JobDetailPage } from './JobDetailPage'
-import { BranchJobsPage, MyJobsPage } from './JobsPage'
-import { ReportFaultPage } from './ReportFaultPage'
-import { VehicleHistoryPage } from './VehicleHistoryPage'
+import { BranchJobsPage, ClearanceQueuePage, JobDetailPage, MyJobsPage, ReportFaultPage, VehicleHistoryPage } from './lazy'
 
 const TECHNICIAN: readonly Role[] = ['MAINTENANCE_TECHNICIAN']
 /** Maint.Create, Maint.Schedule (Proposed M11 includes the Branch Manager). */
