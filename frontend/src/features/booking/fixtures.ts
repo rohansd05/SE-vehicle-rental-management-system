@@ -37,8 +37,10 @@ export const CAR: VehicleDetail = {
   seating_capacity: 5,
   engine_cc: null,
   average_rating: '4.50',
+  rating_count: 2,
   last_service_date: '2026-09-20',
   status: 'Available',
+  service_overdue: false,
   photos: ['/api/v1/files/p1/', '/api/v1/files/p2/', '/api/v1/files/p3/', '/api/v1/files/p4/'],
   tariff: { hourly_rate: '150.00', daily_rate: '1800.00', free_km_allowance_per_day: 250, excess_km_rate: '12.00' },
   security_deposit: '5000.00',
@@ -113,11 +115,15 @@ export const heldBooking = (minutes = 15): BookingDetail => ({
   discount_amount: '0.00',
   terms_accepted_at: '2026-10-11T10:00:00Z',
   safety_notice_acknowledged_at: null,
+  delivery_address: '',
+  delivery_pincode: '',
   invoice_number: null,
   created_at: '2026-10-11T10:00:00Z',
   price: QUOTE,
   transaction_id: null,
   refunds: [],
+  rating: null,
+  rating_open_until: null,
 })
 
 export const confirmedBooking = (): BookingDetail => ({

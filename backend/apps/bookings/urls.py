@@ -27,4 +27,5 @@ urlpatterns = [
         name="booking-extend-quote",
     ),
     path("<int:pk>/extend/", views.BookingExtendView.as_view(), name="booking-extend"),
+    path("<int:pk>/rating/", views.BookingRatingView.as_view(), name="booking-rating"),  # UC 6
 ]

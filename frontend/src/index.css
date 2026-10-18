@@ -300,6 +300,7 @@
 
 /* The hero headline (B2, system C): Schibsted Grotesk 800, tight. */
 @utility display {
+    font-variant-numeric: normal;
     font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: -0.03em;
@@ -308,6 +309,7 @@
 /* The Veyora wordmark (D24): Schibsted Grotesk at its heaviest, tracked in,
    no icon, no gradient. Sizes come from the brand and display tokens. */
 @utility brand {
+    font-variant-numeric: normal;
     font-family: var(--font-heading);
     font-weight: 800;
     letter-spacing: -0.035em;
@@ -323,6 +325,7 @@
 
 /* Heading style for elements that are not h1 to h4 (legends, captions, alert titles). */
 @utility heading {
+    font-variant-numeric: normal;
     font-family: var(--font-heading);
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -473,7 +476,12 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* Headings (B2, system C): Schibsted Grotesk 700, tight; subsections 650. */
+    /* Headings (B2, system C): Schibsted Grotesk 700, tight; subsections 650.
+       Never tabular, even inside td, dd or a tabular-nums container: Schibsted
+       Grotesk's tnum puts a gap before , : and . (mono `num` spans keep theirs). */
+    h1, h2, h3, h4, .font-heading {
+        font-variant-numeric: normal;
+    }
     h1, h2, h3, h4 {
         @apply font-heading;
         font-weight: 700;

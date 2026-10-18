@@ -34,6 +34,7 @@ const CAR: AvailableVehicle = {
   seating_capacity: 5,
   engine_cc: null,
   average_rating: '4.50',
+  rating_count: 2,
   last_service_date: '2026-09-20',
   estimate: { billing_unit: 'day', billing_count: 2, total_payable: '4248.00', security_deposit: '5000.00' },
 }

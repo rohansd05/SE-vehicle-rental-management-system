@@ -832,7 +832,10 @@ paths:
         BR-1) and prices it (Tariff.calculate_price(), BR-6). The booking is Pending
         Payment with a 15-minute hold (Book.Hold). Refusals: 400 with `code` licence_not_verified,
         licence_expired, licence_expires_before_return, licence_category, under_age,
-        customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`.'
+        customer_blacklisted or outstanding_due; 409 `vehicle_unavailable` or `service_overdue`
+        (SA-2). With the doorstep delivery add-on, `delivery_address` and a `delivery_pincode`
+        in the branch''s serviceable areas are required (Book.Deliver.Location); a
+        refusal is a 400 on that field.'
       summary: Create a booking and hold the vehicle (Booking.create_booking())
       tags:
       - Bookings
@@ -1376,6 +1379,100 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingError'
           description: ''
+  /api/v1/bookings/{id}/rating/:
+    post:
+      operationId: api_v1_bookings_rating_create
+      description: Only the customer's own Completed booking, within 14 days of its
+        return, once. Vehicle and service are scored 1 to 5; the comment is optional.
+        The vehicle's average rating is computed from the ratings, so it is current
+        at once (D13). 409 `rating_refused` (with the reason) for a Cancelled, No-show
+        or Active booking, one returned more than 14 days ago, or one already rated.
+      summary: Rate a completed booking (UC 6 steps 2-3)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RateBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RateBooking'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
+    patch:
+      operationId: api_v1_bookings_rating_partial_update
+      description: Only within 24 hours of submitting it; otherwise 409 `rating_refused`.
+      summary: Edit the review of a booking (UC 6 extension 2a)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRateBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRateBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRateBooking'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingError'
+          description: ''
   /api/v1/bookings/awaiting-cash/:
     get:
       operationId: api_v1_bookings_awaiting_cash_list
@@ -1903,14 +2000,18 @@ paths:
     get:
       operationId: api_v1_fleet_search_list
       description: 'Vehicles at the pickup branch that can be booked for the whole
-        period: status Available (Appendix B), no Pending Payment, Confirmed or Active
-        booking within the period plus the 60-minute turnaround buffer (BR-1, Book.Hold),
-        no Scheduled or In Progress maintenance window in the period, and an availability
-        date on or before the pickup (Fleet.Add). The period must be 4 hours to 30
-        days (BR-5) and start in the future; otherwise the answer is 400 with the
-        message on the field. Each result carries `estimate` (Search.Price): the base
-        charge plus tax at the tariff in force, excluding add-ons, discounts and usage-based
-        charges; null if no tariff is in force.'
+        period: status Available (Appendix B; so never Under Maintenance, Unsafe or
+        Retired), no Pending Payment, Confirmed or Active booking within the period
+        plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In
+        Progress maintenance window in the period, not overdue for its preventive
+        service by date or distance (SA-2, BR-15), and an availability date on or
+        before the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5)
+        and start in the future; otherwise the answer is 400 with the message on the
+        field. Search.Filter narrows the results and `sort` orders them by price or
+        rating. Each result carries `estimate` (Search.Price): the base charge plus
+        tax at the tariff in force on the pickup date, excluding add-ons, discounts
+        and usage-based charges; null if no tariff is in force. `min_price`/`max_price`
+        apply to that estimate.'
       summary: Search available vehicles (Search.Available)
       parameters:
       - in: query
@@ -1919,10 +2020,61 @@ paths:
           type: integer
         required: true
       - in: query
+        name: brand
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 1
+      - in: query
         name: category
         schema:
           type: integer
           nullable: true
+      - in: query
+        name: fuel_type
+        schema:
+          enum:
+          - Petrol
+          - Diesel
+          - CNG
+          - Electric
+          type: string
+          minLength: 1
+        description: |-
+          * `Petrol` - Petrol
+          * `Diesel` - Diesel
+          * `CNG` - CNG
+          * `Electric` - Electric
+      - in: query
+        name: max_price
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      - in: query
+        name: min_price
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      - in: query
+        name: min_rating
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,1})?$
+      - in: query
+        name: min_seats
+        schema:
+          type: integer
+          maximum: 20
+          minimum: 1
+      - in: query
+        name: model
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 1
       - name: page
         required: false
         in: query
@@ -1941,6 +2093,43 @@ paths:
           type: string
           format: date-time
         required: true
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - price
+          - -price
+          - rating
+          type: string
+          minLength: 1
+        description: |-
+          price (lowest first), -price, or rating.
+
+          * `price` - price
+          * `-price` - -price
+          * `rating` - rating
+      - in: query
+        name: transmission
+        schema:
+          enum:
+          - Manual
+          - Automatic
+          type: string
+          minLength: 1
+        description: |-
+          * `Manual` - Manual
+          * `Automatic` - Automatic
+      - in: query
+        name: vehicle_type
+        schema:
+          enum:
+          - Car
+          - Two-Wheeler
+          type: string
+          minLength: 1
+        description: |-
+          * `Car` - Car
+          * `Two-Wheeler` - Two-Wheeler
       tags:
       - Search and availability
       security:
@@ -1952,13 +2141,148 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAvailableVehicleList'
           description: ''
+  /api/v1/fleet/search/alternatives/:
+    get:
+      operationId: api_v1_fleet_search_alternatives_list
+      description: The same query as the search. Returns the other branches with matching
+        vehicles for the same period (by name), then the same branch for the same
+        length of rental moved by up to SEARCH_ALTERNATIVE_DAYS days either way, nearest
+        first, at most SEARCH_ALTERNATIVE_DATES_SHOWN of them. Each entry gives how
+        many vehicles match there.
+      summary: Nearest alternatives when nothing matches (UC 2 extension 3a)
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: brand
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 1
+      - in: query
+        name: category
+        schema:
+          type: integer
+          nullable: true
+      - in: query
+        name: fuel_type
+        schema:
+          enum:
+          - Petrol
+          - Diesel
+          - CNG
+          - Electric
+          type: string
+          minLength: 1
+        description: |-
+          * `Petrol` - Petrol
+          * `Diesel` - Diesel
+          * `CNG` - CNG
+          * `Electric` - Electric
+      - in: query
+        name: max_price
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      - in: query
+        name: min_price
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      - in: query
+        name: min_rating
+        schema:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,1})?$
+      - in: query
+        name: min_seats
+        schema:
+          type: integer
+          maximum: 20
+          minimum: 1
+      - in: query
+        name: model
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 1
+      - in: query
+        name: pickup_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: return_datetime
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - price
+          - -price
+          - rating
+          type: string
+          minLength: 1
+        description: |-
+          price (lowest first), -price, or rating.
+
+          * `price` - price
+          * `-price` - -price
+          * `rating` - rating
+      - in: query
+        name: transmission
+        schema:
+          enum:
+          - Manual
+          - Automatic
+          type: string
+          minLength: 1
+        description: |-
+          * `Manual` - Manual
+          * `Automatic` - Automatic
+      - in: query
+        name: vehicle_type
+        schema:
+          enum:
+          - Car
+          - Two-Wheeler
+          type: string
+          minLength: 1
+        description: |-
+          * `Car` - Car
+          * `Two-Wheeler` - Two-Wheeler
+      tags:
+      - Search and availability
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchAlternative'
+          description: ''
   /api/v1/fleet/vehicles/{id}/:
     get:
       operationId: api_v1_fleet_vehicles_retrieve
       description: Photographs (signed links), specification, the tariff in force,
         the BR-3 deposit, the rental terms (Book.Quote.Terms), the average rating
-        and the last service date. `tariff` and `terms` are null while the category
-        has no tariff in force.
+        and how many ratings it has, and the last service date from the maintenance
+        history. `service_overdue` (SA-2) marks a vehicle that cannot be booked until
+        it is serviced. `tariff` and `terms` are null while the category has no tariff
+        in force.
       summary: A vehicle in detail (Search.Detail)
       parameters:
       - in: path
@@ -4754,9 +5078,13 @@ components:
           pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
           readOnly: true
           nullable: true
+        rating_count:
+          type: integer
+          readOnly: true
         last_service_date:
           type: string
           format: date
+          readOnly: true
           nullable: true
         estimate:
           allOf:
@@ -4775,7 +5103,9 @@ components:
       - home_branch
       - home_branch_id
       - id
+      - last_service_date
       - model
+      - rating_count
       - seating_capacity
       - transmission
       - vehicle_type
@@ -4874,6 +5204,12 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        delivery_address:
+          type: string
+          readOnly: true
+        delivery_pincode:
+          type: string
+          readOnly: true
         invoice_number:
           type: string
           nullable: true
@@ -4888,6 +5224,8 @@ components:
       - cash_on_collection
       - confirmed_at
       - created_at
+      - delivery_address
+      - delivery_pincode
       - discount_amount
       - discount_code
       - hold_expires_at
@@ -4924,8 +5262,9 @@ components:
       - quantity
     BookingDetail:
       type: object
-      description: Adds the itemised price (Book.Quote.Display) and the payment transaction
-        (Pay.Confirm.OK).
+      description: |-
+        Adds the itemised price (Book.Quote.Display), the payment transaction (Pay.Confirm.OK)
+        and the review (UC 6): `rating_open_until` invites a rating while it can be given.
       properties:
         id:
           type: integer
@@ -5005,6 +5344,12 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        delivery_address:
+          type: string
+          readOnly: true
+        delivery_pincode:
+          type: string
+          readOnly: true
         invoice_number:
           type: string
           nullable: true
@@ -5026,12 +5371,24 @@ components:
           items:
             $ref: '#/components/schemas/Refund'
           readOnly: true
+        rating:
+          allOf:
+          - $ref: '#/components/schemas/Rating'
+          nullable: true
+          readOnly: true
+        rating_open_until:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
       required:
       - add_ons
       - booking_reference
       - cash_on_collection
       - confirmed_at
       - created_at
+      - delivery_address
+      - delivery_pincode
       - discount_amount
       - discount_code
       - hold_expires_at
@@ -5042,6 +5399,8 @@ components:
       - pickup_code
       - pickup_datetime
       - price
+      - rating
+      - rating_open_until
       - refunds
       - return_datetime
       - safety_notice_acknowledged_at
@@ -5356,6 +5715,12 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        delivery_address:
+          type: string
+          readOnly: true
+        delivery_pincode:
+          type: string
+          readOnly: true
         invoice_number:
           type: string
           nullable: true
@@ -5384,6 +5749,8 @@ components:
       - created_at
       - customer_mobile
       - customer_name
+      - delivery_address
+      - delivery_pincode
       - discount_amount
       - discount_code
       - hold_expires_at
@@ -5555,6 +5922,17 @@ components:
           type: boolean
           default: false
           description: 'SA-1: must be true for a two-wheeler.'
+        delivery_address:
+          type: string
+          default: ''
+          description: 'Book.Deliver.Location: required with the doorstep delivery
+            add-on.'
+          maxLength: 500
+        delivery_pincode:
+          type: string
+          default: ''
+          description: Six digits, within the pickup branch's serviceable areas.
+          maxLength: 6
       required:
       - pickup_datetime
       - return_datetime
@@ -7400,6 +7778,23 @@ components:
           maxLength: 15
         address:
           type: string
+    PatchedRateBooking:
+      type: object
+      description: 'Exp 2 UC 6 step 2: vehicle and service rated separately, 1 to
+        5, optional comment.'
+      properties:
+        vehicle_rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        service_rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          default: ''
+          maxLength: 1000
     PatchedStaffUpdate:
       type: object
       description: Send only what changes. The role never changes.
@@ -7816,6 +8211,54 @@ components:
       - late_return_grace_minutes
       - late_return_hourly_rate
       - no_show_retained_percent
+    RateBooking:
+      type: object
+      description: 'Exp 2 UC 6 step 2: vehicle and service rated separately, 1 to
+        5, optional comment.'
+      properties:
+        vehicle_rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        service_rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          default: ''
+          maxLength: 1000
+      required:
+      - service_rating
+      - vehicle_rating
+    Rating:
+      type: object
+      description: 'Exp 2 UC 6: the review, and until when it may still be edited
+        (extension 2a).'
+      properties:
+        vehicle_rating:
+          type: integer
+          readOnly: true
+        service_rating:
+          type: integer
+          readOnly: true
+        comment:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        editable_until:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - comment
+      - created_at
+      - editable_until
+      - service_rating
+      - vehicle_rating
     Reason:
       type: object
       properties:
@@ -8689,6 +9132,29 @@ components:
       - scheduled_from
       - scheduled_to
       - technician
+    SearchAlternative:
+      type: object
+      description: 'Exp 2 UC 2 extension 3a: a branch or a nearby period with matching
+        vehicles.'
+      properties:
+        branch:
+          type: integer
+        branch_name:
+          type: string
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_datetime:
+          type: string
+          format: date-time
+        vehicles:
+          type: integer
+      required:
+      - branch
+      - branch_name
+      - pickup_datetime
+      - return_datetime
+      - vehicles
     SettlementRecord:
       type: object
       description: 'Return.Complete: the signed settlement and where its money went.'
@@ -9278,12 +9744,19 @@ components:
           pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
           readOnly: true
           nullable: true
+        rating_count:
+          type: integer
+          readOnly: true
         last_service_date:
           type: string
           format: date
+          readOnly: true
           nullable: true
         status:
           type: string
+          readOnly: true
+        service_overdue:
+          type: boolean
           readOnly: true
         photos:
           type: array
@@ -9316,10 +9789,13 @@ components:
       - home_branch
       - home_branch_id
       - id
+      - last_service_date
       - model
       - photos
+      - rating_count
       - seating_capacity
       - security_deposit
+      - service_overdue
       - status
       - tariff
       - terms

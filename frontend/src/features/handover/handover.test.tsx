@@ -46,7 +46,11 @@ function serveCollections(respond: (url: URL) => object) {
 
 function serveHandover(initial: HandoverDetail) {
   const state = { handover: initial }
-  server.use(http.get(DETAIL, () => HttpResponse.json(state.handover)))
+  server.use(
+    http.get(DETAIL, () => HttpResponse.json(state.handover)),
+    // Module R4: the delivery address comes from the booking; none here.
+    http.get(`${API}/bookings/:id/`, () => HttpResponse.json({ delivery_address: '', delivery_pincode: '' })),
+  )
   return state
 }
 

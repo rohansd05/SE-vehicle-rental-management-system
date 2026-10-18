@@ -509,6 +509,16 @@ confirmation are built); an Administrator declining a clearance.
 | N3-P9 | "Next service overdue" (SA-2) | Due when the odometer has reached the BR-15 distance, or the date its time interval gives has come, from the last service on record; unknown (never overdue) before any service is recorded. Handover is refused with its own reason (`service_overdue`). Search and booking (SA-2's other two) are the catalogue's, Rohan's. |
 | N3-P10 | Booking links on the blacklist screen | There is no staff or Administrator booking detail screen yet, so each booking links to its audit history (`/app/audit?entity_type=bookings.Booking&entity_id=…`). |
 
+## Module R4 (catalogue, rating, delivery): proposed items (awaiting team approval)
+
+R4-P1 to R4-P7 are listed with their reasons in
+`docs/traceability-catalogue-rating.md`, section 6: the "nearest" alternatives
+(±3 days, at most 3 dates), no delivery change through Modify, generated demo
+photo cards, the serviceable area matched by pincode, 409 for a refused rating,
+SA-2 judged today, and search priced at the pickup date's tariff while the
+quote still prices at today's. D13 stands: the average rating and count are
+computed on every query, never stored.
+
 ---
 
 ## Third-party packages and licences

@@ -146,6 +146,8 @@ describe('booking form and price summary (Book.Quote.Display)', () => {
       discount_code: '',
       terms_accepted: true,
       safety_notice_acknowledged: false,
+      delivery_address: '', // collected at the branch (Book.Deliver.Location)
+      delivery_pincode: '',
     })
   })
 

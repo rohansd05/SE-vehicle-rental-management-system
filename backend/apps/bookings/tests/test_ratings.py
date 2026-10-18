@@ -54,7 +54,12 @@ class TestSubmitRating:
     )
     def test_only_completed_bookings(self, status):
         booking = BookingFactory(status=status)
-        with pytest.raises(RatingError, match="completed"):
+        expected = {
+            Booking.Status.CANCELLED: "cancelled booking",
+            Booking.Status.NO_SHOW: "no-show",
+            Booking.Status.ACTIVE: "once the vehicle has been returned",
+        }.get(status, "completed")
+        with pytest.raises(RatingError, match=expected):
             submit_rating(booking.customer, booking.pk, vehicle_rating=4, service_rating=4)
 
     def test_only_own_bookings(self):

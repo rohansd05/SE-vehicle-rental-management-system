@@ -148,15 +148,18 @@ def record_extension(booking: Booking, by, *, request=None, update_fields=()) ->
     )
 
 
-def mark_cancelled(booking: Booking, by, *, request=None) -> Booking:
-    """Book.Cancel.Release: Confirmed (or an unpaid cash booking, R2-P1) -> Cancelled."""
+def mark_cancelled(booking: Booking, by, *, reason: str = "", request=None) -> Booking:
+    """Book.Cancel.Release: Confirmed (or an unpaid cash booking, R2-P1) -> Cancelled.
+
+    `reason` replaces the customer's default, e.g. for an Administrator's cancellation.
+    """
     if not booking.cash_on_collection:
         _require(booking, Status.CONFIRMED, new=Status.CANCELLED)
     return transition(
         booking,
         Status.CANCELLED,
         actor=by,
-        reason="The customer cancelled before collection; refund per BR-8 (Book.Cancel).",
+        reason=reason or "The customer cancelled before collection; refund per BR-8 (Book.Cancel).",
         request=request,
     )
 

@@ -22,8 +22,10 @@ from apps.reports.services import Period
 pytestmark = pytest.mark.django_db
 
 D = Decimal
-# What --reports adds to the default demo (apps/core/tests/test_seed_demo.py EXPECTED).
-REPORTS_ADD = {User: 1, Customer: 1, Licence: 1, LicenceCategory: 2}
+# What --reports adds to the default demo (apps/core/tests/test_seed_demo.py EXPECTED):
+# reports@vrms.test, and rating@vrms.test (Module R4, bookings/seed_ratings.py).
+REPORTS_ADD = {User: 2, Customer: 2, Licence: 2, LicenceCategory: 4}
+INVOICES = 12  # the reports customer's 10 and the rating customer's 2
 
 
 def _seed(*args):
@@ -52,7 +54,7 @@ def test_the_reports_demo_gives_every_report_data():
 
     revenue = services.revenue_report(admin, period)
     totals = revenue["totals"]
-    assert totals["invoices"] == 10
+    assert totals["invoices"] == INVOICES
     assert totals["add_ons"] > 0 and totals["discounts"] < 0 and totals["tax"] > 0
     assert totals["debit_notes"] == D("472.00")  # the return charges (N2)
     assert totals["credit_notes"] > 0  # the no-show refund (BR-8)
@@ -103,7 +105,7 @@ def test_the_reports_demo_is_idempotent_and_keeps_the_rest_of_the_demo():
     _seed("--reports")
     expected = {model: n + REPORTS_ADD.get(model, 0) for model, n in EXPECTED.items()}
     assert _counts() == expected
-    assert Invoice.objects.count() == 10 and InvoiceAdjustment.objects.count() == 2
+    assert Invoice.objects.count() == INVOICES and InvoiceAdjustment.objects.count() == 2
     assert MaintenanceJob.objects.count() == 4  # demo jobs 1 to 3, and this one
     assert MaintenanceJob.objects.filter(reported_problem__in=DEMO_PROBLEMS).count() == 3
     for email in ["customer@vrms.test", "staff@vrms.test", "admin@vrms.test", CUSTOMER_EMAIL]:

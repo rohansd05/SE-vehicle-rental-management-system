@@ -5,13 +5,16 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '@/api/client'
 import { representativeImage } from '@/assets/vehicles/registry'
-import { FormAlert, SubmitButton } from '@/components/form'
+import { Field, FormAlert, SubmitButton } from '@/components/form'
 import { PageHeader } from '@/components/page'
 import { Photo } from '@/components/photo'
 import { StickyRail } from '@/components/sticky-rail'
 import { EmptyState, ErrorState, LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useAuth } from '@/features/auth/auth-context'
+import { useCatalogueBase } from '@/features/search/paths'
 import { useAgency } from '@/hooks/page'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate, formatDateTime } from '@/lib/dates'
@@ -32,7 +35,17 @@ import { BookingRefusal } from './BookingRefusal'
 import { addOnsKey, quoteKey, vehicleKey } from './keys'
 import { PriceSummary, TermsList } from './PriceSummary'
 
-const BOOKING_FIELDS = ['terms_accepted', 'safety_notice_acknowledged', 'add_ons', 'discount_code']
+const BOOKING_FIELDS = [
+  'terms_accepted',
+  'safety_notice_acknowledged',
+  'add_ons',
+  'discount_code',
+  'delivery_address',
+  'delivery_pincode',
+]
+
+/** Book.Addons: the doorstep delivery add-on, known by its name (BR-7, Book.Deliver.Location). */
+const isDelivery = (addOn: AddOn) => addOn.name.trim().toLowerCase() === 'doorstep delivery'
 
 
 function readPeriod(params: URLSearchParams): Period | null {
@@ -100,6 +113,9 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
             <>
               <Star className="size-3.5 fill-current text-signal" aria-hidden="true" />
               {Number(vehicle.average_rating).toFixed(1)} out of 5
+              <span className="text-muted-foreground">
+                ({vehicle.rating_count === 1 ? '1 rating' : `${vehicle.rating_count} ratings`})
+              </span>
             </>
           ) : (
             'No ratings yet'
@@ -107,6 +123,15 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
         </dd>
         <dt className="text-muted-foreground">Last serviced</dt>
         <dd className="num">{vehicle.last_service_date ? formatDate(vehicle.last_service_date) : 'Not recorded'}</dd>
+        {vehicle.tariff ? (
+          <>
+            <dt className="text-muted-foreground">Free distance</dt>
+            <dd>
+              {vehicle.tariff.free_km_allowance_per_day} km per day, then{' '}
+              {formatCurrency(vehicle.tariff.excess_km_rate, currency)} per km
+            </dd>
+          </>
+        ) : null}
         {vehicle.tariff ? (
           <>
             <dt className="text-muted-foreground">Tariff</dt>
@@ -206,6 +231,8 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
   const [appliedCode, setAppliedCode] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryPincode, setDeliveryPincode] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const twoWheeler = vehicle.vehicle_type === 'Two-Wheeler'
@@ -222,6 +249,7 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
   })
   const codeError =
     quote.error instanceof ApiError ? quote.error.fieldErrors.discount_code?.join(' ') : undefined
+  const delivery = (addOns.data ?? []).some((addOn) => isDelivery(addOn) && chosen[addOn.id] !== undefined)
 
   const book = useMutation({
     mutationFn: () =>
@@ -232,6 +260,8 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
         discount_code: appliedCode,
         terms_accepted: termsAccepted,
         safety_notice_acknowledged: safetyAcknowledged,
+        delivery_address: delivery ? deliveryAddress : '',
+        delivery_pincode: delivery ? deliveryPincode : '',
       }),
     onSuccess: (booking) => navigate(`/app/bookings/${booking.id}/pay`),
     onError: (error) => {
@@ -256,6 +286,10 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
     if (!termsAccepted) errors.terms_accepted = 'Accept the rental terms to continue.'
     if (twoWheeler && !safetyAcknowledged)
       errors.safety_notice_acknowledged = 'Read and acknowledge the safety notice.'
+    if (delivery && !deliveryAddress.trim())
+      errors.delivery_address = 'Enter the address we should deliver the vehicle to.'
+    if (delivery && !/^[0-9]{6}$/.test(deliveryPincode))
+      errors.delivery_pincode = 'Enter the six-digit pincode of the delivery address.'
     setFieldErrors(errors)
     if (Object.keys(errors).length) return
     book.mutate()
@@ -278,6 +312,44 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
           )}
           {fieldErrors.add_ons ? <p className="text-small font-medium text-destructive">{fieldErrors.add_ons}</p> : null}
         </div>
+
+        {delivery ? (
+          // Book.Deliver.Location: the server checks the pincode against the branch's areas.
+          <fieldset className="enter grid gap-4">
+            <legend className="heading mb-1 text-subsection">Delivery address</legend>
+            <Field id="delivery-address" label="Address" error={fieldErrors.delivery_address}>
+              <Textarea
+                id="delivery-address"
+                rows={3}
+                autoComplete="street-address"
+                value={deliveryAddress}
+                aria-invalid={fieldErrors.delivery_address ? true : undefined}
+                aria-describedby={fieldErrors.delivery_address ? 'delivery-address-error' : undefined}
+                onChange={(event) => setDeliveryAddress(event.target.value)}
+              />
+            </Field>
+            <Field
+              id="delivery-pincode"
+              label="Pincode"
+              hint={`We deliver within the areas served by our ${vehicle.home_branch} branch.`}
+              error={fieldErrors.delivery_pincode}
+            >
+              <Input
+                id="delivery-pincode"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                maxLength={6}
+                className="max-w-40"
+                value={deliveryPincode}
+                aria-invalid={fieldErrors.delivery_pincode ? true : undefined}
+                aria-describedby={
+                  fieldErrors.delivery_pincode ? 'delivery-pincode-hint delivery-pincode-error' : 'delivery-pincode-hint'
+                }
+                onChange={(event) => setDeliveryPincode(event.target.value.trim())}
+              />
+            </Field>
+          </fieldset>
+        ) : null}
 
         <div className="grid gap-1.5">
           <label htmlFor="discount-code" className="text-label font-medium">
@@ -379,8 +451,8 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
             <h2 className="text-section">Book this vehicle</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               <span className="num">{formatDateTime(period.pickup_datetime)}</span> to{' '}
-              <span className="num">{formatDateTime(period.return_datetime)}</span>, collected at{' '}
-              {vehicle.home_branch}.
+              <span className="num">{formatDateTime(period.return_datetime)}</span>
+              {delivery ? `, delivered from ${vehicle.home_branch}.` : `, collected at ${vehicle.home_branch}.`}
             </p>
           </div>
 
@@ -413,11 +485,58 @@ function BookingForm({ vehicle, period, children }: { vehicle: VehicleDetail; pe
   )
 }
 
+/**
+ * Search.Browse: a guest sees the vehicle and its price but books only after
+ * signing in or registering, which brings them back to this vehicle and these
+ * dates inside the app. A signed-in customer on the public page goes there too.
+ */
+function SignInToBook({ vehicleId, period }: { vehicleId: number; period: Period }) {
+  const { status, user } = useAuth()
+  const target = { pathname: `/app/vehicles/${vehicleId}`, search: `?${new URLSearchParams({ ...period })}` }
+  if (status === 'signed-in' && user?.role === 'CUSTOMER') {
+    return (
+      <EmptyState
+        title="Book this vehicle"
+        description="Hold it for 15 minutes and pay to confirm."
+        action={
+          <Button asChild>
+            <Link to={`${target.pathname}${target.search}`}>Book this vehicle</Link>
+          </Button>
+        }
+      />
+    )
+  }
+  if (status === 'signed-in') {
+    return <EmptyState title="Booking is for customers" description="Sign in with a customer account to book." />
+  }
+  return (
+    <EmptyState
+      title="Sign in to book"
+      description="Sign in or register to hold this vehicle for these dates; we bring you back here."
+      action={
+        <div className="flex flex-wrap gap-3">
+          <Button asChild>
+            <Link to="/login" state={{ from: target }}>
+              Sign in to book
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/register" state={{ from: target }}>
+              Register to book
+            </Link>
+          </Button>
+        </div>
+      }
+    />
+  )
+}
+
 /** Search.Detail, then Book.Create for the period chosen in the search. */
 export function VehicleDetailPage() {
   const { id } = useParams()
   const [params] = useSearchParams()
   const period = readPeriod(params)
+  const base = useCatalogueBase()
   const vehicleId = Number(id)
   const vehicle = useQuery({
     queryKey: vehicleKey(vehicleId),
@@ -429,7 +548,7 @@ export function VehicleDetailPage() {
   return (
     <section className="stage">
       <Button asChild variant="ghost" size="sm" className="mb-3 -ml-3">
-        <Link to={period ? `/app/search?${new URLSearchParams({ ...period, branch: String(vehicle.data?.home_branch_id ?? '') })}` : '/app/search'}>
+        <Link to={period ? `${base}/search?${new URLSearchParams({ ...period, branch: String(vehicle.data?.home_branch_id ?? '') })}` : `${base}/search`}>
           <ArrowLeft aria-hidden="true" />
           Back to search
         </Link>
@@ -439,7 +558,7 @@ export function VehicleDetailPage() {
         <LoadingState label="Loading the vehicle…" />
       ) : vehicle.isError ? (
         <ErrorState title="We couldn’t load this vehicle" error={vehicle.error} onRetry={() => void vehicle.refetch()} />
-      ) : vehicle.data.tariff && period ? (
+      ) : vehicle.data.tariff && period && base && !vehicle.data.service_overdue ? (
         <BookingForm vehicle={vehicle.data} period={period}>
           <VehicleFacts vehicle={vehicle.data} />
           <Policies vehicle={vehicle.data} />
@@ -451,15 +570,23 @@ export function VehicleDetailPage() {
             <Policies vehicle={vehicle.data} />
           </div>
           <StickyRail>
-            {!vehicle.data.tariff ? (
+            {vehicle.data.service_overdue ? (
+              // SA-2: never booked while overdue for its preventive service (BR-15).
+              <EmptyState
+                title="Not bookable: service overdue"
+                description="This vehicle is due for its safety service. Please choose another vehicle."
+              />
+            ) : !vehicle.data.tariff ? (
               <EmptyState title="Not bookable yet" description="No price has been published for this category." />
+            ) : period ? (
+              <SignInToBook vehicleId={vehicle.data.id} period={period} />
             ) : (
               <EmptyState
                 title="Choose your dates first"
                 description="Search with a pickup branch and a period to book this vehicle."
                 action={
                   <Button asChild>
-                    <Link to="/app/search">Search vehicles</Link>
+                    <Link to={`${base}/search`}>Search vehicles</Link>
                   </Button>
                 }
               />

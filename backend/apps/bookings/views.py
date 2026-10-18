@@ -51,6 +51,7 @@ from .serializers import (
     ModificationRequestSerializer,
     ModifyBookingSerializer,
     PayBookingSerializer,
+    RateBookingSerializer,
     RecordCashSerializer,
 )
 
@@ -134,7 +135,10 @@ class BookingListCreateView(ListCreateAPIView):
             "BR-6). The booking is Pending Payment with a 15-minute hold (Book.Hold). "
             "Refusals: 400 with `code` licence_not_verified, licence_expired, "
             "licence_expires_before_return, licence_category, under_age, "
-            "customer_blacklisted or outstanding_due; 409 `vehicle_unavailable`."
+            "customer_blacklisted or outstanding_due; 409 `vehicle_unavailable` or "
+            "`service_overdue` (SA-2). With the doorstep delivery add-on, `delivery_address` "
+            "and a `delivery_pincode` in the branch's serviceable areas are required "
+            "(Book.Deliver.Location); a refusal is a 400 on that field."
         ),
         request=CreateBookingSerializer,
         responses={
@@ -172,6 +176,8 @@ class BookingListCreateView(ListCreateAPIView):
                 discount_code=data["discount_code"],
                 terms_accepted=data["terms_accepted"],
                 safety_notice_acknowledged=data["safety_notice_acknowledged"],
+                delivery_address=data["delivery_address"],
+                delivery_pincode=data["delivery_pincode"],
                 request=request,
             )
         except REFUSALS as exc:
@@ -613,3 +619,58 @@ class BookingExtendView(APIView):
         except REFUSALS as exc:
             return refusal(exc)
         return _detail(booking, request)
+
+
+# ─── Module R4: Rate Vehicle (Exp 2 UC 6; D13) ────────────────────────────
+
+
+class BookingRatingView(APIView):
+    """Exp 2 UC 6 Rate Vehicle: rate a Completed booking (POST) or edit the review (PATCH)."""
+
+    permission_classes = [IsCustomer]
+
+    def _rate(self, request, pk: int, rate, code=status.HTTP_200_OK) -> Response:
+        _own_booking(request, pk)
+        serializer = RateBookingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            rate(request.user.customer, pk, **serializer.validated_data, request=request)
+        except services.RatingError as exc:
+            return Response(
+                {"detail": str(exc), "code": "rating_refused"}, status=status.HTTP_409_CONFLICT
+            )
+        return _detail(Booking.objects.get(pk=pk), request, code)
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Rate a completed booking (UC 6 steps 2-3)",
+        description=(
+            "Only the customer's own Completed booking, within 14 days of its return, once. "
+            "Vehicle and service are scored 1 to 5; the comment is optional. The vehicle's "
+            "average rating is computed from the ratings, so it is current at once (D13). "
+            "409 `rating_refused` (with the reason) for a Cancelled, No-show or Active "
+            "booking, one returned more than 14 days ago, or one already rated."
+        ),
+        request=RateBookingSerializer,
+        responses={
+            201: BookingDetailSerializer,
+            400: DetailSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def post(self, request, pk: int):
+        return self._rate(request, pk, services.submit_rating, status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Edit the review of a booking (UC 6 extension 2a)",
+        description="Only within 24 hours of submitting it; otherwise 409 `rating_refused`.",
+        request=RateBookingSerializer,
+        responses={
+            200: BookingDetailSerializer,
+            400: DetailSerializer,
+            409: BookingErrorSerializer,
+        },
+    )
+    def patch(self, request, pk: int):
+        return self._rate(request, pk, services.edit_rating)

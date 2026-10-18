@@ -445,12 +445,13 @@ def test_an_alternative_must_be_of_the_same_category(customer, booking, branch):
 
 
 def test_doorstep_delivery_cannot_be_added(customer, booking):
+    """Proposed R4-P2: a change has no address, so it never adds doorstep delivery."""
     delivery = AddOnFactory(name="Doorstep delivery", vehicle_type="")
     with pytest.raises(lifecycle.BookingError) as refused:
         services.modification_quote(
             customer, booking.pk, change(booking, add_ons=[(delivery.pk, 1)])
         )
-    assert refused.value.code == "delivery_unavailable"
+    assert (refused.value.code, refused.value.field) == ("delivery_unchangeable", "add_ons")
 
 
 def test_raising_then_cancelling_refunds_both_payments(customer, booking, return_):

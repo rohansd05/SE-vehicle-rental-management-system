@@ -365,7 +365,7 @@ def test_a_blacklisted_customer_cannot_book(client):
     assert refused.value.code == "customer_blacklisted"
 
 
-def test_a_confirmed_booking_is_cancelled_through_r2_and_audited_twice(client, admin):
+def test_a_confirmed_booking_is_cancelled_through_r2_with_the_admin_as_actor(client, admin):
     customer = eligible_customer()
     booking = _paid_booking(customer)
     client.post(
@@ -392,12 +392,13 @@ def test_a_confirmed_booking_is_cancelled_through_r2_and_audited_twice(client, a
     booking.refresh_from_db()
     assert booking.status == Booking.Status.CANCELLED
     assert RefundRequest.objects.filter(original_payment__booking=booking).exists()
-    assert AuditLog.objects.filter(
-        action="Booking Cancelled For Blacklist", actor=admin, entity_id=str(booking.pk)
-    ).exists()
-    assert AuditLog.objects.filter(
+    # R2's own entry records the Administrator and the blacklist reason; no second entry.
+    cancelled = AuditLog.objects.get(
         action="Booking Status Changed", entity_id=str(booking.pk), after__status="Cancelled"
-    ).exists()  # R2's own entry
+    )
+    assert cancelled.actor == admin
+    assert "blacklisted" in cancelled.after["reason"]
+    assert AuditLog.objects.filter(action="Vehicle Released From Booking", actor=admin).exists()
     again = client.post(
         url, {"expected_refund": quote["total_refund"], "password": "Test@12345"}, format="json"
     )

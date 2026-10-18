@@ -14,6 +14,7 @@ import { formatDate, formatDateTime } from '@/lib/dates'
 import { type BookingDetail, downloadInvoice, getBooking } from '@/features/booking/api'
 import { bookingKey } from '@/features/booking/keys'
 import { PriceSummary } from '@/features/booking/PriceSummary'
+import { RatingSection } from '@/features/rating/RatingSection'
 import { RAIL_LAYOUT } from '@/lib/layout'
 
 import { BookingActions } from './BookingActions'
@@ -162,8 +163,10 @@ export function BookingDetailPage() {
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 <span className="num">{formatDateTime(booking.data.pickup_datetime)}</span> to{' '}
-                <span className="num">{formatDateTime(booking.data.return_datetime)}</span>, collected at{' '}
-                {booking.data.pickup_branch}.
+                <span className="num">{formatDateTime(booking.data.return_datetime)}</span>
+                {booking.data.delivery_address
+                  ? `, delivered to ${booking.data.delivery_address}, ${booking.data.delivery_pincode}.`
+                  : `, collected at ${booking.data.pickup_branch}.`}
               </p>
             </div>
             {booking.data.status === 'Pending Payment' && booking.data.cash_on_collection ? (
@@ -184,6 +187,7 @@ export function BookingDetailPage() {
               </div>
             ) : null}
             <BookingActions booking={booking.data} />
+            <RatingSection booking={booking.data} />
             {booking.data.invoice_number ? (
               <div className="reveal grid gap-3 border-t pt-6">
                 <FormAlert message={download.error instanceof Error ? download.error.message : null} />

@@ -137,3 +137,15 @@ ODOMETER_PLAUSIBILITY_KM_PER_DAY = 1000
 # UC 13 Approve Refund: a refund above this amount waits for an Administrator.
 # Proposed (the SRS names an "automatic approval threshold" but gives no value).
 REFUND_AUTO_APPROVAL_LIMIT = Decimal("5000.00")
+
+# Exp 2 UC 6 Rate Vehicle: a Completed booking may be rated within this long of
+# its completion (precondition), and a review edited within this long of its
+# submission (extension 2a). Scores run from 1 to 5 (UC 6 step 2, D13).
+RATING_WINDOW = timedelta(days=14)
+RATING_EDIT_WINDOW = timedelta(hours=24)
+
+# Exp 2 UC 2 extension 3a: "the nearest alternatives by branch or by date".
+# Proposed (R4-P1; the SRS gives no distance): the same period moved by up to
+# this many days either way, and at most this many dates offered.
+SEARCH_ALTERNATIVE_DAYS = 3
+SEARCH_ALTERNATIVE_DATES_SHOWN = 3

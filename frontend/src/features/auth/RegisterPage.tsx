@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { register as registerAccount } from '@/api/auth'
 import { Field, FormAlert, SubmitButton } from '@/components/form'
@@ -32,6 +32,8 @@ const SERVER_FIELDS = [
 /** Customer self-registration (SE-7). Staff accounts are created by an administrator. */
 export function RegisterPage() {
   const navigate = useNavigate()
+  // Search.Browse: a guest who chose "Book" returns to that vehicle after signing in.
+  const from = (useLocation().state as { from?: unknown } | null)?.from
   const [formError, setFormError] = useState<string | null>(null)
   const {
     register,
@@ -45,7 +47,7 @@ export function RegisterPage() {
     try {
       const response = await registerAccount(values)
       navigate('/verify', {
-        state: { email: response.email, mobile: values.mobile_no, sentAt: now() },
+        state: { email: response.email, mobile: values.mobile_no, sentAt: now(), from },
       })
     } catch (error) {
       setFormError(applyServerErrors(error, setError, SERVER_FIELDS))

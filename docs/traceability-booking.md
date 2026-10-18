@@ -94,9 +94,10 @@ invoice at confirmation, notifications, cash and delivery not built), the SA-1 n
 
 Book.Done.Customer / Book.Done.Branch notifications (built in Module R3,
 `docs/traceability-reports.md`); cash at the branch (BR-9, built in Module R1);
-doorstep delivery (Book.Deliver.Location; the add-on is refused online); Book.Modify, Book.Cancel,
+doorstep delivery (Book.Deliver.Location; built in Module R4, `docs/traceability-catalogue-rating.md`); Book.Modify, Book.Cancel,
 Book.Extend; capture and refund (SI-1.2, SI-1.3, built in Module R1); History.View date-range filter; nearest
-alternatives when nothing is free (SRS 3.2.2); the Search.Filter filters beyond category.
+alternatives when nothing is free (SRS 3.2.2) and the Search.Filter filters beyond category (both
+built in Module R4).
 
 ## 6. Demo data
 

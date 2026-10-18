@@ -1,4 +1,4 @@
-import { CircleHelp } from 'lucide-react'
+import { CircleHelp, Search } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { Brand, Tagline } from '@/components/brand'
@@ -36,6 +36,13 @@ export function PublicLayout() {
             <Brand size="bar" />
           </Link>
           <nav aria-label="Account" className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
+            {/* Search.Browse: the catalogue is open to every visitor (Module R4). */}
+            <Button asChild variant="ghost" className="px-2 sm:px-3">
+              <Link to="/search" aria-label="Browse vehicles">
+                <Search aria-hidden="true" />
+                <span className="hidden sm:inline">Browse vehicles</span>
+              </Link>
+            </Button>
             <Button asChild variant="ghost" className="px-2 sm:px-3">
               <Link to="/help" aria-label="Help">
                 <CircleHelp aria-hidden="true" />

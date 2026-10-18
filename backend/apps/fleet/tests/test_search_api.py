@@ -184,6 +184,7 @@ def test_a_car_result_carries_its_specification(api_client, branch):
         "seating_capacity": 5,
         "engine_cc": None,
         "average_rating": "4.00",
+        "rating_count": 1,
         "last_service_date": "2026-09-20",
         # Search.Price: two days at the factory tariff's 1800.00, plus 18% tax (PR9).
         "estimate": {
@@ -262,6 +263,7 @@ def test_the_query_count_does_not_grow_with_the_results(
 
 
 def test_the_estimate_uses_each_categorys_tariff_in_force(api_client, branch):
+    """Module R4: the tariff in force on the searched pickup date (BR-13 effective dates)."""
     scooter = TwoWheelerFactory(home_branch=branch, available_from=IN_SERVICE)
     TariffFactory(
         vehicle_category=scooter.category,
@@ -269,16 +271,16 @@ def test_the_estimate_uses_each_categorys_tariff_in_force(api_client, branch):
         daily_rate="500.00",
         effective_from=NOW - timedelta(days=60),
     )
-    TariffFactory(  # later, so it is the one in force
+    TariffFactory(  # later, so it is the one in force on the pickup date
         vehicle_category=scooter.category,
         hourly_rate="70.00",
         daily_rate="600.00",
         effective_from=NOW - timedelta(days=1),
     )
-    TariffFactory(  # not in force yet
+    TariffFactory(  # takes effect only after the pickup
         vehicle_category=scooter.category,
         daily_rate="900.00",
-        effective_from=NOW + timedelta(days=1),
+        effective_from=PICKUP + timedelta(hours=1),
     )
     estimate = search(api_client, branch).data["results"][0]["estimate"]
     assert estimate == {

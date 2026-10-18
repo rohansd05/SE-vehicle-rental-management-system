@@ -25,6 +25,7 @@ from apps.fleet.models import (
     Vehicle,
     VehicleCategory,
     VehicleDocument,
+    VehiclePhoto,
 )
 from apps.pricing.models import AddOn, DiscountCode, FuelPrice, Tariff
 
@@ -48,6 +49,8 @@ EXPECTED = {
     TwoWheeler: 10,
     # one each, and the four of the handover car and of the service-due car (SA-3)
     VehicleDocument: 38,
+    # Module R4 (fleet/seed.py): four photographs of every one of the 34 demo vehicles
+    VehiclePhoto: 136,
     # 5 + pending@ (bookings/seed.py) + handover@ (rentals/seed.py) + payments@ (payments/seed.py)
     # + changes@ (bookings/seed_changes.py) + return@ (rentals/seed_return.py)
     # + tech2@ (maintenance/seed_n3.py) + blacklist@ (core/seed_admin.py)

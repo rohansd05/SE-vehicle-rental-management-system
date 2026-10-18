@@ -118,6 +118,20 @@ TEMPLATES: dict[tuple[str, int], Template] = {
             "{refund} Status: {status}."
         ),
     ),
+    # Module R4, Book.Done.Customer with Book.Deliver.Location: {collection} is either the
+    # branch collection or the doorstep delivery address. Version 1 stays as it was sent.
+    ("booking_confirmed", 2): Template(
+        subject="{agency}: booking {reference} is confirmed",
+        body=(
+            "Hello {name},\n\n"
+            "Your booking {reference} is confirmed: {vehicle} ({registration_no}) from "
+            "{pickup} to {return_at}.\n\n"
+            "Price:\n{price}\n\n"
+            "{collection} Please bring {documents}. Your six-digit pickup code is sent to you "
+            "by SMS.\n\n"
+            "Status: {status}\n\n{agency}"
+        ),
+    ),
 }
 
 
@@ -137,6 +151,8 @@ SAMPLE_CONTEXT = {
     "documents": "your driving licence MH02 20150012345",
     "price": "- Rental, 2 days: INR 3,600.00\n- Tax: INR 648.00\nTotal: INR 4,248.00",
     "pickup_code": "135790",
+    "collection": "Doorstep delivery: we bring the vehicle to 12 Demo Lane, 400053, "
+    "from our Andheri branch on 22 Oct 2026 10:00.",
 }
 
 

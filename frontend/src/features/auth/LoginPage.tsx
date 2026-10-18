@@ -87,7 +87,7 @@ export function LoginPage() {
         </SubmitButton>
         <p className="border-t pt-5 text-sm text-muted-foreground">
           New here?{' '}
-          <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link to="/register" state={{ from: state.from }} className="font-medium text-primary underline-offset-4 hover:underline">
             Create an account
           </Link>
         </p>

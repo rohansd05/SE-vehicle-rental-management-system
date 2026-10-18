@@ -12,19 +12,19 @@ token sent with a public request is never a reason to refuse it.
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
-
-from apps.bookings.services import with_average_rating
-from apps.pricing.services import tariffs_in_force
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Branch, Vehicle, VehicleCategory
 from .serializers import (
     AvailabilitySearchSerializer,
     AvailableVehicleSerializer,
     BranchSerializer,
+    SearchAlternativeSerializer,
     VehicleCategorySerializer,
     VehicleDetailSerializer,
 )
-from .services.availability import available_vehicles
+from .services import catalogue
 
 TAG = "Search and availability"
 
@@ -72,46 +72,72 @@ class VehicleSearchView(ListAPIView):
             return Vehicle.objects.none()
         query = AvailabilitySearchSerializer(data=self.request.query_params)
         query.is_valid(raise_exception=True)
-        params = self.search_params = query.validated_data
-        vehicles = available_vehicles(
+        params = query.validated_data
+        vehicles, self.estimates = catalogue.search(
             branch=params["branch"],
             pickup=params["pickup_datetime"],
             return_=params["return_datetime"],
-            category=params.get("category"),
+            filters=query.filters(),
         )
-        return with_average_rating(
-            vehicles.select_related("category", "home_branch", "car", "twowheeler")
-        ).order_by("brand", "model", "pk")
+        return vehicles
 
     def get_serializer_context(self):
-        context = super().get_serializer_context()
-        params = getattr(self, "search_params", None)
-        if params is not None:
-            # Search.Price: one query for every category's tariff in force (BR-13).
-            context.update(
-                tariffs=tariffs_in_force(),
-                pickup=params["pickup_datetime"],
-                return_=params["return_datetime"],
-            )
-        return context
+        # Search.Price: each category's estimate at the tariff in force on the pickup date.
+        return {**super().get_serializer_context(), "estimates": getattr(self, "estimates", {})}
 
     @extend_schema(
         tags=[TAG],
         summary="Search available vehicles (Search.Available)",
         description=(
             "Vehicles at the pickup branch that can be booked for the whole period: status "
-            "Available (Appendix B), no Pending Payment, Confirmed or Active booking within the "
-            "period plus the 60-minute turnaround buffer (BR-1, Book.Hold), no Scheduled or In "
-            "Progress maintenance window in the period, and an availability date on or before "
-            "the pickup (Fleet.Add). The period must be 4 hours to 30 days (BR-5) and start in "
-            "the future; otherwise the answer is 400 with the message on the field. Each result "
-            "carries `estimate` (Search.Price): the base charge plus tax at the tariff in force, "
-            "excluding add-ons, discounts and usage-based charges; null if no tariff is in force."
+            "Available (Appendix B; so never Under Maintenance, Unsafe or Retired), no Pending "
+            "Payment, Confirmed or Active booking within the period plus the 60-minute "
+            "turnaround buffer (BR-1, Book.Hold), no Scheduled or In Progress maintenance "
+            "window in the period, not overdue for its preventive service by date or distance "
+            "(SA-2, BR-15), and an availability date on or before the pickup (Fleet.Add). The "
+            "period must be 4 hours to 30 days (BR-5) and start in the future; otherwise the "
+            "answer is 400 with the message on the field. Search.Filter narrows the results "
+            "and `sort` orders them by price or rating. Each result carries `estimate` "
+            "(Search.Price): the base charge plus tax at the tariff in force on the pickup "
+            "date, excluding add-ons, discounts and usage-based charges; null if no tariff is "
+            "in force. `min_price`/`max_price` apply to that estimate."
         ),
         parameters=[AvailabilitySearchSerializer],
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class SearchAlternativesView(APIView):
+    """Exp 2 UC 2 extension 3a: no vehicle matches, so offer the nearest alternatives."""
+
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Nearest alternatives when nothing matches (UC 2 extension 3a)",
+        description=(
+            "The same query as the search. Returns the other branches with matching vehicles "
+            "for the same period (by name), then the same branch for the same length of "
+            "rental moved by up to SEARCH_ALTERNATIVE_DAYS days either way, nearest first, at "
+            "most SEARCH_ALTERNATIVE_DATES_SHOWN of them. Each entry gives how many vehicles "
+            "match there."
+        ),
+        parameters=[AvailabilitySearchSerializer],
+        responses={200: SearchAlternativeSerializer(many=True)},
+    )
+    def get(self, request):
+        query = AvailabilitySearchSerializer(data=request.query_params)
+        query.is_valid(raise_exception=True)
+        params = query.validated_data
+        found = catalogue.alternatives(
+            branch=params["branch"],
+            pickup=params["pickup_datetime"],
+            return_=params["return_datetime"],
+            filters=query.filters(),
+        )
+        return Response(SearchAlternativeSerializer(found, many=True).data)
 
 
 class VehicleDetailView(RetrieveAPIView):
@@ -122,7 +148,7 @@ class VehicleDetailView(RetrieveAPIView):
     serializer_class = VehicleDetailSerializer
 
     def get_queryset(self):
-        return with_average_rating(
+        return catalogue.with_catalogue_facts(
             Vehicle.objects.exclude(status=Vehicle.Status.RETIRED)
             .select_related("category", "home_branch", "car", "twowheeler")
             .prefetch_related("photos")
@@ -133,8 +159,10 @@ class VehicleDetailView(RetrieveAPIView):
         summary="A vehicle in detail (Search.Detail)",
         description=(
             "Photographs (signed links), specification, the tariff in force, the BR-3 deposit, "
-            "the rental terms (Book.Quote.Terms), the average rating and the last service date. "
-            "`tariff` and `terms` are null while the category has no tariff in force."
+            "the rental terms (Book.Quote.Terms), the average rating and how many ratings it "
+            "has, and the last service date from the maintenance history. `service_overdue` "
+            "(SA-2) marks a vehicle that cannot be booked until it is serviced. `tariff` and "
+            "`terms` are null while the category has no tariff in force."
         ),
     )
     def get(self, request, *args, **kwargs):
