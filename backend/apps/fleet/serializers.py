@@ -1,20 +1,23 @@
 """Fleet API serializers for the catalogue and availability search (SRS 3.2)."""
 
+from decimal import Decimal
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.core.choices import FuelType, VehicleType
 from apps.core.files import signed_file_url
 from apps.pricing.serializers import EstimateSerializer, QuoteTermsSerializer
 from apps.pricing.services import (
     PricingError,
     current_tariff,
-    estimate,
     quote_terms,
     security_deposit_for,
 )
 
 from .models import Branch, Car, TwoWheeler, Vehicle, VehicleCategory
-from .services.availability import RentalPeriodError, check_period
+from .services.availability import RentalPeriodError, check_period, service_overdue
+from .services.catalogue import SORTS, SearchFilters
 
 
 class BranchSerializer(serializers.ModelSerializer):
@@ -34,11 +37,18 @@ class VehicleCategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "vehicle_type"]
 
 
+def _money(**kwargs) -> serializers.DecimalField:
+    return serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False, **kwargs
+    )
+
+
 class AvailabilitySearchSerializer(serializers.Serializer):
-    """Search.Available: a pickup branch, a rental period and an optional category.
+    """Search.Available: a pickup branch, a rental period and the Search.Filter criteria.
 
     Date-times are ISO 8601; send them in UTC (CO-6). The period must satisfy
-    BR-5.
+    BR-5. Prices are the estimate for the period (Search.Price) at the tariff in
+    force on the pickup date.
     """
 
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
@@ -47,13 +57,48 @@ class AvailabilitySearchSerializer(serializers.Serializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=VehicleCategory.objects.all(), required=False, allow_null=True
     )
+    vehicle_type = serializers.ChoiceField(choices=VehicleType.choices, required=False)
+    brand = serializers.CharField(required=False, max_length=64)
+    model = serializers.CharField(required=False, max_length=64)
+    fuel_type = serializers.ChoiceField(choices=FuelType.choices, required=False)
+    transmission = serializers.ChoiceField(choices=Car.Transmission.choices, required=False)
+    min_seats = serializers.IntegerField(required=False, min_value=1, max_value=20)
+    min_price = _money()
+    max_price = _money()
+    min_rating = serializers.DecimalField(
+        max_digits=3, decimal_places=1, min_value=1, max_value=5, required=False
+    )
+    sort = serializers.ChoiceField(
+        choices=SORTS, required=False, help_text="price (lowest first), -price, or rating."
+    )
 
     def validate(self, attrs):
         try:
             check_period(attrs["pickup_datetime"], attrs["return_datetime"])
         except RentalPeriodError as exc:
             raise serializers.ValidationError({exc.field: [str(exc)]}) from exc
+        low, high = attrs.get("min_price"), attrs.get("max_price")
+        if low is not None and high is not None and low > high:
+            raise serializers.ValidationError(
+                {"max_price": ["The highest price must not be below the lowest."]}
+            )
         return attrs
+
+    def filters(self) -> SearchFilters:
+        data = self.validated_data
+        return SearchFilters(
+            vehicle_type=data.get("vehicle_type", ""),
+            category=data.get("category"),
+            brand=data.get("brand", ""),
+            model=data.get("model", ""),
+            fuel_type=data.get("fuel_type", ""),
+            transmission=data.get("transmission", ""),
+            min_seats=data.get("min_seats"),
+            min_price=data.get("min_price"),
+            max_price=data.get("max_price"),
+            min_rating=data.get("min_rating"),
+            sort=data.get("sort", ""),
+        )
 
 
 class AvailableVehicleSerializer(serializers.ModelSerializer):
@@ -67,9 +112,14 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
     transmission = serializers.SerializerMethodField()
     seating_capacity = serializers.SerializerMethodField()
     engine_cc = serializers.SerializerMethodField()
-    # D13: computed from ratings of completed bookings, never stored.
+    # D13, UC 6: computed from ratings of completed bookings, never stored.
     average_rating = serializers.DecimalField(
         max_digits=4, decimal_places=2, read_only=True, allow_null=True
+    )
+    rating_count = serializers.IntegerField(read_only=True)
+    # Search.Detail "date on which the vehicle was last serviced": the latest closed job.
+    last_service_date = serializers.DateField(
+        source="last_serviced", read_only=True, allow_null=True
     )
     # Search.Price: null when the category has no tariff in force.
     estimate = serializers.SerializerMethodField()
@@ -92,20 +142,16 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
             "seating_capacity",
             "engine_cc",
             "average_rating",
-            "last_service_date",  # Search.Detail "date on which the vehicle was last serviced"
+            "rating_count",
+            "last_service_date",
             "estimate",
         ]
 
     @extend_schema_field(EstimateSerializer(allow_null=True))
     def get_estimate(self, vehicle: Vehicle) -> dict | None:
         """Search.Price: base + tax for the searched period (PR9), from the context."""
-        tariff = self.context["tariffs"].get(vehicle.category_id)
-        if tariff is None:
-            return None
-        result = estimate(
-            tariff, vehicle.vehicle_type, self.context["pickup"], self.context["return_"]
-        )
-        return EstimateSerializer(result).data
+        result = self.context["estimates"].get(vehicle.category_id)
+        return EstimateSerializer(result).data if result else None
 
     @staticmethod
     def _car(vehicle: Vehicle) -> Car | None:
@@ -137,6 +183,16 @@ class AvailableVehicleSerializer(serializers.ModelSerializer):
         return two_wheeler.engine_cc if two_wheeler else None
 
 
+class SearchAlternativeSerializer(serializers.Serializer):
+    """Exp 2 UC 2 extension 3a: a branch or a nearby period with matching vehicles."""
+
+    branch = serializers.IntegerField(source="branch.branch_id")
+    branch_name = serializers.CharField(source="branch.branch_name")
+    pickup_datetime = serializers.DateTimeField()
+    return_datetime = serializers.DateTimeField()
+    vehicles = serializers.IntegerField()
+
+
 class TariffSummarySerializer(serializers.Serializer):
     """Search.Detail "the applicable tariff" (PR3: the weekly rate is not applied, so not shown)."""
 
@@ -150,6 +206,8 @@ class VehicleDetailSerializer(AvailableVehicleSerializer):
     """Search.Detail: photos, specification, tariff, deposit, policies, rating, last service."""
 
     status = serializers.CharField(read_only=True)
+    # SA-2: shown as "Not bookable: service overdue"; never searched or booked.
+    service_overdue = serializers.SerializerMethodField()
     photos = serializers.SerializerMethodField()
     tariff = serializers.SerializerMethodField()
     security_deposit = serializers.SerializerMethodField()
@@ -159,6 +217,7 @@ class VehicleDetailSerializer(AvailableVehicleSerializer):
         fields = [
             *(name for name in AvailableVehicleSerializer.Meta.fields if name != "estimate"),
             "status",
+            "service_overdue",
             "photos",
             "tariff",
             "security_deposit",
@@ -173,6 +232,10 @@ class VehicleDetailSerializer(AvailableVehicleSerializer):
             except PricingError:
                 cache[vehicle.category_id] = None
         return cache[vehicle.category_id]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_service_overdue(self, vehicle: Vehicle) -> bool:
+        return service_overdue(vehicle)
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, vehicle: Vehicle) -> list[str]:

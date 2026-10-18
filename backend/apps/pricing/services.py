@@ -254,6 +254,7 @@ def tariffs_in_force(at: datetime | None = None) -> dict[int, Tariff]:
     at = at or timezone.now()
     tariffs = (
         Tariff.objects.filter(effective_from__lte=at)
+        .select_related("vehicle_category")
         .order_by("vehicle_category_id", "-effective_from")
         .distinct("vehicle_category_id")
     )

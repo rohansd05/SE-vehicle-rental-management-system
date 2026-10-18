@@ -12,7 +12,10 @@ A vehicle is available for a requested period only if (Search.Available):
   customer". The overlap test is the one the booking exclusion constraint
   applies, so search never offers what the database would refuse;
 - no Scheduled or In Progress maintenance window overlaps the period;
-- the pickup is on or after its availability date (Fleet.Add, 3.7.2).
+- the pickup is on or after its availability date (Fleet.Add, 3.7.2);
+- SA-2: it is not overdue for its preventive service (BR-15), by date or by
+  distance, judged by N3's maintenance.services.service_due(), the same check
+  that refuses a handover (`service_overdue`).
 
 Requested periods follow BR-5 (4 hours to 30 days).
 
@@ -23,7 +26,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from apps.fleet.models import Branch, Vehicle, VehicleCategory
@@ -86,6 +89,21 @@ def requested_block(pickup: datetime, return_: datetime) -> DateTimeTZRange:
     return DateTimeTZRange(pickup, return_ + settings.BOOKING_TURNAROUND_BUFFER, "[)")
 
 
+def service_overdue(vehicle: Vehicle) -> bool:
+    """SA-2: the vehicle is overdue for its preventive service (BR-15); never searched or booked."""
+    from apps.maintenance.services import service_due
+
+    return service_due(vehicle) is not None
+
+
+def _service_overdue_ids(vehicles: QuerySet[Vehicle]) -> list[int]:
+    """SA-2 for a whole search. Only a vehicle with a service on record can be overdue."""
+    on_record = vehicles.filter(
+        Q(last_service_date__isnull=False) | Q(last_service_odometer__isnull=False)
+    ).select_related("category")
+    return [vehicle.pk for vehicle in on_record if service_overdue(vehicle)]
+
+
 def _unavailable_ids(pickup: datetime, return_: datetime):
     """Ids of vehicles held by a booking or a maintenance window during the period."""
     from apps.bookings.models import Booking
@@ -122,7 +140,7 @@ def available_vehicles(
     )
     if category is not None:
         vehicles = vehicles.filter(category=category)
-    return vehicles
+    return vehicles.exclude(pk__in=_service_overdue_ids(vehicles))
 
 
 def is_available(vehicle: Vehicle, pickup: datetime, return_: datetime) -> bool:
@@ -135,6 +153,8 @@ def is_available(vehicle: Vehicle, pickup: datetime, return_: datetime) -> bool:
     if vehicle.status not in bookable_statuses():
         return False
     if timezone.localdate(pickup) < vehicle.available_from:
+        return False
+    if service_overdue(vehicle):  # SA-2
         return False
     booked, in_workshop = _unavailable_ids(pickup, return_)
     return vehicle.pk not in in_workshop and not booked.filter(vehicle_id=vehicle.pk).exists()
