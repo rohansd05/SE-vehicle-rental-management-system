@@ -4,8 +4,8 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 
-import { type MaintenanceJob, recordWork } from '@/api/maintenance'
-import { Field, FormAlert, SubmitButton } from '@/components/form'
+import { attachInvoice, type MaintenanceJob, recordWork } from '@/api/maintenance'
+import { Field, FormAlert, StatusMessage, SubmitButton } from '@/components/form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -32,7 +32,8 @@ function defaults(job: MaintenanceJob): RecordValues {
   const recorded = job.service_date !== null
   return {
     service_date: job.service_date ?? todayISO(),
-    odometer_at_service: String(job.odometer_at_service ?? job.vehicle.odometer),
+    // Empty until recorded: the hint gives the last reading, so typing never appends to it.
+    odometer_at_service: job.odometer_at_service === null ? '' : String(job.odometer_at_service),
     work_description: job.work_description,
     labour_cost: recorded ? plain(job.labour_cost) : '',
     downtime_hours: job.downtime_hours ? plain(job.downtime_hours) : '',
@@ -169,7 +170,69 @@ export function RecordWorkForm({
             </SubmitButton>
           </div>
         </form>
+        <InvoiceUpload job={job} onSaved={onSaved} />
       </CardContent>
     </Card>
+  )
+}
+
+/** Maint.Record "permit the workshop invoice to be attached" (UC 9 step 3). */
+function InvoiceUpload({ job, onSaved }: { job: MaintenanceJob; onSaved: (job: MaintenanceJob) => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const upload = useMutation({
+    mutationFn: (chosen: File) => attachInvoice(job.job_id, chosen),
+    onSuccess: (next) => {
+      setFile(null)
+      setError(null)
+      onSaved(next)
+    },
+    onError: (failure) => setError(failure instanceof Error ? failure.message : 'Something went wrong.'),
+  })
+  return (
+    <form
+      noValidate
+      className={cn(FORM, 'mt-8 border-t pt-6')}
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!file) setError('Choose the invoice file.')
+        else upload.mutate(file)
+      }}
+    >
+      <Field
+        id="record-invoice"
+        label="Workshop invoice"
+        hint="A PDF, JPG or PNG of at most 5 MB. A new file replaces the one attached."
+        error={error ?? undefined}
+      >
+        <Input
+          id="record-invoice"
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy('record-invoice', { hint: true, error: Boolean(error) })}
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        />
+      </Field>
+      {job.workshop_invoice_url ? (
+        <div className={FORM_INDENT}>
+          <StatusMessage
+            message={
+              <>
+                An invoice is attached.{' '}
+                <a href={job.workshop_invoice_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline">
+                  Open the invoice
+                </a>
+              </>
+            }
+          />
+        </div>
+      ) : null}
+      <div className={FORM_INDENT}>
+        <SubmitButton busy={upload.isPending} busyLabel="Attaching…">
+          Attach invoice
+        </SubmitButton>
+      </div>
+    </form>
   )
 }

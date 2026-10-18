@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, History, ShieldAlert, Wrench } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -52,7 +52,29 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-function DetailsCard({ job }: { job: MaintenanceJob }) {
+/** BR-15 due point, "25,000 km or 1 Apr 2027, whichever comes first". */
+function dueText(odometer: number | null, date: string | null): string {
+  if (odometer !== null && date) return `${formatDate(date)} or ${formatKm(odometer)}, whichever comes first`
+  return date ? formatDate(date) : formatKm(odometer)
+}
+
+/** SA-2, BR-15: the vehicle's preventive service is overdue, so it cannot be handed over. */
+export function ServiceOverdueNote({ registration }: { registration: string }) {
+  return (
+    <div role="status" className="flex items-start gap-3 rounded-md border-l-2 border-l-status-maintenance bg-status-maintenance-tint px-4 py-3">
+      <Wrench className="mt-1 size-5 shrink-0 text-status-maintenance" aria-hidden="true" />
+      <div>
+        <p className="font-medium">Preventive service overdue</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {registration} has reached its service interval (BR-15). It cannot be handed over until
+          the service is recorded (SA-2).
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function DetailsCard({ job, historyTo }: { job: MaintenanceJob; historyTo: string }) {
   const vehicle = job.vehicle
   return (
     <Card>
@@ -77,8 +99,11 @@ function DetailsCard({ job }: { job: MaintenanceJob }) {
           </Row>
           <Row label="Problem">{job.reported_problem}</Row>
           <Row label="Reported">
-            {job.reported_by}, {formatDateTime(job.created_at)}
+            {job.reported_by ?? 'Raised by the system (BR-15)'}, {formatDateTime(job.created_at)}
           </Row>
+          {job.due_odometer !== null || job.due_date ? (
+            <Row label="Service due (BR-15)">{dueText(job.due_odometer, job.due_date)}</Row>
+          ) : null}
           <Row label="Technician">
             {job.technician ? `${job.technician.name} (${job.technician.workshop})` : 'Not assigned'}
           </Row>
@@ -93,6 +118,14 @@ function DetailsCard({ job }: { job: MaintenanceJob }) {
               {job.closed_by ?? '—'}, {formatDateTime(job.closed_at)}
             </Row>
           ) : null}
+          {job.status === 'Cancelled' ? (
+            <>
+              <Row label="Cancelled by">
+                {job.cancelled_by ?? '—'}, {formatDateTime(job.cancelled_at)}
+              </Row>
+              <Row label="Reason for cancelling">{job.cancel_reason || '—'}</Row>
+            </>
+          ) : null}
           <Row label="Last service">
             {formatDate(vehicle.last_service_date)} at {formatKm(vehicle.last_service_odometer)}
           </Row>
@@ -102,6 +135,12 @@ function DetailsCard({ job }: { job: MaintenanceJob }) {
               : 'Not known until a service is recorded'}
           </Row>
         </dl>
+        <Button asChild variant="outline" className="mt-5">
+          <Link to={historyTo}>
+            <History aria-hidden="true" />
+            Maintenance history of {vehicle.registration_no}
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   )
@@ -124,6 +163,15 @@ function WorkRecordCard({ job }: { job: MaintenanceJob }) {
           <Row label="Work performed">{job.work_description}</Row>
           <Row label="Downtime">{job.downtime_hours ? `${job.downtime_hours} hours` : '—'}</Row>
           <Row label="Labour">{formatINR(job.labour_cost)}</Row>
+          <Row label="Workshop invoice">
+            {job.workshop_invoice_url ? (
+              <a href={job.workshop_invoice_url} target="_blank" rel="noreferrer" className="text-primary underline">
+                Open the invoice
+              </a>
+            ) : (
+              'None attached'
+            )}
+          </Row>
         </dl>
         {job.parts.length ? (
           <div>
@@ -273,6 +321,7 @@ export function JobDetailPage() {
     (location.state as { flash?: string } | null)?.flash ?? null,
   )
   const [actionError, setActionError] = useState<string | null>(null)
+  const [clearUnsafe, setClearUnsafe] = useState(false)
   const job = useQuery({ queryKey: jobKey(jobId), queryFn: () => getJob(jobId) })
 
   const isTechnician = user.role === 'MAINTENANCE_TECHNICIAN'
@@ -298,13 +347,15 @@ export function JobDetailPage() {
     onError: fail,
   })
   const complete = useMutation({
-    mutationFn: () => completeJob(jobId),
-    onSuccess: (next) =>
+    mutationFn: (clear: boolean) => completeJob(jobId, clear),
+    onSuccess: (next, clear) =>
       update(
         next,
         next.awaiting_clearance
           ? 'Work complete. The vehicle is flagged Unsafe, so an Administrator must clear it before the job closes.'
-          : `Job completed. ${next.vehicle.registration_no} is ${next.vehicle.status}.`,
+          : clear
+            ? `Unsafe flag cleared and job completed. ${next.vehicle.registration_no} is ${next.vehicle.status}; you are recorded (BR-16).`
+            : `Job completed. ${next.vehicle.registration_no} is ${next.vehicle.status}.`,
       ),
     onError: fail,
   })
@@ -375,7 +426,11 @@ export function JobDetailPage() {
             <ScheduleCard job={data} onScheduled={(next) => update(next, `Job scheduled and assigned to ${next.technician?.name}. They have been e-mailed.`)} />
           ) : null}
 
-          <DetailsCard job={data} />
+          {data.vehicle.service_overdue && data.status !== 'Completed' ? (
+            <ServiceOverdueNote registration={data.vehicle.registration_no} />
+          ) : null}
+
+          <DetailsCard job={data} historyTo={`${backTo}/vehicles/${data.vehicle.id}/history`} />
 
           {isTechnician && inProgress ? (
             <RecordWorkForm
@@ -431,8 +486,33 @@ export function JobDetailPage() {
                         Administrator to clear it if it is flagged Unsafe.
                       </p>
                     )}
+                    {data.can_clear_unsafe && data.vehicle.status === 'Unsafe' ? (
+                      <div className="flex items-start gap-3 rounded-md border-l-2 border-l-status-unsafe bg-status-unsafe-tint p-4">
+                        <input
+                          id="complete-clear-unsafe"
+                          type="checkbox"
+                          className="mt-1 size-5 accent-destructive"
+                          aria-describedby="complete-clear-unsafe-hint"
+                          checked={clearUnsafe}
+                          onChange={(event) => setClearUnsafe(event.target.checked)}
+                        />
+                        <div>
+                          <label htmlFor="complete-clear-unsafe" className="text-sm font-medium">
+                            Clear the Unsafe flag as I close the job
+                          </label>
+                          <p id="complete-clear-unsafe-hint" className="text-xs text-muted-foreground">
+                            You are authorised to clear Unsafe flags (BR-16). The vehicle becomes
+                            Available and you are recorded. Leave it unticked to ask an Administrator.
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                     <div>
-                      <Button onClick={() => complete.mutate()} disabled={complete.isPending} aria-busy={complete.isPending}>
+                      <Button
+                        onClick={() => complete.mutate(clearUnsafe && data.vehicle.status === 'Unsafe')}
+                        disabled={complete.isPending}
+                        aria-busy={complete.isPending}
+                      >
                         {complete.isPending ? 'Completing…' : 'Complete job'}
                       </Button>
                     </div>

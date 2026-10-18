@@ -12,6 +12,7 @@ import { ClearanceQueuePage } from './ClearanceQueuePage'
 import { JobDetailPage } from './JobDetailPage'
 import { BranchJobsPage, MyJobsPage } from './JobsPage'
 import { ReportFaultPage } from './ReportFaultPage'
+import { VehicleHistoryPage } from './VehicleHistoryPage'
 
 const TECHNICIAN: readonly Role[] = ['MAINTENANCE_TECHNICIAN']
 /** Maint.Create, Maint.Schedule (Proposed M11 includes the Branch Manager). */
@@ -27,9 +28,17 @@ export function maintenanceRoutes() {
     <>
       <Route path="jobs" element={guard(TECHNICIAN, <MyJobsPage />)} />
       <Route path="jobs/:id" element={guard(TECHNICIAN, <JobDetailPage />)} />
+      <Route
+        path="jobs/vehicles/:id/history"
+        element={guard(TECHNICIAN, <VehicleHistoryPage basePath="/app/jobs" />)}
+      />
       <Route path="maintenance" element={guard(JOB_MANAGERS, <BranchJobsPage />)} />
       <Route path="maintenance/report" element={guard(JOB_MANAGERS, <ReportFaultPage />)} />
       <Route path="maintenance/:id" element={guard(JOB_MANAGERS, <JobDetailPage />)} />
+      <Route
+        path="maintenance/vehicles/:id/history"
+        element={guard(JOB_MANAGERS, <VehicleHistoryPage basePath="/app/maintenance" />)}
+      />
       <Route path="clearances" element={guard(ADMINISTRATOR, <ClearanceQueuePage />)} />
     </>
   )

@@ -168,8 +168,8 @@ export function ReportFaultPage() {
                     Flag the vehicle as Unsafe
                   </label>
                   <p id="report-unsafe-hint" className="text-xs text-muted-foreground">
-                    It leaves search, booking and handover at once. Only an Administrator can clear
-                    the flag (BR-16).
+                    It leaves search, booking and handover at once. Only an Administrator or an
+                    authorised technician can clear the flag (BR-16).
                   </p>
                 </div>
               </div>

@@ -16,6 +16,7 @@ export const VEHICLE: MaintenanceVehicle = {
   last_service_date: null,
   last_service_odometer: null,
   next_service_due: { odometer: null, date: null },
+  service_overdue: false,
 }
 
 export function makeJob(overrides: Partial<MaintenanceJob> = {}): MaintenanceJob {
@@ -25,9 +26,11 @@ export function makeJob(overrides: Partial<MaintenanceJob> = {}): MaintenanceJob
     severity: 'High',
     status: 'Scheduled',
     vehicle: VEHICLE,
-    technician: { technician_id: 3, name: 'Tara Tech', workshop: 'Agency workshop' },
+    technician: { technician_id: 3, name: 'Tara Tech', workshop: 'Agency workshop', authorised_to_clear_unsafe: false },
     reported_problem: 'Brake pedal feels soft.',
     reported_by: 'Ravi Staff',
+    due_odometer: null,
+    due_date: null,
     scheduled_from: '2026-10-14T04:30:00Z',
     scheduled_to: '2026-10-14T12:30:00Z',
     started_at: null,
@@ -43,6 +46,11 @@ export function makeJob(overrides: Partial<MaintenanceJob> = {}): MaintenanceJob
     clearance_requested_at: null,
     closed_by: null,
     closed_at: null,
+    cancelled_by: null,
+    cancelled_at: null,
+    cancel_reason: '',
+    workshop_invoice_url: null,
+    can_clear_unsafe: false,
     created_at: '2026-10-12T09:00:00Z',
     ...overrides,
   }
