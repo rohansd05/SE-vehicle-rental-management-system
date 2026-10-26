@@ -64,24 +64,29 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
     vehicle.seating_capacity ? `${vehicle.seating_capacity} seats` : null,
     vehicle.engine_cc ? `${vehicle.engine_cc} cc` : null,
   ].filter(Boolean)
-  // B12: the vehicle's own photographs first; without them, the representative
-  // model (or category) photo, labelled as such, above the existing note.
-  const representative = vehicle.photos.length ? null : representativeImage(vehicle)
+  // B12: the representative model (or category) photo leads, labelled as such;
+  // the vehicle's own photographs follow as a smaller gallery. Without a
+  // representative photo, the own photographs lead as before.
+  const representative = representativeImage(vehicle)
+  const gallery = (
+    <ul aria-label="Photographs" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {vehicle.photos.map((url, index) => {
+        const lead = index === 0 && !representative
+        return (
+          <li key={url} className={cn(lead && 'col-span-full')}>
+            <img
+              src={url}
+              alt={`${vehicle.brand} ${vehicle.model}, photo ${index + 1} of ${vehicle.photos.length}`}
+              className={cn('w-full object-cover', lead ? 'aspect-[3/2] rounded-xl' : 'aspect-[4/3] rounded-md')}
+            />
+          </li>
+        )
+      })}
+    </ul>
+  )
   return (
     <div className="grid gap-5">
-      {vehicle.photos.length ? (
-        <ul aria-label="Photographs" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {vehicle.photos.map((url, index) => (
-            <li key={url} className="first:col-span-full">
-              <img
-                src={url}
-                alt={`${vehicle.brand} ${vehicle.model}, photo ${index + 1} of ${vehicle.photos.length}`}
-                className={cn('w-full object-cover', index === 0 ? 'aspect-[3/2] rounded-xl' : 'aspect-[4/3] rounded-md')}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : representative ? (
+      {representative ? (
         <div className="grid gap-2">
           <Photo
             id={representative.id}
@@ -90,8 +95,21 @@ function VehicleFacts({ vehicle }: { vehicle: VehicleDetail }) {
             aspect="native"
             className="rounded-xl"
           />
-          <p className="text-small text-muted-foreground">No photographs have been added yet.</p>
+          <p className="text-small text-muted-foreground">Representative image</p>
+          {vehicle.photos.length ? null : (
+            <p className="text-small text-muted-foreground">No photographs have been added yet.</p>
+          )}
         </div>
+      ) : null}
+      {representative && vehicle.photos.length ? (
+        <section aria-labelledby="vehicle-photos-heading" className="grid gap-2">
+          <h2 id="vehicle-photos-heading" className="text-small font-medium">
+            Vehicle photos
+          </h2>
+          {gallery}
+        </section>
+      ) : representative ? null : vehicle.photos.length ? (
+        gallery
       ) : (
         <p className="flex aspect-[3/1] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground sm:aspect-[5/1]">
           No photographs have been added yet.
