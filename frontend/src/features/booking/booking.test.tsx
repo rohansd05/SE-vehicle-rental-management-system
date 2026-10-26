@@ -63,6 +63,31 @@ describe('vehicle detail (Search.Detail)', () => {
     expect(within(policies).getByText(/75% from 12 to 48 hours before/)).toBeInTheDocument()
   })
 
+  it('leads with the representative model photo and keeps the own photos as a gallery below it', async () => {
+    customerOnVehicle()
+    const main = await screen.findByRole('img', { name: 'Representative image of a Maruti Suzuki Swift' })
+    expect(screen.getByText('Representative image')).toBeInTheDocument()
+    const gallery = within(screen.getByRole('region', { name: 'Vehicle photos' })).getByRole('list', { name: 'Photographs' })
+    const own = within(gallery).getAllByRole('img')
+    expect(own).toHaveLength(4)
+    expect(main.compareDocumentPosition(own[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows the representative photo when the vehicle has no photos of its own', async () => {
+    customerOnVehicle({ ...CAR, photos: [] })
+    expect(await screen.findByRole('img', { name: 'Representative image of a Maruti Suzuki Swift' })).toBeInTheDocument()
+    expect(screen.getByText('No photographs have been added yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Photographs' })).not.toBeInTheDocument()
+  })
+
+  it('leads with the own photos when neither the model nor the category has a representative photo', async () => {
+    customerOnVehicle({ ...CAR, brand: 'Acme', model: 'Zip', category: 'Van' })
+    expect(await screen.findByRole('img', { name: 'Acme Zip, photo 1 of 4' })).toHaveClass('aspect-[3/2]')
+    expect(within(screen.getByRole('list', { name: 'Photographs' })).getAllByRole('img')).toHaveLength(4)
+    expect(screen.queryByText('Representative image')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Vehicle photos' })).not.toBeInTheDocument()
+  })
+
   it('asks for dates when it was opened without a search', async () => {
     signedInAs('CUSTOMER')
     server.use(http.get(`${API}/fleet/vehicles/:id/`, () => HttpResponse.json(CAR)))
