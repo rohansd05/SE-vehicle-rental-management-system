@@ -8,7 +8,9 @@ import { defineConfig } from 'vite'
 // Dev only: the browser talks to Vite, and Vite forwards API, admin and
 // Django static requests to runserver. Production is same-origin behind
 // Caddy (D1), so no CORS package is needed in either case.
-const backend = 'http://localhost:8000'
+// The browser's host is kept: Django builds the signed file links (SI-3) from
+// it, so photos come back through this proxy like the JSON does.
+const backend = { target: 'http://localhost:8000', changeOrigin: false }
 
 // https://vite.dev/config/
 export default defineConfig({
